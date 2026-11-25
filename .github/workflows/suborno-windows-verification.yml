@@ -24,6 +24,7 @@ concurrency:
 env:
   VCPKG_ROOT: ${{ github.workspace }}\.vcpkg
   VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\.vcpkg-binary-cache
+  VCPKG_DOWNLOADS: ${{ github.workspace }}\.vcpkg-downloads
   VCPKG_MAX_CONCURRENCY: 2
 
 jobs:
@@ -35,29 +36,58 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7.0.1
 
-      - name: Cache vcpkg packages
-        uses: actions/cache@v6.1.0
+      - name: Restore vcpkg compiled package cache
+        id: vcpkg-binary-cache
+        uses: actions/cache/restore@v6.1.0
         with:
           path: .vcpkg-binary-cache
-          key: vcpkg-${{ runner.os }}-msvc-v143-x64-windows-static-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}
+          key: vcpkg-${{ runner.os }}-msvc-v143-x64-windows-static-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}-${{ github.sha }}
           restore-keys: |
+            vcpkg-${{ runner.os }}-msvc-v143-x64-windows-static-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}-
             vcpkg-${{ runner.os }}-msvc-v143-x64-windows-static-
 
       # The vcpkg source checkout and its bootstrapped executable are pinned
       # to an immutable commit, so they can be safely reused between runs.
-      - name: Cache pinned vcpkg tool
-        uses: actions/cache@v6.1.0
+      - name: Restore pinned vcpkg tool
+        id: vcpkg-tool-cache
+        uses: actions/cache/restore@v6.1.0
         with:
           path: .vcpkg
           key: vcpkg-tool-${{ runner.os }}-0df93a05b9de080129e653ec4776d7e14a1b2e4f
 
+      # Keep vcpkg's source archives and downloaded host tools outside its
+      # checkout so they can be cached independently from build intermediates.
+      - name: Restore vcpkg downloaded assets
+        id: vcpkg-download-cache
+        uses: actions/cache/restore@v6.1.0
+        with:
+          path: .vcpkg-downloads
+          key: vcpkg-downloads-${{ runner.os }}-0df93a05b9de080129e653ec4776d7e14a1b2e4f-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}-${{ github.sha }}
+          restore-keys: |
+            vcpkg-downloads-${{ runner.os }}-0df93a05b9de080129e653ec4776d7e14a1b2e4f-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}-
+            vcpkg-downloads-${{ runner.os }}-0df93a05b9de080129e653ec4776d7e14a1b2e4f-
+
       # Reuse the exact same third-party installer on subsequent workflow runs.
       # The cached binary is still SHA-256 verified before it is executed.
-      - name: Cache downloaded Windows tools
-        uses: actions/cache@v6.1.0
+      - name: Restore downloaded Windows tools
+        id: windows-tool-cache
+        uses: actions/cache/restore@v6.1.0
         with:
           path: .ci-cache/downloads
           key: windows-tool-innosetup-6.3.3-0bcb2a409dea17e305a27a6b09555cabe600e984f88570ab72575cd7e93c95e
+
+      - name: Report cache restore results
+        shell: pwsh
+        run: |
+          @(
+            "vcpkg binary package cache exact hit: ${{ steps.vcpkg-binary-cache.outputs.cache-hit }}"
+            "vcpkg binary package cache matched key: ${{ steps.vcpkg-binary-cache.outputs.cache-matched-key }}"
+            "vcpkg downloaded asset cache exact hit: ${{ steps.vcpkg-download-cache.outputs.cache-hit }}"
+            "vcpkg downloaded asset cache matched key: ${{ steps.vcpkg-download-cache.outputs.cache-matched-key }}"
+            "pinned vcpkg tool cache exact hit: ${{ steps.vcpkg-tool-cache.outputs.cache-hit }}"
+            "Inno Setup download cache exact hit: ${{ steps.windows-tool-cache.outputs.cache-hit }}"
+          ) | Tee-Object -FilePath verify-cache-status.txt
+          Get-Content verify-cache-status.txt | Add-Content $env:GITHUB_STEP_SUMMARY
 
       - name: Initialize verification evidence
         shell: pwsh
@@ -111,6 +141,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $pinnedVcpkgCommit = '0df93a05b9de080129e653ec4776d7e14a1b2e4f'
           New-Item -ItemType Directory -Force -Path $env:VCPKG_DEFAULT_BINARY_CACHE | Out-Null
+          New-Item -ItemType Directory -Force -Path $env:VCPKG_DOWNLOADS | Out-Null
           $vcpkgGitDirectory = Join-Path $env:VCPKG_ROOT '.git'
           $vcpkgExecutable = Join-Path $env:VCPKG_ROOT 'vcpkg.exe'
 
@@ -139,8 +170,32 @@ jobs:
             Write-Host "Using cached vcpkg.exe; bootstrap download/build skipped."
           }
 
+      - name: Save pinned vcpkg tool
+        if: success()
+        uses: actions/cache/save@v6.1.0
+        with:
+          path: .vcpkg
+          key: vcpkg-tool-${{ runner.os }}-0df93a05b9de080129e653ec4776d7e14a1b2e4f
+
       - name: Configure (windows-msvc preset)
         run: cmake --preset windows-msvc
+
+      # Save immediately after vcpkg has populated the caches. This runs even
+      # when configuration fails, so later compile/test failures cannot discard
+      # already downloaded archives or successfully built dependency packages.
+      - name: Save vcpkg compiled package cache
+        if: always()
+        uses: actions/cache/save@v6.1.0
+        with:
+          path: .vcpkg-binary-cache
+          key: vcpkg-${{ runner.os }}-msvc-v143-x64-windows-static-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}-${{ github.sha }}
+
+      - name: Save vcpkg downloaded assets
+        if: always()
+        uses: actions/cache/save@v6.1.0
+        with:
+          path: .vcpkg-downloads
+          key: vcpkg-downloads-${{ runner.os }}-0df93a05b9de080129e653ec4776d7e14a1b2e4f-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}-${{ github.sha }}
 
       - name: Build Release (full, log captured)
         run: |
@@ -236,6 +291,7 @@ jobs:
           Get-Content verify-evidence\def_vs_pe_check.txt
 
       - name: Build installer (Inno Setup, SHA-pinned)
+        id: build-installer
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -258,6 +314,13 @@ jobs:
           if (-not (Test-Path $iscc)) { throw "ISCC.exe not found." }
           & $iscc /Q packaging/windows/suborno_installer.iss
           if ($LASTEXITCODE -ne 0) { throw "Inno Setup compilation failed." }
+
+      - name: Save downloaded Windows tools
+        if: steps.build-installer.outcome == 'success'
+        uses: actions/cache/save@v6.1.0
+        with:
+          path: .ci-cache/downloads
+          key: windows-tool-innosetup-6.3.3-0bcb2a409dea17e305a27a6b09555cabe600e984f88570ab72575cd7e93c95e
 
       - name: Installer lifecycle test (clean install + upgrade + uninstall)
         shell: pwsh
