@@ -1,0 +1,42 @@
+# SubornoIME line-ending and diff policy.
+# Text files are normalized to LF in the repository. Windows-native scripts
+# and Inno Setup sources keep CRLF so native tooling works unmodified.
+
+* text=auto
+
+# C/C++ sources and build files — LF everywhere
+*.c text
+*.cc text
+*.cpp text
+*.cxx text
+*.h text
+*.hpp text
+*.cmake text
+CMakeLists.txt text
+*.json text
+*.yml text
+*.yaml text
+*.md text
+*.tsv text
+*.xml text
+*.sh text eol=lf
+*.py text eol=lf
+
+# Windows-native scripts and project files — CRLF
+*.iss text eol=crlf
+*.isl text eol=crlf
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.rc text eol=crlf
+*.sln text eol=crlf
+*.vcxproj text eol=crlf
+
+# Binary assets — never diff or normalize
+*.png binary
+*.jpg binary
+*.ico binary
+*.db binary
+*.dll binary
+*.exe binary
+*.pdf binary

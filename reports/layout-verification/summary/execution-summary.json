@@ -1,0 +1,448 @@
+{
+  "mission": "Seven-layout typing verification (brief sections 1-21)",
+  "execution_note": "2026-11-23 17:51Z run (Asia/Dhaka 2026-11-23 23:51)",
+  "environment": {
+    "os": "Linux sandbox (Debian 13)",
+    "compiler": "GCC 14.2.0 (engine-layer validation; NOT MSVC)",
+    "kernel": "Linux 5.10.134",
+    "build": "build/ubuntu-dev (ninja: no work to do -> binaries match HEAD)",
+    "windows_msvc": "absent"
+  },
+  "git": {
+    "head": "a241477cc9c69e5985be66f9e4036e5b920615d7",
+    "branch": "main",
+    "working_tree": "clean at generation time (report files added afterwards)",
+    "baseline_head": "01f6a6f",
+    "src_changed_since_baseline": false,
+    "fix_commits": {
+      "c1462f4": "BUG-06 + F-1..F-5",
+      "cf2a0ca": "BUG-05"
+    }
+  },
+  "suites": {
+    "unit_tests": {
+      "result": "557/557 PASS",
+      "binary": "build/ubuntu-dev/suborno_unit_tests",
+      "preset": "ctest --preset ubuntu-dev"
+    },
+    "integration": {
+      "result": "2/2 PASS",
+      "binary": "build/ubuntu-dev/suborno_integration_tests"
+    },
+    "corpus": {
+      "result": "294/294 PASS (49 words x 6 layouts)",
+      "artifact": "evidence-raw/evidence.json"
+    },
+    "paragraphs": {
+      "result": "18/18 PASS (P1-P3 x 6 layouts)",
+      "artifact": "evidence-raw/evidence.json"
+    },
+    "extended_inventory": {
+      "result": "401/402 PASS + 1 NOT_DERIVABLE (khipro trailing virama)",
+      "artifact": "evidence-raw/corpus_inventory_extension.csv"
+    },
+    "chandrabindu_nga_probe": {
+      "result": "36/36 PASS + dict=ON 4/4",
+      "artifact": "evidence-raw/chandrabindu_nga_probe.txt"
+    },
+    "brief_sequences": {
+      "result": {
+        "pass": 163,
+        "fail": 3,
+        "other": 1
+      },
+      "artifact": "evidence-raw/brief_sequences.csv"
+    },
+    "convention_probe": {
+      "result": {
+        "pass": 20,
+        "total": 23
+      },
+      "artifact": "evidence-raw/convention_sequences.csv"
+    },
+    "digits_punctuation": {
+      "result": "13/13 PASS + 14 INFO",
+      "artifact": "evidence-raw/digits_punct.csv"
+    },
+    "nukta_capability": {
+      "result": "6 layouts probed; standalone nukta typeable only in khipro/national (+suborno attached control)",
+      "artifact": "evidence-raw/nukta_probe_stdout.txt"
+    },
+    "switch_chains": {
+      "result": "7/7 PASS",
+      "artifact": "evidence-raw/brief_sequences.csv (group=switch-chain)"
+    },
+    "editing_engine": {
+      "result": "19 PASS (backspace suite) + 9 BLOCKED (host-app)",
+      "artifact": "evidence-raw/evidence.json"
+    },
+    "composition": {
+      "result": "7 PASS + 2 NOT_APPLICABLE",
+      "artifact": "evidence-raw/evidence.json"
+    },
+    "switching": {
+      "result": "4/4 PASS (cycle, set_active_layout, restart persistence, per-window)",
+      "artifact": "evidence-raw/evidence.json"
+    },
+    "stress": {
+      "result": "11 PASS + 4 BLOCKED (TSF runtime)",
+      "artifact": "evidence-raw/evidence.json"
+    }
+  },
+  "verdicts": {
+    "suborno-phonetic": "ENGINE VERIFIED — WINDOWS RUNTIME BLOCKED",
+    "english": "ENGINE VERIFIED (passthrough identity) — WINDOWS RUNTIME BLOCKED",
+    "borno-phonetic": "ENGINE VERIFIED — WINDOWS RUNTIME BLOCKED",
+    "avro-phonetic": "ENGINE VERIFIED — WINDOWS RUNTIME BLOCKED",
+    "khipro": "PARTIALLY VERIFIED — WINDOWS RUNTIME BLOCKED",
+    "probhat": "PARTIALLY VERIFIED — WINDOWS RUNTIME BLOCKED",
+    "national": "ENGINE VERIFIED — WINDOWS RUNTIME BLOCKED"
+  },
+  "files": [
+    {
+      "path": "reports/layout-verification/CHARACTER_CAPABILITY_MATRIX.csv",
+      "sha256": "28fd90802b644b94793c709d28a7bfc9e8845295dd49d9923270df7c0667e3bf",
+      "bytes": 8436
+    },
+    {
+      "path": "reports/layout-verification/EVIDENCE_INDEX.csv",
+      "sha256": "8eb6914b5cfd260301be21c7c81e9c0cf488778cabbc7c6e0688ac19dcf45749",
+      "bytes": 2073
+    },
+    {
+      "path": "reports/layout-verification/MASTER_LAYOUT_STATUS_MATRIX.csv",
+      "sha256": "3d87c1a9ed80ff608445094c253c158b96ad62ce7a539e13fbf440bfc784c57f",
+      "bytes": 1302
+    },
+    {
+      "path": "reports/layout-verification/MASTER_LAYOUT_STATUS_REPORT.md",
+      "sha256": "32bbff02d9e0f07bfd11a47bdb83a98f4dce14801ab338b6cd500462ec5550ad",
+      "bytes": 16365
+    },
+    {
+      "path": "reports/layout-verification/README.md",
+      "sha256": "0a06755109484e3caca27daba8a5c722b2a5a26ee29ac8aa06645e0e3b466826",
+      "bytes": 1841
+    },
+    {
+      "path": "reports/layout-verification/layouts/national/REPORT.md",
+      "sha256": "3e7e4928291e11704698547298c29257f0e9fc761e1f97390b68a40c64245a4a",
+      "bytes": 3439
+    },
+    {
+      "path": "reports/layout-verification/layouts/national/brief-results.csv",
+      "sha256": "718b977852f3e2b29fd8956759c0641c8cfdcb2b67fcc98689ab847826de25f5",
+      "bytes": 1929
+    },
+    {
+      "path": "reports/layout-verification/layouts/national/engine-results.csv",
+      "sha256": "7e8a70bbf81184d036071747412e392408ed44fe76cc5d94de65a077d5a5325e",
+      "bytes": 10769
+    },
+    {
+      "path": "reports/layout-verification/layouts/national/findings.md",
+      "sha256": "f8d1252080f8bb1e5c4be5c87f0146aabbe4a43afcc9b09dadabee0c8b1fa1c2",
+      "bytes": 589
+    },
+    {
+      "path": "reports/layout-verification/layouts/national/inventory-results.csv",
+      "sha256": "c95bd47e22f0214e0361e4c2b66df4bb0779a380705da3939df1f57de0e447cb",
+      "bytes": 4723
+    },
+    {
+      "path": "reports/layout-verification/layouts/national/regression-results.csv",
+      "sha256": "4bf97c2ca61ddc56e97e7c0d4509bdfea7add3456bfa90505df638cba6bb23f4",
+      "bytes": 1134
+    },
+    {
+      "path": "reports/layout-verification/layouts/national/windows-results.csv",
+      "sha256": "ffefde6ca037c3722f4829426d53f1f489702d784b4ee74bc78bac8c1f12f6fe",
+      "bytes": 1291
+    },
+    {
+      "path": "reports/layout-verification/layouts/probhat/REPORT.md",
+      "sha256": "12ae0de1ea5fdd1496ed0d528d957d8c2ca8c05d65e4bbd5f76d7aec489ecaf5",
+      "bytes": 4200
+    },
+    {
+      "path": "reports/layout-verification/layouts/probhat/brief-results.csv",
+      "sha256": "3d4b5cb13930dcfe2e1677b747e0a1985fa71b7f066ee821b10599eac5c8e35b",
+      "bytes": 7362
+    },
+    {
+      "path": "reports/layout-verification/layouts/probhat/engine-results.csv",
+      "sha256": "cc8613886e621ea9d75d432eb73ec8cdaa425f299a96513894c027233a7d88f6",
+      "bytes": 10666
+    },
+    {
+      "path": "reports/layout-verification/layouts/probhat/findings.md",
+      "sha256": "dbb6af611a818eae2428aab39aad7883cbf963ef0bd3b23f0c43019ad912067b",
+      "bytes": 877
+    },
+    {
+      "path": "reports/layout-verification/layouts/probhat/inventory-results.csv",
+      "sha256": "c29e0bae4d578379dd8b62a857cc64147154ebdcba3698d084781789f41e2cdf",
+      "bytes": 4819
+    },
+    {
+      "path": "reports/layout-verification/layouts/probhat/regression-results.csv",
+      "sha256": "dab85b443b9fe06ed5ce74778835bb8106b0b570e8a0290a579db78262ca6dec",
+      "bytes": 1647
+    },
+    {
+      "path": "reports/layout-verification/layouts/probhat/windows-results.csv",
+      "sha256": "ffefde6ca037c3722f4829426d53f1f489702d784b4ee74bc78bac8c1f12f6fe",
+      "bytes": 1291
+    },
+    {
+      "path": "reports/layout-verification/layouts/borno-phonetic/REPORT.md",
+      "sha256": "0dbd19bcaa12962a6e091fd5b3a67ee0a5982816fae449d9abae1bad6806b179",
+      "bytes": 3668
+    },
+    {
+      "path": "reports/layout-verification/layouts/borno-phonetic/brief-results.csv",
+      "sha256": "8f2e7598a95ffe759e32d0fcc671ab9d67db487442fd3af89bd62ba9f8717dfa",
+      "bytes": 1728
+    },
+    {
+      "path": "reports/layout-verification/layouts/borno-phonetic/engine-results.csv",
+      "sha256": "55bcd693defd6d9ec0cccfe408b7192deb6b2c3f8186dcfe47d91d7c74cf0f70",
+      "bytes": 10881
+    },
+    {
+      "path": "reports/layout-verification/layouts/borno-phonetic/findings.md",
+      "sha256": "929c6046107d374c4b9da514563553b51c9425b30dee58a1d65d6a6238a00274",
+      "bytes": 968
+    },
+    {
+      "path": "reports/layout-verification/layouts/borno-phonetic/inventory-results.csv",
+      "sha256": "ce09122dca416491f64f4cfeb5eb946b65998de6648befbfb22545cef4a13f25",
+      "bytes": 5128
+    },
+    {
+      "path": "reports/layout-verification/layouts/borno-phonetic/regression-results.csv",
+      "sha256": "fbba50f6b5b5785a336746fefab021051db4a43fffcf1045a2548c034a294c02",
+      "bytes": 977
+    },
+    {
+      "path": "reports/layout-verification/layouts/borno-phonetic/windows-results.csv",
+      "sha256": "ffefde6ca037c3722f4829426d53f1f489702d784b4ee74bc78bac8c1f12f6fe",
+      "bytes": 1291
+    },
+    {
+      "path": "reports/layout-verification/layouts/khipro/REPORT.md",
+      "sha256": "0ec20b14f67e9e76870b9ac0424ae4394d2b8413919b53a0468010b4e115254d",
+      "bytes": 3978
+    },
+    {
+      "path": "reports/layout-verification/layouts/khipro/brief-results.csv",
+      "sha256": "e0e71d164e47978f158ebd5f74739b5ca0b29c0c1783bb97283ffd0f711eda2c",
+      "bytes": 1862
+    },
+    {
+      "path": "reports/layout-verification/layouts/khipro/engine-results.csv",
+      "sha256": "5c7372ed827059a9d6bd3039527c6961deaba1b025e91d5c1c38651799e637a0",
+      "bytes": 10457
+    },
+    {
+      "path": "reports/layout-verification/layouts/khipro/findings.md",
+      "sha256": "204e22b92eca6b3d51526d6b2b734bdd89f2b0d138840d9439ee076ecb237cc7",
+      "bytes": 1141
+    },
+    {
+      "path": "reports/layout-verification/layouts/khipro/inventory-results.csv",
+      "sha256": "968b96b73537539fc037cd7b17e583d4020176e400fb3a9f330c55456038adfb",
+      "bytes": 4642
+    },
+    {
+      "path": "reports/layout-verification/layouts/khipro/regression-results.csv",
+      "sha256": "d463299234ff748bd4f0b17317ffbe40b0b323b5b7acaa93af87ee8e1760d308",
+      "bytes": 1112
+    },
+    {
+      "path": "reports/layout-verification/layouts/khipro/windows-results.csv",
+      "sha256": "ffefde6ca037c3722f4829426d53f1f489702d784b4ee74bc78bac8c1f12f6fe",
+      "bytes": 1291
+    },
+    {
+      "path": "reports/layout-verification/layouts/english/REPORT.md",
+      "sha256": "482563ae5ad384113d991a31917f0c3a32d55f4ca47de25a50db1fd772cee4f6",
+      "bytes": 2397
+    },
+    {
+      "path": "reports/layout-verification/layouts/english/engine-results.csv",
+      "sha256": "d1064d964b170b8cdc0647fb1c614cc56fa4747ddcbb00352cfc83e51d0682e2",
+      "bytes": 1812
+    },
+    {
+      "path": "reports/layout-verification/layouts/english/findings.md",
+      "sha256": "a739376ced1dcef9274f7fdf4c97f99415a9c05e4ac3d2bc6812bee5043d104b",
+      "bytes": 725
+    },
+    {
+      "path": "reports/layout-verification/layouts/english/windows-results.csv",
+      "sha256": "ffefde6ca037c3722f4829426d53f1f489702d784b4ee74bc78bac8c1f12f6fe",
+      "bytes": 1291
+    },
+    {
+      "path": "reports/layout-verification/layouts/suborno-phonetic/REPORT.md",
+      "sha256": "d7f1009215e833d2883097ac0e40c5839e216909a4347e07010525ec3627507f",
+      "bytes": 3572
+    },
+    {
+      "path": "reports/layout-verification/layouts/suborno-phonetic/brief-results.csv",
+      "sha256": "194b3f59a754f9661549c1295af4ff466725b37302df0a4d3221ea25ba42bcf2",
+      "bytes": 2047
+    },
+    {
+      "path": "reports/layout-verification/layouts/suborno-phonetic/engine-results.csv",
+      "sha256": "a8085e7166700c4008fca302c7bbc96b3dbfbb4ffbcba22eef732daf9d6df20b",
+      "bytes": 13409
+    },
+    {
+      "path": "reports/layout-verification/layouts/suborno-phonetic/findings.md",
+      "sha256": "843599dd6c1fe91650bdc19089461974fc3ab91e8b0ccd529995f76adb57d4ff",
+      "bytes": 807
+    },
+    {
+      "path": "reports/layout-verification/layouts/suborno-phonetic/inventory-results.csv",
+      "sha256": "f5bf8e3216d5659f70ad57d3fa52d6833df1440adc040bc92de1ea736b26c0cb",
+      "bytes": 5276
+    },
+    {
+      "path": "reports/layout-verification/layouts/suborno-phonetic/regression-results.csv",
+      "sha256": "61d22b384859acbab290107385e0e3a6d387204b3389d95d7d18e78bc591ea7e",
+      "bytes": 819
+    },
+    {
+      "path": "reports/layout-verification/layouts/suborno-phonetic/windows-results.csv",
+      "sha256": "ffefde6ca037c3722f4829426d53f1f489702d784b4ee74bc78bac8c1f12f6fe",
+      "bytes": 1291
+    },
+    {
+      "path": "reports/layout-verification/layouts/avro-phonetic/REPORT.md",
+      "sha256": "eec1c68f3bc76c308e497b58d2f39d44a94d5efe32ad912d258fdecbdb6fedbb",
+      "bytes": 3187
+    },
+    {
+      "path": "reports/layout-verification/layouts/avro-phonetic/brief-results.csv",
+      "sha256": "ca8b907c2499a361dd9a5f4c5e364d6f8d24883fd8eec56152827ed11dc5eeee",
+      "bytes": 1450
+    },
+    {
+      "path": "reports/layout-verification/layouts/avro-phonetic/engine-results.csv",
+      "sha256": "0d107f0b8898bde02a0db702e250be72497b032c0c2fb1b46af22d22139caa1a",
+      "bytes": 11067
+    },
+    {
+      "path": "reports/layout-verification/layouts/avro-phonetic/findings.md",
+      "sha256": "255a242e8beb9693b04f57d400a8e723d800c8e5d6642bf24da5a7acb5f3b721",
+      "bytes": 539
+    },
+    {
+      "path": "reports/layout-verification/layouts/avro-phonetic/inventory-results.csv",
+      "sha256": "768192d7cdaf9b558b4f3301d6dd207b8f1961dc6bc186138476f8cf4f1bfc43",
+      "bytes": 5063
+    },
+    {
+      "path": "reports/layout-verification/layouts/avro-phonetic/regression-results.csv",
+      "sha256": "176e1d0386a7ad4cd74e55e1dc16b3a702759b5d93cb439da88ea74707b821f4",
+      "bytes": 799
+    },
+    {
+      "path": "reports/layout-verification/layouts/avro-phonetic/windows-results.csv",
+      "sha256": "ffefde6ca037c3722f4829426d53f1f489702d784b4ee74bc78bac8c1f12f6fe",
+      "bytes": 1291
+    },
+    {
+      "path": "reports/layout-verification/summary/execution-summary.json",
+      "sha256": "2b76bd9b7c007f7751f568ae4f78dc849b7b55822379df1ae8cbbdd94ad531bc",
+      "bytes": 17051
+    },
+    {
+      "path": "reports/layout-verification/summary/limitations.json",
+      "sha256": "39ca40ca6ac06d92c06dd523640db930a4ecc5d7bd9b3cd8f3eee1389a75bb18",
+      "bytes": 2441
+    },
+    {
+      "path": "reports/layout-verification/summary/verification-status.json",
+      "sha256": "e2a6dc49e3a57cd388b43edcda9408100c09db7b33404f302a3cf7154688f177",
+      "bytes": 3745
+    },
+    {
+      "path": "reports/layout-verification/evidence-raw/brief_sequences.csv",
+      "sha256": "427fe9659079a106c064757936bd4e7f926623227f99af85273237ed3f1155e9",
+      "bytes": 19868
+    },
+    {
+      "path": "reports/layout-verification/evidence-raw/brief_summary.json",
+      "sha256": "44f703c8e78dc84402072aa6b994ad77b4df89732e0ed4a099a551335bf26fd6",
+      "bytes": 28956
+    },
+    {
+      "path": "reports/layout-verification/evidence-raw/chandrabindu_nga_probe.txt",
+      "sha256": "64bb13948402153a937b7f3eed922d9e0018a2cd5f22b9f7662c10d5ee0988e4",
+      "bytes": 2398
+    },
+    {
+      "path": "reports/layout-verification/evidence-raw/convention_sequences.csv",
+      "sha256": "e98c699b84e34e503e06f1b292d6735ce1a6406e16551f9a5a7a36fb7074ab75",
+      "bytes": 1934
+    },
+    {
+      "path": "reports/layout-verification/evidence-raw/corpus_ext_stdout.txt",
+      "sha256": "a45dec0670e2cb1da47d8047599f3a5f6e637b7f5030dc979bbfb263293fd38c",
+      "bytes": 42
+    },
+    {
+      "path": "reports/layout-verification/evidence-raw/corpus_inventory_extension.csv",
+      "sha256": "adc62dfa416c1c82e5dfaf7c0ee82d5937ab06e25a89ae7e433bce1a69ec6fe1",
+      "bytes": 25928
+    },
+    {
+      "path": "reports/layout-verification/evidence-raw/ctest_full.log",
+      "sha256": "c5e581aa149606ac8d8fc6d8a7955226dfb530df0dfe4e4e77ce1b9481cd2e2b",
+      "bytes": 343
+    },
+    {
+      "path": "reports/layout-verification/evidence-raw/digits_punct.csv",
+      "sha256": "4dd3c8b23edfa8323e1e6841ac2163d6de53c8ae5abe428969b6901171e8352e",
+      "bytes": 1607
+    },
+    {
+      "path": "reports/layout-verification/evidence-raw/evidence.json",
+      "sha256": "36528c523b39b5abb8cd96f8ded0208caaca6486d5319e06ea9f8d04393a5d2e",
+      "bytes": 198014
+    },
+    {
+      "path": "reports/layout-verification/evidence-raw/integration_stdout.log",
+      "sha256": "3921a40040877933e47fc1d26917a464d5029365d76100f7bddec0aefb442c4f",
+      "bytes": 721
+    },
+    {
+      "path": "reports/layout-verification/evidence-raw/nukta_probe_stdout.txt",
+      "sha256": "c953b2ddb042ad887ee123a36cc8154f54d85008caf4876c7414fb19128cb467",
+      "bytes": 599
+    },
+    {
+      "path": "reports/layout-verification/evidence-raw/probe_stdout.txt",
+      "sha256": "a6d4a78563868d73bcdd241a068c582838a4121e0745426e386b7e181e99cbb6",
+      "bytes": 44
+    },
+    {
+      "path": "reports/layout-verification/evidence-raw/rerun.log",
+      "sha256": "3435542dbf2b069cfd3f9209c0ab676c95531039e078ee7af4c3eb49e2ba8992",
+      "bytes": 2755
+    },
+    {
+      "path": "reports/layout-verification/evidence-raw/unit_stdout.log",
+      "sha256": "c0dc744a60bfe617bad3e0f6685d372b6cb438ffcaebf90a7737e94cf8d10c40",
+      "bytes": 94479
+    },
+    {
+      "path": "reports/layout-verification/evidence-raw/verify_stdout.txt",
+      "sha256": "b7ba4f5516540e759a6135820fb8178ded65c1d62a247b04b3d099ac4f529d23",
+      "bytes": 68
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+suborno-ime (0.1.0-1) unstable; urgency=medium
+
+  * First Debian packaging of the portable Suborno core and tools
+    (engine, layouts, dictionary, spell, C API examples).
+  * Windows TSF build fixed: EngineSettings member rename, COM base-class
+    dedup, UNICODE define, narrowing and ambiguity fixes.
+  * Per-directory CMakeLists layout; MSVC analysis limited to production
+    code (gtest no longer floods C6326).
+
+ -- SubornoIME Maintainers <maintainers@subornoime.org>  Sat, 21 Nov 2026 20:00:00 +0000

@@ -1,0 +1,40 @@
+suborno-phonetic  পাঁচ five  actual=পাঁচ  PASS
+suborno-phonetic  কাঁচ glass  actual=কাঁচ  PASS
+suborno-phonetic  বাঙালি Bangali  actual=বাঙালি  PASS
+suborno-phonetic  আঁশ fiber  actual=আঁশ  PASS
+suborno-phonetic  সাঁকো bridge  actual=সাঁকো  PASS
+suborno-phonetic  ঙ nga-standalone  actual=ঙ  PASS
+borno-phonetic  পাঁচ five  actual=পাঁচ  PASS
+borno-phonetic  কাঁচ glass  actual=কাঁচ  PASS
+borno-phonetic  বাঙালি Bangali  actual=বাঙালি  PASS
+borno-phonetic  আঁশ fiber  actual=আঁশ  PASS
+borno-phonetic  সাঁকো bridge  actual=সাঁকো  PASS
+borno-phonetic  ঙ nga-standalone  actual=ঙ  PASS
+avro-phonetic  পাঁচ five  actual=পাঁচ  PASS
+avro-phonetic  কাঁচ glass  actual=কাঁচ  PASS
+avro-phonetic  বাঙালি Bangali  actual=বাঙালি  PASS
+avro-phonetic  আঁশ fiber  actual=আঁশ  PASS
+avro-phonetic  সাঁকো bridge  actual=সাঁকো  PASS
+avro-phonetic  ঙ nga-standalone  actual=ঙ  PASS
+khipro  পাঁচ five  actual=পাঁচ  PASS
+khipro  কাঁচ glass  actual=কাঁচ  PASS
+khipro  বাঙালি Bangali  actual=বাঙালি  PASS
+khipro  আঁশ fiber  actual=আঁশ  PASS
+khipro  সাঁকো bridge  actual=সাঁকো  PASS
+khipro  ঙ nga-standalone  actual=ঙ  PASS
+probhat  পাঁচ five  actual=পাঁচ  PASS
+probhat  কাঁচ glass  actual=কাঁচ  PASS
+probhat  বাঙালি Bangali  actual=বাঙালি  PASS
+probhat  আঁশ fiber  actual=আঁশ  PASS
+probhat  সাঁকো bridge  actual=সাঁকো  PASS
+probhat  ঙ nga-standalone  actual=ঙ  PASS
+national  পাঁচ five  actual=পাঁচ  PASS
+national  কাঁচ glass  actual=কাঁচ  PASS
+national  বাঙালি Bangali  actual=বাঙালি  PASS
+national  আঁশ fiber  actual=আঁশ  PASS
+national  সাঁকো bridge  actual=সাঁকো  PASS
+national  ঙ nga-standalone  actual=ঙ  PASS
+dict=ON পাঁচ committed=পাঁচ statuses=matched
+dict=ON কাঁচ committed=কাঁচ statuses=matched
+dict=ON সাঁকো committed=সাঁকো statuses=matched
+dict=ON বাংলা committed=বাংলা statuses=matched

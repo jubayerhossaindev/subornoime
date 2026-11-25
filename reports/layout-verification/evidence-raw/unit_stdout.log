@@ -1,0 +1,1306 @@
+Running main() from /tmp/googletest-1.15.2/googletest/src/gtest_main.cc
+[==========] Running 557 tests from 62 test suites.
+[----------] Global test environment set-up.
+[----------] 6 tests from AtomicFileTest
+[ RUN      ] AtomicFileTest.ReplacesExistingFileWithCompleteContents
+[       OK ] AtomicFileTest.ReplacesExistingFileWithCompleteContents (0 ms)
+[ RUN      ] AtomicFileTest.RejectsAnEmptyDestination
+[       OK ] AtomicFileTest.RejectsAnEmptyDestination (0 ms)
+[ RUN      ] AtomicFileTest.FailedReplacementLeavesDestinationIntact
+[       OK ] AtomicFileTest.FailedReplacementLeavesDestinationIntact (0 ms)
+[ RUN      ] AtomicFileTest.QuarantineRenamesExistingFileBesideItself
+[       OK ] AtomicFileTest.QuarantineRenamesExistingFileBesideItself (0 ms)
+[ RUN      ] AtomicFileTest.QuarantineMissingFileSucceeds
+[       OK ] AtomicFileTest.QuarantineMissingFileSucceeds (0 ms)
+[ RUN      ] AtomicFileTest.QuarantineEmptyPathIsInvalid
+[       OK ] AtomicFileTest.QuarantineEmptyPathIsInvalid (0 ms)
+[----------] 6 tests from AtomicFileTest (1 ms total)
+
+[----------] 2 tests from ProjectSmokeTest
+[ RUN      ] ProjectSmokeTest.ExposesInitialInfrastructureAbiVersion
+[       OK ] ProjectSmokeTest.ExposesInitialInfrastructureAbiVersion (0 ms)
+[ RUN      ] ProjectSmokeTest.HandlesCoreBanglaTransliterationExamples
+[       OK ] ProjectSmokeTest.HandlesCoreBanglaTransliterationExamples (0 ms)
+[----------] 2 tests from ProjectSmokeTest (0 ms total)
+
+[----------] 5 tests from CApiTest
+[ RUN      ] CApiTest.CreatesGenericInputSessionAndCommitsBengaliText
+[       OK ] CApiTest.CreatesGenericInputSessionAndCommitsBengaliText (0 ms)
+[ RUN      ] CApiTest.SessionKeepsItsEngineAliveAfterEngineHandleIsDestroyed
+[       OK ] CApiTest.SessionKeepsItsEngineAliveAfterEngineHandleIsDestroyed (0 ms)
+[ RUN      ] CApiTest.RejectsNullArgumentsAtTheBoundary
+[       OK ] CApiTest.RejectsNullArgumentsAtTheBoundary (0 ms)
+[ RUN      ] CApiTest.ReportsBufferTooSmallForThePreeditSnapshot
+[       OK ] CApiTest.ReportsBufferTooSmallForThePreeditSnapshot (0 ms)
+[ RUN      ] CApiTest.RejectsOutOfRangeCandidatesAndCommitsTheSelectedOne
+[       OK ] CApiTest.RejectsOutOfRangeCandidatesAndCommitsTheSelectedOne (0 ms)
+[----------] 5 tests from CApiTest (0 ms total)
+
+[----------] 6 tests from CandidateEngineTest
+[ RUN      ] CandidateEngineTest.SupportsFixedLayoutsAndMergesDictionaryCandidates
+[       OK ] CandidateEngineTest.SupportsFixedLayoutsAndMergesDictionaryCandidates (1 ms)
+[ RUN      ] CandidateEngineTest.AppliesTheCandidateLimitAndSkipsDuplicateLayoutOutput
+[       OK ] CandidateEngineTest.AppliesTheCandidateLimitAndSkipsDuplicateLayoutOutput (1 ms)
+[ RUN      ] CandidateEngineTest.IncludesNormalizedPrefixPredictionsBelowExactMatches
+[       OK ] CandidateEngineTest.IncludesNormalizedPrefixPredictionsBelowExactMatches (1 ms)
+[ RUN      ] CandidateEngineTest.NextWordPredictionInsertsTransitionFollowersAbovePrefixMatches
+[       OK ] CandidateEngineTest.NextWordPredictionInsertsTransitionFollowersAbovePrefixMatches (1 ms)
+[ RUN      ] CandidateEngineTest.PredictionWordThatAlsoMatchesExactAppearsOnce
+[       OK ] CandidateEngineTest.PredictionWordThatAlsoMatchesExactAppearsOnce (1 ms)
+[ RUN      ] CandidateEngineTest.EmptyPreviousWordKeepsThePrePredictionCandidateList
+[       OK ] CandidateEngineTest.EmptyPreviousWordKeepsThePrePredictionCandidateList (1 ms)
+[----------] 6 tests from CandidateEngineTest (10 ms total)
+
+[----------] 12 tests from PhoneticParserTest
+[ RUN      ] PhoneticParserTest.AppliesIndependentAndDependentVowelStateTransitions
+[       OK ] PhoneticParserTest.AppliesIndependentAndDependentVowelStateTransitions (0 ms)
+[ RUN      ] PhoneticParserTest.PreservesCaseSensitiveRetroflexMappings
+[       OK ] PhoneticParserTest.PreservesCaseSensitiveRetroflexMappings (0 ms)
+[ RUN      ] PhoneticParserTest.AppliesNasalLookaheadBeforeOrdinaryTokenConsumption
+[       OK ] PhoneticParserTest.AppliesNasalLookaheadBeforeOrdinaryTokenConsumption (0 ms)
+[ RUN      ] PhoneticParserTest.NasalAlternatesAreNotGeneratedForNgkOrNk
+[       OK ] PhoneticParserTest.NasalAlternatesAreNotGeneratedForNgkOrNk (0 ms)
+[ RUN      ] PhoneticParserTest.TreatsMAndHAsSignsWithoutAddingVirama
+[       OK ] PhoneticParserTest.TreatsMAndHAsSignsWithoutAddingVirama (0 ms)
+[ RUN      ] PhoneticParserTest.AppliesExplicitControlTransitionsAndModifiers
+[       OK ] PhoneticParserTest.AppliesExplicitControlTransitionsAndModifiers (0 ms)
+[ RUN      ] PhoneticParserTest.ExercisesValidAndInvalidControlContexts
+[       OK ] PhoneticParserTest.ExercisesValidAndInvalidControlContexts (0 ms)
+[ RUN      ] PhoneticParserTest.MapsDigitsAndHonorsExplicitEscapes
+[       OK ] PhoneticParserTest.MapsDigitsAndHonorsExplicitEscapes (0 ms)
+[ RUN      ] PhoneticParserTest.DistinguishesPendingAndCommittedIncompleteControls
+[       OK ] PhoneticParserTest.DistinguishesPendingAndCommittedIncompleteControls (0 ms)
+[ RUN      ] PhoneticParserTest.EmitsExplicitConjunctSequencesAndNfcOutput
+[       OK ] PhoneticParserTest.EmitsExplicitConjunctSequencesAndNfcOutput (0 ms)
+[ RUN      ] PhoneticParserTest.KeepsLegacyExamplesAsTokenDerivedOutput
+[       OK ] PhoneticParserTest.KeepsLegacyExamplesAsTokenDerivedOutput (0 ms)
+[ RUN      ] PhoneticParserTest.KeepsLegacyVectorsTokenDerivedWithoutWordExceptions
+[       OK ] PhoneticParserTest.KeepsLegacyVectorsTokenDerivedWithoutWordExceptions (0 ms)
+[----------] 12 tests from PhoneticParserTest (0 ms total)
+
+[----------] 9 tests from PhoneticInputSessionTest
+[ RUN      ] PhoneticInputSessionTest.AppendsValidInputAndCommitsPrimaryOutput
+[       OK ] PhoneticInputSessionTest.AppendsValidInputAndCommitsPrimaryOutput (0 ms)
+[ RUN      ] PhoneticInputSessionTest.RejectsInvalidUtf8AndLimitOverflowAtomically
+[       OK ] PhoneticInputSessionTest.RejectsInvalidUtf8AndLimitOverflowAtomically (0 ms)
+[ RUN      ] PhoneticInputSessionTest.EnforcesTheScalarLimitAndAllowsExactLimit
+[       OK ] PhoneticInputSessionTest.EnforcesTheScalarLimitAndAllowsExactLimit (4 ms)
+[ RUN      ] PhoneticInputSessionTest.BackspaceRemovesOneExtendedGraphemeCluster
+[       OK ] PhoneticInputSessionTest.BackspaceRemovesOneExtendedGraphemeCluster (0 ms)
+[ RUN      ] PhoneticInputSessionTest.BackspaceKeepsEmojiFlagAndCombiningGraphemesAtomic
+[       OK ] PhoneticInputSessionTest.BackspaceKeepsEmojiFlagAndCombiningGraphemesAtomic (0 ms)
+[ RUN      ] PhoneticInputSessionTest.KeepsIncompleteControlPendingUntilCommit
+[       OK ] PhoneticInputSessionTest.KeepsIncompleteControlPendingUntilCommit (0 ms)
+[ RUN      ] PhoneticInputSessionTest.ReportsEscapedAndInvalidControlLiteralPassThrough
+[       OK ] PhoneticInputSessionTest.ReportsEscapedAndInvalidControlLiteralPassThrough (0 ms)
+[ RUN      ] PhoneticInputSessionTest.InvalidCandidateIndexDoesNotClearComposition
+[       OK ] PhoneticInputSessionTest.InvalidCandidateIndexDoesNotClearComposition (0 ms)
+[ RUN      ] PhoneticInputSessionTest.ResetDropsCompositionWithoutCommitting
+[       OK ] PhoneticInputSessionTest.ResetDropsCompositionWithoutCommitting (0 ms)
+[----------] 9 tests from PhoneticInputSessionTest (5 ms total)
+
+[----------] 10 tests from LayoutInputSessionTest
+[ RUN      ] LayoutInputSessionTest.BuildsPreeditFromTheCompleteKeySequence
+[       OK ] LayoutInputSessionTest.BuildsPreeditFromTheCompleteKeySequence (0 ms)
+[ RUN      ] LayoutInputSessionTest.BackspaceRemovesOneGraphemeAndRebuildsPreedit
+[       OK ] LayoutInputSessionTest.BackspaceRemovesOneGraphemeAndRebuildsPreedit (0 ms)
+[ RUN      ] LayoutInputSessionTest.SelectsAndCommitsTheActiveCandidate
+[       OK ] LayoutInputSessionTest.SelectsAndCommitsTheActiveCandidate (0 ms)
+[ RUN      ] LayoutInputSessionTest.RejectsInvalidUtf8WithoutMutatingTheSession
+[       OK ] LayoutInputSessionTest.RejectsInvalidUtf8WithoutMutatingTheSession (0 ms)
+[ RUN      ] LayoutInputSessionTest.AcceptsPhysicalKeysThroughTheSharedSessionContract
+[       OK ] LayoutInputSessionTest.AcceptsPhysicalKeysThroughTheSharedSessionContract (0 ms)
+[ RUN      ] LayoutInputSessionTest.DoesNotTurnShortcutChordsIntoCompositionText
+[       OK ] LayoutInputSessionTest.DoesNotTurnShortcutChordsIntoCompositionText (0 ms)
+[ RUN      ] LayoutInputSessionTest.EnforcesTheSharedInputLimit
+[       OK ] LayoutInputSessionTest.EnforcesTheSharedInputLimit (0 ms)
+[ RUN      ] LayoutInputSessionTest.SharedCandidateEngineAddsDictionaryMatchesForFixedLayouts
+[       OK ] LayoutInputSessionTest.SharedCandidateEngineAddsDictionaryMatchesForFixedLayouts (1 ms)
+[ RUN      ] LayoutInputSessionTest.UsesLogicalUnicodeTextFromActiveKeyboardLayout
+[       OK ] LayoutInputSessionTest.UsesLogicalUnicodeTextFromActiveKeyboardLayout (0 ms)
+[ RUN      ] LayoutInputSessionTest.DoesNotUseUsFallbackWhenLayoutTranslationReturnsNoText
+[       OK ] LayoutInputSessionTest.DoesNotUseUsFallbackWhenLayoutTranslationReturnsNoText (0 ms)
+[----------] 10 tests from LayoutInputSessionTest (1 ms total)
+
+[----------] 11 tests from KeyEventTest
+[ RUN      ] KeyEventTest.AppliesShiftAndCapsLockAsAnXor
+[       OK ] KeyEventTest.AppliesShiftAndCapsLockAsAnXor (0 ms)
+[ RUN      ] KeyEventTest.MapsShiftedNumberRowCharacters
+[       OK ] KeyEventTest.MapsShiftedNumberRowCharacters (0 ms)
+[ RUN      ] KeyEventTest.HonorsNumpadNumLockState
+[       OK ] KeyEventTest.HonorsNumpadNumLockState (0 ms)
+[ RUN      ] KeyEventTest.MapsPunctuationAndShiftedVariants
+[       OK ] KeyEventTest.MapsPunctuationAndShiftedVariants (0 ms)
+[ RUN      ] KeyEventTest.RemapsNumpadDigitsToTheTopRowWhenNumLockIsEnabled
+[       OK ] KeyEventTest.RemapsNumpadDigitsToTheTopRowWhenNumLockIsEnabled (0 ms)
+[ RUN      ] KeyEventTest.DoesNotRemapNumpadWhenNumLockIsOff
+[       OK ] KeyEventTest.DoesNotRemapNumpadWhenNumLockIsOff (0 ms)
+[ RUN      ] KeyEventTest.IdentifiesNumericKeypadPhysicalKeys
+[       OK ] KeyEventTest.IdentifiesNumericKeypadPhysicalKeys (0 ms)
+[ RUN      ] KeyEventTest.DoesNotTreatModifierShortcutsAsText
+[       OK ] KeyEventTest.DoesNotTreatModifierShortcutsAsText (0 ms)
+[ RUN      ] KeyEventTest.DecodesWindowsRepeatScanCodeAndExtendedKeyBits
+[       OK ] KeyEventTest.DecodesWindowsRepeatScanCodeAndExtendedKeyBits (0 ms)
+[ RUN      ] KeyEventTest.DecodesFirstKeyDownMessage
+[       OK ] KeyEventTest.DecodesFirstKeyDownMessage (0 ms)
+[ RUN      ] KeyEventTest.DistinguishesUnavailableLogicalTextFromAnEmptyTranslation
+[       OK ] KeyEventTest.DistinguishesUnavailableLogicalTextFromAnEmptyTranslation (0 ms)
+[----------] 11 tests from KeyEventTest (0 ms total)
+
+[----------] 5 tests from BornoPhoneticLayoutTest
+[ RUN      ] BornoPhoneticLayoutTest.ConvertsIndependentAndDependentVowels
+[       OK ] BornoPhoneticLayoutTest.ConvertsIndependentAndDependentVowels (0 ms)
+[ RUN      ] BornoPhoneticLayoutTest.PreservesCaseSensitiveConsonantTokens
+[       OK ] BornoPhoneticLayoutTest.PreservesCaseSensitiveConsonantTokens (0 ms)
+[ RUN      ] BornoPhoneticLayoutTest.ComposesConsonantRunsAndExplicitControls
+[       OK ] BornoPhoneticLayoutTest.ComposesConsonantRunsAndExplicitControls (0 ms)
+[ RUN      ] BornoPhoneticLayoutTest.EscapesLiteralGraphemesAndPreservesUnknownText
+[       OK ] BornoPhoneticLayoutTest.EscapesLiteralGraphemesAndPreservesUnknownText (0 ms)
+[ RUN      ] BornoPhoneticLayoutTest.ExposesIndependentCandidateIdentity
+[       OK ] BornoPhoneticLayoutTest.ExposesIndependentCandidateIdentity (0 ms)
+[----------] 5 tests from BornoPhoneticLayoutTest (0 ms total)
+
+[----------] 5 tests from AvroPhoneticLayoutTest
+[ RUN      ] AvroPhoneticLayoutTest.ConvertsIndependentAndDependentVowels
+[       OK ] AvroPhoneticLayoutTest.ConvertsIndependentAndDependentVowels (0 ms)
+[ RUN      ] AvroPhoneticLayoutTest.PreservesCaseSensitiveConsonantTokens
+[       OK ] AvroPhoneticLayoutTest.PreservesCaseSensitiveConsonantTokens (0 ms)
+[ RUN      ] AvroPhoneticLayoutTest.HandlesAccentKeyOverrides
+[       OK ] AvroPhoneticLayoutTest.HandlesAccentKeyOverrides (0 ms)
+[ RUN      ] AvroPhoneticLayoutTest.SupportsRephPhalaAndSpecialSigns
+[       OK ] AvroPhoneticLayoutTest.SupportsRephPhalaAndSpecialSigns (0 ms)
+[ RUN      ] AvroPhoneticLayoutTest.PreservesLiteralAndUnknownUnicodeText
+[       OK ] AvroPhoneticLayoutTest.PreservesLiteralAndUnknownUnicodeText (0 ms)
+[----------] 5 tests from AvroPhoneticLayoutTest (0 ms total)
+
+[----------] 6 tests from KhiproLayoutTest
+[ RUN      ] KhiproLayoutTest.BasicConsonantAndVowelComposition
+[       OK ] KhiproLayoutTest.BasicConsonantAndVowelComposition (0 ms)
+[ RUN      ] KhiproLayoutTest.AutomaticallyJoinsAdjacentConsonants
+[       OK ] KhiproLayoutTest.AutomaticallyJoinsAdjacentConsonants (0 ms)
+[ RUN      ] KhiproLayoutTest.SupportsForcedVowelForms
+[       OK ] KhiproLayoutTest.SupportsForcedVowelForms (0 ms)
+[ RUN      ] KhiproLayoutTest.SupportsSlicerAndChandrabindu
+[       OK ] KhiproLayoutTest.SupportsSlicerAndChandrabindu (0 ms)
+[ RUN      ] KhiproLayoutTest.SupportsSpecialCharactersAndLiteralSeparator
+[       OK ] KhiproLayoutTest.SupportsSpecialCharactersAndLiteralSeparator (0 ms)
+[ RUN      ] KhiproLayoutTest.CreatesCompositionSessionsAndCommitsTheSelectedOutput
+[       OK ] KhiproLayoutTest.CreatesCompositionSessionsAndCommitsTheSelectedOutput (0 ms)
+[----------] 6 tests from KhiproLayoutTest (0 ms total)
+
+[----------] 4 tests from PhoneticCandidateTest
+[ RUN      ] PhoneticCandidateTest.OrdersChAndShWholeTokenAndSplitAlternatives
+[       OK ] PhoneticCandidateTest.OrdersChAndShWholeTokenAndSplitAlternatives (0 ms)
+[ RUN      ] PhoneticCandidateTest.GeneratesLongestMatchAndVowelAlternatives
+[       OK ] PhoneticCandidateTest.GeneratesLongestMatchAndVowelAlternatives (0 ms)
+[ RUN      ] PhoneticCandidateTest.GeneratesAllAmbiguityCombinationsInStableOrder
+[       OK ] PhoneticCandidateTest.GeneratesAllAmbiguityCombinationsInStableOrder (0 ms)
+[ RUN      ] PhoneticCandidateTest.AppliesTheSixteenCandidateCapAndDeduplicatesOutputs
+[       OK ] PhoneticCandidateTest.AppliesTheSixteenCandidateCapAndDeduplicatesOutputs (1 ms)
+[----------] 4 tests from PhoneticCandidateTest (1 ms total)
+
+[----------] 8 tests from PhoneticTokenizerTest
+[ RUN      ] PhoneticTokenizerTest.RegistryIsImmutableAndContainsNormativeTokens
+[       OK ] PhoneticTokenizerTest.RegistryIsImmutableAndContainsNormativeTokens (0 ms)
+[ RUN      ] PhoneticTokenizerTest.EveryNormativeTokenMatchesIndependentGoldenVectors
+[       OK ] PhoneticTokenizerTest.EveryNormativeTokenMatchesIndependentGoldenVectors (0 ms)
+[ RUN      ] PhoneticTokenizerTest.RegistryContainsExactlyTheNormativeInputTokens
+[       OK ] PhoneticTokenizerTest.RegistryContainsExactlyTheNormativeInputTokens (0 ms)
+[ RUN      ] PhoneticTokenizerTest.EveryNormativeVowelHasAnIndependentDependentForm
+[       OK ] PhoneticTokenizerTest.EveryNormativeVowelHasAnIndependentDependentForm (0 ms)
+[ RUN      ] PhoneticTokenizerTest.UsesLongestExactCaseSensitiveMatch
+[       OK ] PhoneticTokenizerTest.UsesLongestExactCaseSensitiveMatch (0 ms)
+[ RUN      ] PhoneticTokenizerTest.KeepsSpecialSignsAndNasalsDistinct
+[       OK ] PhoneticTokenizerTest.KeepsSpecialSignsAndNasalsDistinct (0 ms)
+[ RUN      ] PhoneticTokenizerTest.LowercaseRhIsAJoinerFreeConsonantCluster
+[       OK ] PhoneticTokenizerTest.LowercaseRhIsAJoinerFreeConsonantCluster (0 ms)
+[ RUN      ] PhoneticTokenizerTest.MatchesAtRequestedOffsetAndDoesNotConsumeUnknownInput
+[       OK ] PhoneticTokenizerTest.MatchesAtRequestedOffsetAndDoesNotConsumeUnknownInput (0 ms)
+[----------] 8 tests from PhoneticTokenizerTest (0 ms total)
+
+[----------] 5 tests from UnicodeUtilitiesTest
+[ RUN      ] UnicodeUtilitiesTest.ValidatesUtf8WithoutAcceptingMalformedSequences
+[       OK ] UnicodeUtilitiesTest.ValidatesUtf8WithoutAcceptingMalformedSequences (0 ms)
+[ RUN      ] UnicodeUtilitiesTest.CountsUnicodeCodePointsRatherThanUtf8Bytes
+[       OK ] UnicodeUtilitiesTest.CountsUnicodeCodePointsRatherThanUtf8Bytes (0 ms)
+[ RUN      ] UnicodeUtilitiesTest.NormalizesNfcAndNfkcExplicitly
+[       OK ] UnicodeUtilitiesTest.NormalizesNfcAndNfkcExplicitly (0 ms)
+[ RUN      ] UnicodeUtilitiesTest.SplitsExtendedGraphemeClusters
+[       OK ] UnicodeUtilitiesTest.SplitsExtendedGraphemeClusters (0 ms)
+[ RUN      ] UnicodeUtilitiesTest.SplitsEmojiRegionalIndicatorsAndCombiningSequences
+[       OK ] UnicodeUtilitiesTest.SplitsEmojiRegionalIndicatorsAndCombiningSequences (0 ms)
+[----------] 5 tests from UnicodeUtilitiesTest (0 ms total)
+
+[----------] 21 tests from BijoyEncodingTest
+[ RUN      ] BijoyEncodingTest.EncodesEverydaySentencesToTheirGoldenBytes
+[       OK ] BijoyEncodingTest.EncodesEverydaySentencesToTheirGoldenBytes (0 ms)
+[ RUN      ] BijoyEncodingTest.EncodesAllIndependentVowels
+[       OK ] BijoyEncodingTest.EncodesAllIndependentVowels (0 ms)
+[ RUN      ] BijoyEncodingTest.EncodesConsonantsPerTheAnchoredBijoyAsciiTable
+[       OK ] BijoyEncodingTest.EncodesConsonantsPerTheAnchoredBijoyAsciiTable (0 ms)
+[ RUN      ] BijoyEncodingTest.PrintsVowelSignsAfterTheConsonantTheyFollow
+[       OK ] BijoyEncodingTest.PrintsVowelSignsAfterTheConsonantTheyFollow (0 ms)
+[ RUN      ] BijoyEncodingTest.MovesTheLeftSideEMatraAndAiMatraBeforeTheConsonant
+[       OK ] BijoyEncodingTest.MovesTheLeftSideEMatraAndAiMatraBeforeTheConsonant (0 ms)
+[ RUN      ] BijoyEncodingTest.SplitsOTwoPartKarCompositesAroundTheConsonant
+[       OK ] BijoyEncodingTest.SplitsOTwoPartKarCompositesAroundTheConsonant (0 ms)
+[ RUN      ] BijoyEncodingTest.EmitsRephAfterTheBaseConsonant
+[       OK ] BijoyEncodingTest.EmitsRephAfterTheBaseConsonant (0 ms)
+[ RUN      ] BijoyEncodingTest.KeepsPlainPostConsonantRaDistinctFromReph
+[       OK ] BijoyEncodingTest.KeepsPlainPostConsonantRaDistinctFromReph (0 ms)
+[ RUN      ] BijoyEncodingTest.JoinsRafalaAndYafalaWithHasanta
+[       OK ] BijoyEncodingTest.JoinsRafalaAndYafalaWithHasanta (0 ms)
+[ RUN      ] BijoyEncodingTest.CollapsesCommonConjunctsToHasantaJoinedComponents
+[       OK ] BijoyEncodingTest.CollapsesCommonConjunctsToHasantaJoinedComponents (0 ms)
+[ RUN      ] BijoyEncodingTest.CollapsesShaSaAndHaSeriesConjuncts
+[       OK ] BijoyEncodingTest.CollapsesShaSaAndHaSeriesConjuncts (0 ms)
+[ RUN      ] BijoyEncodingTest.EncodesNumeralsDandaAndTakaSign
+[       OK ] BijoyEncodingTest.EncodesNumeralsDandaAndTakaSign (0 ms)
+[ RUN      ] BijoyEncodingTest.EncodesNasalAndVisargaSignsInPlace
+[       OK ] BijoyEncodingTest.EncodesNasalAndVisargaSignsInPlace (0 ms)
+[ RUN      ] BijoyEncodingTest.PassesAsciiThroughByteForByte
+[       OK ] BijoyEncodingTest.PassesAsciiThroughByteForByte (0 ms)
+[ RUN      ] BijoyEncodingTest.DropsZeroWidthJoinersAndNonJoiners
+[       OK ] BijoyEncodingTest.DropsZeroWidthJoinersAndNonJoiners (0 ms)
+[ RUN      ] BijoyEncodingTest.ReturnsInvalidUtf8UnchangedAndReportsItUnencodable
+[       OK ] BijoyEncodingTest.ReturnsInvalidUtf8UnchangedAndReportsItUnencodable (0 ms)
+[ RUN      ] BijoyEncodingTest.ReportsEncodabilityOfMappedAndUnmappedText
+[       OK ] BijoyEncodingTest.ReportsEncodabilityOfMappedAndUnmappedText (0 ms)
+[ RUN      ] BijoyEncodingTest.SkipsUnmappedCharactersInsteadOfEmittingNonAsciiBytes
+[       OK ] BijoyEncodingTest.SkipsUnmappedCharactersInsteadOfEmittingNonAsciiBytes (0 ms)
+[ RUN      ] BijoyEncodingTest.EncodingIsIdempotentBecauseOutputIsPureAscii
+[       OK ] BijoyEncodingTest.EncodingIsIdempotentBecauseOutputIsPureAscii (0 ms)
+[ RUN      ] BijoyEncodingTest.NormalizesDecomposedNuqtaLettersAndTwoPartMatras
+[       OK ] BijoyEncodingTest.NormalizesDecomposedNuqtaLettersAndTwoPartMatras (0 ms)
+[ RUN      ] BijoyEncodingTest.EncodesEverydayWordsWithClustersAndReph
+[       OK ] BijoyEncodingTest.EncodesEverydayWordsWithClustersAndReph (0 ms)
+[----------] 21 tests from BijoyEncodingTest (0 ms total)
+
+[----------] 37 tests from EngineTest
+[ RUN      ] EngineTest.RegistersDefaultPhoneticLayout
+[       OK ] EngineTest.RegistersDefaultPhoneticLayout (0 ms)
+[ RUN      ] EngineTest.RegistersEnglishPassthroughLayoutWithCleanNames
+[       OK ] EngineTest.RegistersEnglishPassthroughLayoutWithCleanNames (0 ms)
+[ RUN      ] EngineTest.LayoutDisplayNamesAreCorrectAndScriptClean
+[       OK ] EngineTest.LayoutDisplayNamesAreCorrectAndScriptClean (0 ms)
+[ RUN      ] EngineTest.RegistersAndSwitchesLayouts
+[       OK ] EngineTest.RegistersAndSwitchesLayouts (0 ms)
+[ RUN      ] EngineTest.CreatesSessionsThroughStatelessInputLayoutFactory
+[       OK ] EngineTest.CreatesSessionsThroughStatelessInputLayoutFactory (0 ms)
+[ RUN      ] EngineTest.RegistersAndCreatesBornoPhoneticSessions
+[       OK ] EngineTest.RegistersAndCreatesBornoPhoneticSessions (0 ms)
+[ RUN      ] EngineTest.RegistersAndCreatesKhiproCompositionalSessions
+[       OK ] EngineTest.RegistersAndCreatesKhiproCompositionalSessions (0 ms)
+[ RUN      ] EngineTest.RegistersAndCreatesAvroPhoneticSessions
+[       OK ] EngineTest.RegistersAndCreatesAvroPhoneticSessions (0 ms)
+[ RUN      ] EngineTest.CandidateEngineAddsDictionaryExactMatches
+[       OK ] EngineTest.CandidateEngineAddsDictionaryExactMatches (1 ms)
+[ RUN      ] EngineTest.CandidateEngineDeduplicatesCanonicalText
+[       OK ] EngineTest.CandidateEngineDeduplicatesCanonicalText (0 ms)
+[ RUN      ] EngineTest.DictionarySchemaCommitAndReset
+[       OK ] EngineTest.DictionarySchemaCommitAndReset (1 ms)
+[ RUN      ] EngineTest.DictionaryRejectsInvalidSchemaVersion
+[       OK ] EngineTest.DictionaryRejectsInvalidSchemaVersion (2 ms)
+[ RUN      ] EngineTest.DictionaryMigratesLegacySchema
+[       OK ] EngineTest.DictionaryMigratesLegacySchema (1 ms)
+[ RUN      ] EngineTest.DictionaryMigratesVersionTwoLearnedWordsToAliasSchema
+[       OK ] EngineTest.DictionaryMigratesVersionTwoLearnedWordsToAliasSchema (2 ms)
+[ RUN      ] EngineTest.DictionaryRejectsCorruptDatabase
+[       OK ] EngineTest.DictionaryRejectsCorruptDatabase (0 ms)
+[ RUN      ] EngineTest.DictionaryPrefixLookupAndReset
+[       OK ] EngineTest.DictionaryPrefixLookupAndReset (1 ms)
+[ RUN      ] EngineTest.EngineConfigPersistsSettingsAndOwnsDictionary
+[       OK ] EngineTest.EngineConfigPersistsSettingsAndOwnsDictionary (1 ms)
+[ RUN      ] EngineTest.ReloadsSettingsChangedByTheDesktopSettingsApplication
+[       OK ] EngineTest.ReloadsSettingsChangedByTheDesktopSettingsApplication (0 ms)
+[ RUN      ] EngineTest.FallsBackToDefaultsOnCorruptSettingsAndHealsOnNextSave
+[       OK ] EngineTest.FallsBackToDefaultsOnCorruptSettingsAndHealsOnNextSave (0 ms)
+[ RUN      ] EngineTest.RestoresKnownLayoutAndFallsBackForUnknownLayout
+[       OK ] EngineTest.RestoresKnownLayoutAndFallsBackForUnknownLayout (0 ms)
+[ RUN      ] EngineTest.AppliesCandidateLimitAndLearningSettingToSessions
+[       OK ] EngineTest.AppliesCandidateLimitAndLearningSettingToSessions (2 ms)
+[ RUN      ] EngineTest.CandidateLimitAppliesWithoutDictionary
+[       OK ] EngineTest.CandidateLimitAppliesWithoutDictionary (0 ms)
+[ RUN      ] EngineTest.SessionCandidatesIncludePhoneticDictionaryMatches
+[       OK ] EngineTest.SessionCandidatesIncludePhoneticDictionaryMatches (1 ms)
+[ RUN      ] EngineTest.PhoneticSessionStoresCanonicalWordAndTypedAliasSeparately
+[       OK ] EngineTest.PhoneticSessionStoresCanonicalWordAndTypedAliasSeparately (4 ms)
+[ RUN      ] EngineTest.CommitUsesSelectedCandidate
+[       OK ] EngineTest.CommitUsesSelectedCandidate (0 ms)
+[ RUN      ] EngineTest.LoadsDeclarativeLayoutMapping
+[       OK ] EngineTest.LoadsDeclarativeLayoutMapping (0 ms)
+[ RUN      ] EngineTest.DeterministicLanguageIntelligence
+[       OK ] EngineTest.DeterministicLanguageIntelligence (1 ms)
+[ RUN      ] EngineTest.CApiCreatesAndCommitsSession
+[       OK ] EngineTest.CApiCreatesAndCommitsSession (0 ms)
+[ RUN      ] EngineTest.CApiReportsInputAndArgumentErrors
+[       OK ] EngineTest.CApiReportsInputAndArgumentErrors (0 ms)
+[ RUN      ] EngineTest.RecordCommittedWordChainsTransitionsAndIgnoresEmptyWords
+[       OK ] EngineTest.RecordCommittedWordChainsTransitionsAndIgnoresEmptyWords (1 ms)
+[ RUN      ] EngineTest.ClearLearntWordsResetsTransitionsAndCommittedContext
+[       OK ] EngineTest.ClearLearntWordsResetsTransitionsAndCommittedContext (1 ms)
+[ RUN      ] EngineTest.NextWordPredictionTogglePersistsThroughSettingsStoreRoundTrip
+[       OK ] EngineTest.NextWordPredictionTogglePersistsThroughSettingsStoreRoundTrip (0 ms)
+[ RUN      ] EngineTest.CreatedSessionsCarryPredictionContextOnARealLayout
+[       OK ] EngineTest.CreatedSessionsCarryPredictionContextOnARealLayout (3 ms)
+[ RUN      ] EngineTest.CreateSessionForLayoutTypesWithTheRequestedLayout
+[       OK ] EngineTest.CreateSessionForLayoutTypesWithTheRequestedLayout (0 ms)
+[ RUN      ] EngineTest.LayoutKindOfReportsPassthroughForEnglish
+[       OK ] EngineTest.LayoutKindOfReportsPassthroughForEnglish (0 ms)
+[ RUN      ] EngineTest.LayoutPreviewMapsLettersThroughTheActiveLayout
+[       OK ] EngineTest.LayoutPreviewMapsLettersThroughTheActiveLayout (0 ms)
+[ RUN      ] EngineTest.EncodeTextForOutputFollowsTheConfiguredEncoding
+[       OK ] EngineTest.EncodeTextForOutputFollowsTheConfiguredEncoding (1 ms)
+[----------] 37 tests from EngineTest (36 ms total)
+
+[----------] 19 tests from SettingsTest
+[ RUN      ] SettingsTest.SavesAndLoadsVersionedSettings
+[       OK ] SettingsTest.SavesAndLoadsVersionedSettings (0 ms)
+[ RUN      ] SettingsTest.SavesAndLoadsFontPositionAndUiModeKeys
+[       OK ] SettingsTest.SavesAndLoadsFontPositionAndUiModeKeys (0 ms)
+[ RUN      ] SettingsTest.UiLanguageKeyRoundTripsAndValidates
+[       OK ] SettingsTest.UiLanguageKeyRoundTripsAndValidates (0 ms)
+[ RUN      ] SettingsTest.MissingFileUsesDefaults
+[       OK ] SettingsTest.MissingFileUsesDefaults (0 ms)
+[ RUN      ] SettingsTest.MigratesLegacyVersionOneSettingsToCurrentDefaults
+[       OK ] SettingsTest.MigratesLegacyVersionOneSettingsToCurrentDefaults (0 ms)
+[ RUN      ] SettingsTest.RejectsInvalidDesktopRangesShortcutsAndDuplicateKeys
+[       OK ] SettingsTest.RejectsInvalidDesktopRangesShortcutsAndDuplicateKeys (0 ms)
+[ RUN      ] SettingsTest.RejectsMalformedOrUnsupportedFiles
+[       OK ] SettingsTest.RejectsMalformedOrUnsupportedFiles (0 ms)
+[ RUN      ] SettingsTest.RejectsOverflowingVersionAndInvalidLayoutIds
+[       OK ] SettingsTest.RejectsOverflowingVersionAndInvalidLayoutIds (0 ms)
+[ RUN      ] SettingsTest.ReplacesExistingSettingsFile
+[       OK ] SettingsTest.ReplacesExistingSettingsFile (0 ms)
+[ RUN      ] SettingsTest.AcceptsTheKhiproCompositionalLayoutId
+[       OK ] SettingsTest.AcceptsTheKhiproCompositionalLayoutId (0 ms)
+[ RUN      ] SettingsTest.MissingFileReportsFileExistedFalse
+[       OK ] SettingsTest.MissingFileReportsFileExistedFalse (0 ms)
+[ RUN      ] SettingsTest.ExistingFileReportsFileExistedTrue
+[       OK ] SettingsTest.ExistingFileReportsFileExistedTrue (0 ms)
+[ RUN      ] SettingsTest.SaveCreatesMissingParentDirectories
+[       OK ] SettingsTest.SaveCreatesMissingParentDirectories (0 ms)
+[ RUN      ] SettingsTest.SettingsPersistAcrossStoreRestarts
+[       OK ] SettingsTest.SettingsPersistAcrossStoreRestarts (0 ms)
+[ RUN      ] SettingsTest.HandlesUnicodeAndSpacesInDirectoryNames
+[       OK ] SettingsTest.HandlesUnicodeAndSpacesInDirectoryNames (0 ms)
+[ RUN      ] SettingsTest.CorruptFileIsRejectedWithoutModification
+[       OK ] SettingsTest.CorruptFileIsRejectedWithoutModification (0 ms)
+[ RUN      ] SettingsTest.QuarantinedCorruptFileRecoversWithDefaults
+[       OK ] SettingsTest.QuarantinedCorruptFileRecoversWithDefaults (0 ms)
+[ RUN      ] SettingsTest.SaveFailureInReadOnlyDirectoryPreservesExistingSettings
+[       OK ] SettingsTest.SaveFailureInReadOnlyDirectoryPreservesExistingSettings (0 ms)
+[ RUN      ] SettingsTest.SystemThemeIdRoundTrips
+[       OK ] SettingsTest.SystemThemeIdRoundTrips (0 ms)
+[----------] 19 tests from SettingsTest (4 ms total)
+
+[----------] 1 test from LinguisticRegressionTest
+[ RUN      ] LinguisticRegressionTest.CoreBanglaVectorsRemainStable
+[       OK ] LinguisticRegressionTest.CoreBanglaVectorsRemainStable (0 ms)
+[----------] 1 test from LinguisticRegressionTest (0 ms total)
+
+[----------] 14 tests from LayoutTypingRegressionTest
+[ RUN      ] LayoutTypingRegressionTest.SubornoChandrabinduIsTyped
+[       OK ] LayoutTypingRegressionTest.SubornoChandrabinduIsTyped (0 ms)
+[ RUN      ] LayoutTypingRegressionTest.SubornoRiNoLongerShadowsRaPlusIKar
+[       OK ] LayoutTypingRegressionTest.SubornoRiNoLongerShadowsRaPlusIKar (0 ms)
+[ RUN      ] LayoutTypingRegressionTest.SubornoNgaBeforeVelarFinalAndStandalone
+[       OK ] LayoutTypingRegressionTest.SubornoNgaBeforeVelarFinalAndStandalone (0 ms)
+[ RUN      ] LayoutTypingRegressionTest.SubornoKhandaControl
+[       OK ] LayoutTypingRegressionTest.SubornoKhandaControl (0 ms)
+[ RUN      ] LayoutTypingRegressionTest.SubornoFullCorpusHeadlinesStillPass
+[       OK ] LayoutTypingRegressionTest.SubornoFullCorpusHeadlinesStillPass (0 ms)
+[ RUN      ] LayoutTypingRegressionTest.NationalExplicitHasantaFormsConjuncts
+[       OK ] LayoutTypingRegressionTest.NationalExplicitHasantaFormsConjuncts (0 ms)
+[ RUN      ] LayoutTypingRegressionTest.NationalPreviouslyMissingCharacters
+[       OK ] LayoutTypingRegressionTest.NationalPreviouslyMissingCharacters (0 ms)
+[ RUN      ] LayoutTypingRegressionTest.NationalBreaksAndIndependentVowels
+[       OK ] LayoutTypingRegressionTest.NationalBreaksAndIndependentVowels (0 ms)
+[ RUN      ] LayoutTypingRegressionTest.KhiproNgaIsTypeableAndJoinsConjuncts
+[       OK ] LayoutTypingRegressionTest.KhiproNgaIsTypeableAndJoinsConjuncts (0 ms)
+[ RUN      ] LayoutTypingRegressionTest.KhiproNuktaKeepsTheConsonantRunAlive
+[       OK ] LayoutTypingRegressionTest.KhiproNuktaKeepsTheConsonantRunAlive (0 ms)
+[ RUN      ] LayoutTypingRegressionTest.KhiproDigitsAndHeadlines
+[       OK ] LayoutTypingRegressionTest.KhiproDigitsAndHeadlines (0 ms)
+[ RUN      ] LayoutTypingRegressionTest.BornoAccentKeyBreaksVowelCollisions
+[       OK ] LayoutTypingRegressionTest.BornoAccentKeyBreaksVowelCollisions (0 ms)
+[ RUN      ] LayoutTypingRegressionTest.ProbhatSessionCommitMatchesTransliterateEncoding
+[       OK ] LayoutTypingRegressionTest.ProbhatSessionCommitMatchesTransliterateEncoding (0 ms)
+[ RUN      ] LayoutTypingRegressionTest.AvroUnchangedHeadlines
+[       OK ] LayoutTypingRegressionTest.AvroUnchangedHeadlines (0 ms)
+[----------] 14 tests from LayoutTypingRegressionTest (0 ms total)
+
+[----------] 12 tests from ProbhatLayoutTest
+[ RUN      ] ProbhatLayoutTest.IsARealFixedPhysicalKeyboardLayout
+[       OK ] ProbhatLayoutTest.IsARealFixedPhysicalKeyboardLayout (0 ms)
+[ RUN      ] ProbhatLayoutTest.AltGrLayerFollowsTheUpstreamKlcColumns
+[       OK ] ProbhatLayoutTest.AltGrLayerFollowsTheUpstreamKlcColumns (0 ms)
+[ RUN      ] ProbhatLayoutTest.CtrlAloneOrAltAloneInjectsNoPreedit
+[       OK ] ProbhatLayoutTest.CtrlAloneOrAltAloneInjectsNoPreedit (0 ms)
+[ RUN      ] ProbhatLayoutTest.CapsLockAppliesToSgCapsKeysMarkedInTheKlc
+[       OK ] ProbhatLayoutTest.CapsLockAppliesToSgCapsKeysMarkedInTheKlc (0 ms)
+[ RUN      ] ProbhatLayoutTest.MapsPhysicalKeyPositionsAndShiftLayer
+[       OK ] ProbhatLayoutTest.MapsPhysicalKeyPositionsAndShiftLayer (0 ms)
+[ RUN      ] ProbhatLayoutTest.ConcatenatesLiteralFixedKeyOutputsWithoutPhoneticRewriting
+[       OK ] ProbhatLayoutTest.ConcatenatesLiteralFixedKeyOutputsWithoutPhoneticRewriting (0 ms)
+[ RUN      ] ProbhatLayoutTest.AppliesCapsLockOnlyToKeysMarkedInTheKlc
+[       OK ] ProbhatLayoutTest.AppliesCapsLockOnlyToKeysMarkedInTheKlc (0 ms)
+[ RUN      ] ProbhatLayoutTest.UsesPhysicalScanCodeInsteadOfTheActiveLogicalCharacter
+[       OK ] ProbhatLayoutTest.UsesPhysicalScanCodeInsteadOfTheActiveLogicalCharacter (0 ms)
+[ RUN      ] ProbhatLayoutTest.AppliesShiftLayerFromPhysicalKeyEvents
+[       OK ] ProbhatLayoutTest.AppliesShiftLayerFromPhysicalKeyEvents (0 ms)
+[ RUN      ] ProbhatLayoutTest.PassesThroughUnmappedNumpadDigits
+[       OK ] ProbhatLayoutTest.PassesThroughUnmappedNumpadDigits (0 ms)
+[ RUN      ] ProbhatLayoutTest.MapsDigitsSignsAndPunctuation
+[       OK ] ProbhatLayoutTest.MapsDigitsSignsAndPunctuation (0 ms)
+[ RUN      ] ProbhatLayoutTest.BackspaceRemovesOneBengaliGrapheme
+[       OK ] ProbhatLayoutTest.BackspaceRemovesOneBengaliGrapheme (0 ms)
+[----------] 12 tests from ProbhatLayoutTest (0 ms total)
+
+[----------] 7 tests from NationalLayoutTest
+[ RUN      ] NationalLayoutTest.BasicConsonantTransliteration
+[       OK ] NationalLayoutTest.BasicConsonantTransliteration (0 ms)
+[ RUN      ] NationalLayoutTest.VowelTransliteration
+[       OK ] NationalLayoutTest.VowelTransliteration (0 ms)
+[ RUN      ] NationalLayoutTest.Signs
+[       OK ] NationalLayoutTest.Signs (0 ms)
+[ RUN      ] NationalLayoutTest.Clusters
+[       OK ] NationalLayoutTest.Clusters (0 ms)
+[ RUN      ] NationalLayoutTest.Words
+[       OK ] NationalLayoutTest.Words (0 ms)
+[ RUN      ] NationalLayoutTest.Candidates
+[       OK ] NationalLayoutTest.Candidates (0 ms)
+[ RUN      ] NationalLayoutTest.EmptyInputYieldsNoCandidates
+[       OK ] NationalLayoutTest.EmptyInputYieldsNoCandidates (0 ms)
+[----------] 7 tests from NationalLayoutTest (0 ms total)
+
+[----------] 7 tests from SpellCheckerTest
+[ RUN      ] SpellCheckerTest.CorrectWordIsAccepted
+[       OK ] SpellCheckerTest.CorrectWordIsAccepted (1 ms)
+[ RUN      ] SpellCheckerTest.UnknownWordGetsSuggestions
+[       OK ] SpellCheckerTest.UnknownWordGetsSuggestions (3 ms)
+[ RUN      ] SpellCheckerTest.CorrectsMissingRomanPhoneticLetters
+[       OK ] SpellCheckerTest.CorrectsMissingRomanPhoneticLetters (3 ms)
+[ RUN      ] SpellCheckerTest.CorrectsSubstitutedRomanPhoneticLetters
+[       OK ] SpellCheckerTest.CorrectsSubstitutedRomanPhoneticLetters (3 ms)
+[ RUN      ] SpellCheckerTest.EditDistanceIsCorrect
+[       OK ] SpellCheckerTest.EditDistanceIsCorrect (1 ms)
+[ RUN      ] SpellCheckerTest.GenerateEditsProducesVariants
+[       OK ] SpellCheckerTest.GenerateEditsProducesVariants (1 ms)
+[ RUN      ] SpellCheckerTest.BoundsWorkForWordsBeyondTheSupportedLength
+[       OK ] SpellCheckerTest.BoundsWorkForWordsBeyondTheSupportedLength (1 ms)
+[----------] 7 tests from SpellCheckerTest (17 ms total)
+
+[----------] 15 tests from PersonalDictionaryTest
+[ RUN      ] PersonalDictionaryTest.AddAndListUserWords
+[       OK ] PersonalDictionaryTest.AddAndListUserWords (1 ms)
+[ RUN      ] PersonalDictionaryTest.GetUserFrequency
+[       OK ] PersonalDictionaryTest.GetUserFrequency (1 ms)
+[ RUN      ] PersonalDictionaryTest.RemoveUserWord
+[       OK ] PersonalDictionaryTest.RemoveUserWord (1 ms)
+[ RUN      ] PersonalDictionaryTest.UserWordsRankedInFindMatches
+[       OK ] PersonalDictionaryTest.UserWordsRankedInFindMatches (1 ms)
+[ RUN      ] PersonalDictionaryTest.WordsForPrefixMatchesBanglaWordsLiterally
+[       OK ] PersonalDictionaryTest.WordsForPrefixMatchesBanglaWordsLiterally (1 ms)
+[ RUN      ] PersonalDictionaryTest.LimitsFindMatchesAtTheSqlQueryBoundary
+[       OK ] PersonalDictionaryTest.LimitsFindMatchesAtTheSqlQueryBoundary (1 ms)
+[ RUN      ] PersonalDictionaryTest.PinningAndRemovingSystemWordPreservesSystemDictionaryEntry
+[       OK ] PersonalDictionaryTest.PinningAndRemovingSystemWordPreservesSystemDictionaryEntry (1 ms)
+[ RUN      ] PersonalDictionaryTest.ClearingUserEntriesUnpinsSystemWordsAndDeletesUserOnlyWords
+[       OK ] PersonalDictionaryTest.ClearingUserEntriesUnpinsSystemWordsAndDeletesUserOnlyWords (1 ms)
+[ RUN      ] PersonalDictionaryTest.FindsCandidatesByNormalizedPhoneticPrefix
+[       OK ] PersonalDictionaryTest.FindsCandidatesByNormalizedPhoneticPrefix (1 ms)
+[ RUN      ] PersonalDictionaryTest.EscapesSqlWildcardsInNormalizedPrefixSearch
+[       OK ] PersonalDictionaryTest.EscapesSqlWildcardsInNormalizedPrefixSearch (1 ms)
+[ RUN      ] PersonalDictionaryTest.RecordsNewWordsAsLearnedPersonalEntries
+[       OK ] PersonalDictionaryTest.RecordsNewWordsAsLearnedPersonalEntries (1 ms)
+[ RUN      ] PersonalDictionaryTest.StoresUserInputAsAliasWithoutOverwritingCanonicalNormalization
+[       OK ] PersonalDictionaryTest.StoresUserInputAsAliasWithoutOverwritingCanonicalNormalization (1 ms)
+[ RUN      ] PersonalDictionaryTest.LearnedSystemWordsAppearInPersonalListAndCanBeRemoved
+[       OK ] PersonalDictionaryTest.LearnedSystemWordsAppearInPersonalListAndCanBeRemoved (1 ms)
+[ RUN      ] PersonalDictionaryTest.LearnedFrequencyChangesDictionaryRanking
+[       OK ] PersonalDictionaryTest.LearnedFrequencyChangesDictionaryRanking (1 ms)
+[ RUN      ] PersonalDictionaryTest.ConcurrentSessionsCanCommitThroughASharedDictionary
+[       OK ] PersonalDictionaryTest.ConcurrentSessionsCanCommitThroughASharedDictionary (19 ms)
+[----------] 15 tests from PersonalDictionaryTest (42 ms total)
+
+[----------] 7 tests from DictionaryV4Test
+[ RUN      ] DictionaryV4Test.SchemaVersionIsFourWithManagementColumns
+[       OK ] DictionaryV4Test.SchemaVersionIsFourWithManagementColumns (1 ms)
+[ RUN      ] DictionaryV4Test.CategoriesAndRecordsRoundTrip
+[       OK ] DictionaryV4Test.CategoriesAndRecordsRoundTrip (1 ms)
+[ RUN      ] DictionaryV4Test.MergeUpsertKeepsHigherFrequencyAndFillsEmptyMetadata
+[       OK ] DictionaryV4Test.MergeUpsertKeepsHigherFrequencyAndFillsEmptyMetadata (1 ms)
+[ RUN      ] DictionaryV4Test.RelationsAndBackupRoundTrip
+[       OK ] DictionaryV4Test.RelationsAndBackupRoundTrip (2 ms)
+[ RUN      ] DictionaryV4Test.WordValidationRejectsNonBanglaEntries
+[       OK ] DictionaryV4Test.WordValidationRejectsNonBanglaEntries (0 ms)
+[ RUN      ] DictionaryV4Test.FindDuplicateNormalizedReportsSharedKeys
+[       OK ] DictionaryV4Test.FindDuplicateNormalizedReportsSharedKeys (1 ms)
+[ RUN      ] DictionaryV4Test.CacheIsInvalidatedByWrites
+[       OK ] DictionaryV4Test.CacheIsInvalidatedByWrites (1 ms)
+[----------] 7 tests from DictionaryV4Test (9 ms total)
+
+[----------] 4 tests from DictionaryTransitionsTest
+[ RUN      ] DictionaryTransitionsTest.RecordTransitionUpsertsAndIncrementsFrequency
+[       OK ] DictionaryTransitionsTest.RecordTransitionUpsertsAndIncrementsFrequency (1 ms)
+[ RUN      ] DictionaryTransitionsTest.TransitionCandidatesOrderFilterAndLimit
+[       OK ] DictionaryTransitionsTest.TransitionCandidatesOrderFilterAndLimit (1 ms)
+[ RUN      ] DictionaryTransitionsTest.ClearUserEntriesAlsoClearsTransitions
+[       OK ] DictionaryTransitionsTest.ClearUserEntriesAlsoClearsTransitions (1 ms)
+[ RUN      ] DictionaryTransitionsTest.TransitionsSurviveReopenAndKeepSchemaVersionFour
+[       OK ] DictionaryTransitionsTest.TransitionsSurviveReopenAndKeepSchemaVersionFour (1 ms)
+[----------] 4 tests from DictionaryTransitionsTest (6 ms total)
+
+[----------] 8 tests from CApiCoverage
+[ RUN      ] CApiCoverage.SessionCreateRejectsNullEngineAndDestroyAcceptsNull
+[       OK ] CApiCoverage.SessionCreateRejectsNullEngineAndDestroyAcceptsNull (0 ms)
+[ RUN      ] CApiCoverage.FullLifecycleExercisesEveryOutputParameter
+[       OK ] CApiCoverage.FullLifecycleExercisesEveryOutputParameter (0 ms)
+[ RUN      ] CApiCoverage.AppendSurfacesPendingLiteralPassthroughLimitAndEmptyStatuses
+[       OK ] CApiCoverage.AppendSurfacesPendingLiteralPassthroughLimitAndEmptyStatuses (0 ms)
+[ RUN      ] CApiCoverage.CandidateCountAndSnapshotValidateArgumentsAndBuffers
+[       OK ] CApiCoverage.CandidateCountAndSnapshotValidateArgumentsAndBuffers (0 ms)
+[ RUN      ] CApiCoverage.SelectCandidateGuardsNullSessionAndIndexBounds
+[       OK ] CApiCoverage.SelectCandidateGuardsNullSessionAndIndexBounds (0 ms)
+[ RUN      ] CApiCoverage.CommitGuardsArgumentsAndReportsEmptyCompositions
+[       OK ] CApiCoverage.CommitGuardsArgumentsAndReportsEmptyCompositions (0 ms)
+[ RUN      ] CApiCoverage.SessionsCreatedFromOneEngineStayIndependent
+[       OK ] CApiCoverage.SessionsCreatedFromOneEngineStayIndependent (0 ms)
+[ RUN      ] CApiCoverage.StringFreeAcceptsNull
+[       OK ] CApiCoverage.StringFreeAcceptsNull (0 ms)
+[----------] 8 tests from CApiCoverage (1 ms total)
+
+[----------] 27 tests from EngineCoverage
+[ RUN      ] EngineCoverage.StorelessEngineSaveSettingsReportsIoError
+[       OK ] EngineCoverage.StorelessEngineSaveSettingsReportsIoError (0 ms)
+[ RUN      ] EngineCoverage.StorelessEngineLoadSettingsReturnsInMemoryDefaults
+[       OK ] EngineCoverage.StorelessEngineLoadSettingsReturnsInMemoryDefaults (0 ms)
+[ RUN      ] EngineCoverage.StorelessEngineReloadSettingsKeepsInMemoryState
+[       OK ] EngineCoverage.StorelessEngineReloadSettingsKeepsInMemoryState (0 ms)
+[ RUN      ] EngineCoverage.StorelessEngineReloadIfChangedReturnsInMemoryState
+[       OK ] EngineCoverage.StorelessEngineReloadIfChangedReturnsInMemoryState (0 ms)
+[ RUN      ] EngineCoverage.StorelessEngineDictionaryAccessorsReturnNull
+[       OK ] EngineCoverage.StorelessEngineDictionaryAccessorsReturnNull (0 ms)
+[ RUN      ] EngineCoverage.StorelessEngineClearLearntWordsReportsFalseAndForgetsContext
+[       OK ] EngineCoverage.StorelessEngineClearLearntWordsReportsFalseAndForgetsContext (0 ms)
+[ RUN      ] EngineCoverage.StorelessEnginePredictionToggleStaysInMemory
+[       OK ] EngineCoverage.StorelessEnginePredictionToggleStaysInMemory (0 ms)
+[ RUN      ] EngineCoverage.ConstructorRestoresRememberedLayoutFromSettingsFile
+[       OK ] EngineCoverage.ConstructorRestoresRememberedLayoutFromSettingsFile (0 ms)
+[ RUN      ] EngineCoverage.ConstructorIgnoresStoredLayoutWhenRememberDisabled
+[       OK ] EngineCoverage.ConstructorIgnoresStoredLayoutWhenRememberDisabled (0 ms)
+[ RUN      ] EngineCoverage.ConstructorCorrectsUnknownRememberedLayout
+[       OK ] EngineCoverage.ConstructorCorrectsUnknownRememberedLayout (0 ms)
+[ RUN      ] EngineCoverage.ConstructorFallsBackToDefaultsOnCorruptSettingsFile
+[       OK ] EngineCoverage.ConstructorFallsBackToDefaultsOnCorruptSettingsFile (0 ms)
+[ RUN      ] EngineCoverage.ConstructorOpensDictionaryAtPath
+[       OK ] EngineCoverage.ConstructorOpensDictionaryAtPath (1 ms)
+[ RUN      ] EngineCoverage.RecordCommittedWordChainsTransitionsAndIgnoresEmptyWords
+[       OK ] EngineCoverage.RecordCommittedWordChainsTransitionsAndIgnoresEmptyWords (1 ms)
+[ RUN      ] EngineCoverage.RecordCommittedWordRecordsRepeatedWordBigram
+[       OK ] EngineCoverage.RecordCommittedWordRecordsRepeatedWordBigram (1 ms)
+[ RUN      ] EngineCoverage.LearningDisabledTracksLastWordWithoutTransitions
+[       OK ] EngineCoverage.LearningDisabledTracksLastWordWithoutTransitions (1 ms)
+[ RUN      ] EngineCoverage.ClearLearntWordsClearsDictionaryAndContext
+[       OK ] EngineCoverage.ClearLearntWordsClearsDictionaryAndContext (1 ms)
+[ RUN      ] EngineCoverage.CreateSessionCarriesSettingsOptionsForBothPredictionStates
+[       OK ] EngineCoverage.CreateSessionCarriesSettingsOptionsForBothPredictionStates (0 ms)
+[ RUN      ] EngineCoverage.CreateSessionForLayoutUsesRequestedLayoutAndFallsBackForUnknown
+[       OK ] EngineCoverage.CreateSessionForLayoutUsesRequestedLayoutAndFallsBackForUnknown (0 ms)
+[ RUN      ] EngineCoverage.CreateSessionForLayoutHonorsConfiguredCandidateLimit
+[       OK ] EngineCoverage.CreateSessionForLayoutHonorsConfiguredCandidateLimit (0 ms)
+[ RUN      ] EngineCoverage.EncodeTextForOutputFollowsPreferredEncoding
+[       OK ] EngineCoverage.EncodeTextForOutputFollowsPreferredEncoding (0 ms)
+[ RUN      ] EngineCoverage.LayoutPreviewReflectsTheActiveLayout
+[       OK ] EngineCoverage.LayoutPreviewReflectsTheActiveLayout (0 ms)
+[ RUN      ] EngineCoverage.SaveSettingsRoundTripPersistsAndValidates
+[       OK ] EngineCoverage.SaveSettingsRoundTripPersistsAndValidates (0 ms)
+[ RUN      ] EngineCoverage.LoadSettingsFromStoreReturnsPersistedValuesAndCorrectsUnknownLayout
+[       OK ] EngineCoverage.LoadSettingsFromStoreReturnsPersistedValuesAndCorrectsUnknownLayout (0 ms)
+[ RUN      ] EngineCoverage.ReloadSettingsPicksUpExternalChangesAndCorrectsUnknownLayout
+[       OK ] EngineCoverage.ReloadSettingsPicksUpExternalChangesAndCorrectsUnknownLayout (0 ms)
+[ RUN      ] EngineCoverage.ReloadSettingsKeepsStateWhenFileTurnsInvalid
+[       OK ] EngineCoverage.ReloadSettingsKeepsStateWhenFileTurnsInvalid (0 ms)
+[ RUN      ] EngineCoverage.ReloadSettingsIfChangedReloadsOnlyWhenFileChanged
+[       OK ] EngineCoverage.ReloadSettingsIfChangedReloadsOnlyWhenFileChanged (0 ms)
+[ RUN      ] EngineCoverage.RegisterLayoutAcceptsNewIdsAndRejectsDuplicatesAndInvalid
+[       OK ] EngineCoverage.RegisterLayoutAcceptsNewIdsAndRejectsDuplicatesAndInvalid (0 ms)
+[----------] 27 tests from EngineCoverage (13 ms total)
+
+[----------] 23 tests from LayoutApiCoverage
+[ RUN      ] LayoutApiCoverage.LoadReturnsFalseForAMissingMappingFile
+[       OK ] LayoutApiCoverage.LoadReturnsFalseForAMissingMappingFile (0 ms)
+[ RUN      ] LayoutApiCoverage.IdReturnsTheConfiguredIdentifier
+[       OK ] LayoutApiCoverage.IdReturnsTheConfiguredIdentifier (0 ms)
+[ RUN      ] LayoutApiCoverage.LoadParsesCommentsBlankLinesAndTabSeparatedMappings
+[       OK ] LayoutApiCoverage.LoadParsesCommentsBlankLinesAndTabSeparatedMappings (0 ms)
+[ RUN      ] LayoutApiCoverage.TransliteratePrefersTheLongestMatchingKey
+[       OK ] LayoutApiCoverage.TransliteratePrefersTheLongestMatchingKey (0 ms)
+[ RUN      ] LayoutApiCoverage.TransliteratePassesThroughUnmappedAsciiAndMultiByteUtf8
+[       OK ] LayoutApiCoverage.TransliteratePassesThroughUnmappedAsciiAndMultiByteUtf8 (0 ms)
+[ RUN      ] LayoutApiCoverage.TransliterateNormalizesMappedOutputToNfc
+[       OK ] LayoutApiCoverage.TransliterateNormalizesMappedOutputToNfc (0 ms)
+[ RUN      ] LayoutApiCoverage.TransliteratePassesThroughBeforeLoadAndForEmptyInput
+[       OK ] LayoutApiCoverage.TransliteratePassesThroughBeforeLoadAndForEmptyInput (0 ms)
+[ RUN      ] LayoutApiCoverage.TransliterateSingleByteFallbackFeedsNfcWhichRejectsInvalidUtf8
+[       OK ] LayoutApiCoverage.TransliterateSingleByteFallbackFeedsNfcWhichRejectsInvalidUtf8 (0 ms)
+[ RUN      ] LayoutApiCoverage.LoadRejectsLinesWithoutTabSeparator
+[       OK ] LayoutApiCoverage.LoadRejectsLinesWithoutTabSeparator (0 ms)
+[ RUN      ] LayoutApiCoverage.LoadRejectsEmptyKeysAndEmptyValues
+[       OK ] LayoutApiCoverage.LoadRejectsEmptyKeysAndEmptyValues (0 ms)
+[ RUN      ] LayoutApiCoverage.LoadRejectsInvalidUtf8KeysAndValues
+[       OK ] LayoutApiCoverage.LoadRejectsInvalidUtf8KeysAndValues (0 ms)
+[ RUN      ] LayoutApiCoverage.LoadRejectsDuplicateKeys
+[       OK ] LayoutApiCoverage.LoadRejectsDuplicateKeys (0 ms)
+[ RUN      ] LayoutApiCoverage.LoadFailsWhenTheMappingPathIsADirectory
+[       OK ] LayoutApiCoverage.LoadFailsWhenTheMappingPathIsADirectory (0 ms)
+[ RUN      ] LayoutApiCoverage.GenerateCandidatesMirrorTransliterationWithLayoutIdentity
+[       OK ] LayoutApiCoverage.GenerateCandidatesMirrorTransliterationWithLayoutIdentity (0 ms)
+[ RUN      ] LayoutApiCoverage.EmptyRegistryStartsInactiveAndRejectsEmptyIdsAndNullLayouts
+[       OK ] LayoutApiCoverage.EmptyRegistryStartsInactiveAndRejectsEmptyIdsAndNullLayouts (0 ms)
+[ RUN      ] LayoutApiCoverage.FirstRegistrationBecomesTheActiveLayout
+[       OK ] LayoutApiCoverage.FirstRegistrationBecomesTheActiveLayout (0 ms)
+[ RUN      ] LayoutApiCoverage.DuplicateRegistrationIsRejectedAndKeepsTheOriginal
+[       OK ] LayoutApiCoverage.DuplicateRegistrationIsRejectedAndKeepsTheOriginal (0 ms)
+[ RUN      ] LayoutApiCoverage.SetActiveSwitchesBetweenRegisteredLayouts
+[       OK ] LayoutApiCoverage.SetActiveSwitchesBetweenRegisteredLayouts (0 ms)
+[ RUN      ] LayoutApiCoverage.SetActiveUnknownOrEmptyIdIsRejectedAndKeepsSelection
+[       OK ] LayoutApiCoverage.SetActiveUnknownOrEmptyIdIsRejectedAndKeepsSelection (0 ms)
+[ RUN      ] LayoutApiCoverage.FindMetadataReturnsRegisteredEntryOrNullOrMissing
+[       OK ] LayoutApiCoverage.FindMetadataReturnsRegisteredEntryOrNullOrMissing (0 ms)
+[ RUN      ] LayoutApiCoverage.MetadataIdDefaultsToTheRegistryKeyAndExplicitIdIsKept
+[       OK ] LayoutApiCoverage.MetadataIdDefaultsToTheRegistryKeyAndExplicitIdIsKept (0 ms)
+[ RUN      ] LayoutApiCoverage.FailedMetadataRegistrationKeepsTheFirstMetadata
+[       OK ] LayoutApiCoverage.FailedMetadataRegistrationKeepsTheFirstMetadata (0 ms)
+[ RUN      ] LayoutApiCoverage.FindReturnsRegisteredLayoutOrNull
+[       OK ] LayoutApiCoverage.FindReturnsRegisteredLayoutOrNull (0 ms)
+[----------] 23 tests from LayoutApiCoverage (1 ms total)
+
+[----------] 10 tests from PersistenceCoverage
+[ RUN      ] PersistenceCoverage.WriteAtomicallyWritesExactBinaryContentsWithoutTempLitter
+[       OK ] PersistenceCoverage.WriteAtomicallyWritesExactBinaryContentsWithoutTempLitter (0 ms)
+[ RUN      ] PersistenceCoverage.WriteAtomicallyOverwritesDestinationWithDifferentLength
+[       OK ] PersistenceCoverage.WriteAtomicallyOverwritesDestinationWithDifferentLength (0 ms)
+[ RUN      ] PersistenceCoverage.WriteAtomicallyRejectsEmptyDestination
+[       OK ] PersistenceCoverage.WriteAtomicallyRejectsEmptyDestination (0 ms)
+[ RUN      ] PersistenceCoverage.WriteAtomicallyReportsErrorWhenDestinationDirectoryIsMissing
+[       OK ] PersistenceCoverage.WriteAtomicallyReportsErrorWhenDestinationDirectoryIsMissing (0 ms)
+[ RUN      ] PersistenceCoverage.WriteAtomicallyFailsAndCleansUpWhenDestinationIsADirectory
+[       OK ] PersistenceCoverage.WriteAtomicallyFailsAndCleansUpWhenDestinationIsADirectory (0 ms)
+[ RUN      ] PersistenceCoverage.WriteAtomicallySucceedsWithRelativeDestinationWithoutParent
+[       OK ] PersistenceCoverage.WriteAtomicallySucceedsWithRelativeDestinationWithoutParent (0 ms)
+[ RUN      ] PersistenceCoverage.SequentialWritesToSameDestinationNeverCollide
+[       OK ] PersistenceCoverage.SequentialWritesToSameDestinationNeverCollide (0 ms)
+[ RUN      ] PersistenceCoverage.QuarantineRenamesExistingFileAndPreservesExactBytes
+[       OK ] PersistenceCoverage.QuarantineRenamesExistingFileAndPreservesExactBytes (0 ms)
+[ RUN      ] PersistenceCoverage.QuarantineMissingFileSucceedsEvenInMissingDirectory
+[       OK ] PersistenceCoverage.QuarantineMissingFileSucceedsEvenInMissingDirectory (0 ms)
+[ RUN      ] PersistenceCoverage.QuarantineEmptyPathReportsInvalidArgument
+[       OK ] PersistenceCoverage.QuarantineEmptyPathReportsInvalidArgument (0 ms)
+[----------] 10 tests from PersistenceCoverage (1 ms total)
+
+[----------] 24 tests from SettingsCoverage
+[ RUN      ] SettingsCoverage.RoundTripPreservesEveryStartMode
+[       OK ] SettingsCoverage.RoundTripPreservesEveryStartMode (0 ms)
+[ RUN      ] SettingsCoverage.RoundTripPreservesSwitchingOrientationAndEncodingCombos
+[       OK ] SettingsCoverage.RoundTripPreservesSwitchingOrientationAndEncodingCombos (1 ms)
+[ RUN      ] SettingsCoverage.RoundTripPreservesEveryAllowedLayoutSwitchShortcut
+[       OK ] SettingsCoverage.RoundTripPreservesEveryAllowedLayoutSwitchShortcut (1 ms)
+[ RUN      ] SettingsCoverage.RoundTripPreservesThemesFontsAndUiModes
+[       OK ] SettingsCoverage.RoundTripPreservesThemesFontsAndUiModes (8 ms)
+[ RUN      ] SettingsCoverage.RoundTripPreservesFlippedBoolsAndExactIntegers
+[       OK ] SettingsCoverage.RoundTripPreservesFlippedBoolsAndExactIntegers (0 ms)
+[ RUN      ] SettingsCoverage.LoadWithoutFileYieldsCompleteDefaults
+[       OK ] SettingsCoverage.LoadWithoutFileYieldsCompleteDefaults (0 ms)
+[ RUN      ] SettingsCoverage.LoadRejectsMalformedLineWithExactError
+[       OK ] SettingsCoverage.LoadRejectsMalformedLineWithExactError (0 ms)
+[ RUN      ] SettingsCoverage.LoadRejectsDuplicateKeysWithExactError
+[       OK ] SettingsCoverage.LoadRejectsDuplicateKeysWithExactError (0 ms)
+[ RUN      ] SettingsCoverage.LoadRejectsMissingVersionWithExactError
+[       OK ] SettingsCoverage.LoadRejectsMissingVersionWithExactError (0 ms)
+[ RUN      ] SettingsCoverage.LoadRejectsUnsupportedVersionsWithExactError
+[       OK ] SettingsCoverage.LoadRejectsUnsupportedVersionsWithExactError (0 ms)
+[ RUN      ] SettingsCoverage.LoadRejectsMissingRequiredEngineSettingsWithExactError
+[       OK ] SettingsCoverage.LoadRejectsMissingRequiredEngineSettingsWithExactError (0 ms)
+[ RUN      ] SettingsCoverage.LoadRejectsInvalidAndOverflowingVersions
+[       OK ] SettingsCoverage.LoadRejectsInvalidAndOverflowingVersions (0 ms)
+[ RUN      ] SettingsCoverage.LoadRejectsOverlongLinesAndAcceptsMaxLengthBoundary
+[       OK ] SettingsCoverage.LoadRejectsOverlongLinesAndAcceptsMaxLengthBoundary (0 ms)
+[ RUN      ] SettingsCoverage.LoadRejectsInvalidValueForEachSettingsKey
+[       OK ] SettingsCoverage.LoadRejectsInvalidValueForEachSettingsKey (3 ms)
+[ RUN      ] SettingsCoverage.LoadAcceptsBoundaryValuesForNumericKeys
+[       OK ] SettingsCoverage.LoadAcceptsBoundaryValuesForNumericKeys (0 ms)
+[ RUN      ] SettingsCoverage.LoadRejectsCarriageReturnLineEndings
+[       OK ] SettingsCoverage.LoadRejectsCarriageReturnLineEndings (0 ms)
+[ RUN      ] SettingsCoverage.LoadAcceptsBlankLinesBetweenKeys
+[       OK ] SettingsCoverage.LoadAcceptsBlankLinesBetweenKeys (0 ms)
+[ RUN      ] SettingsCoverage.LoadOnDirectoryPathReportsIoErrorWithFileExistedTrue
+[       OK ] SettingsCoverage.LoadOnDirectoryPathReportsIoErrorWithFileExistedTrue (0 ms)
+[ RUN      ] SettingsCoverage.LoadOnExistingButUnopenablePathReportsIoErrorWithoutErrorText
+[       OK ] SettingsCoverage.LoadOnExistingButUnopenablePathReportsIoErrorWithoutErrorText (0 ms)
+[ RUN      ] SettingsCoverage.SaveRejectsInvalidSettingsWithoutTouchingDisk
+[       OK ] SettingsCoverage.SaveRejectsInvalidSettingsWithoutTouchingDisk (0 ms)
+[ RUN      ] SettingsCoverage.SaveReportsIoErrorWhenParentIsAnExistingRegularFile
+[       OK ] SettingsCoverage.SaveReportsIoErrorWhenParentIsAnExistingRegularFile (0 ms)
+[ RUN      ] SettingsCoverage.SaveReportsIoErrorWhenDestinationIsAnExistingDirectory
+[       OK ] SettingsCoverage.SaveReportsIoErrorWhenDestinationIsAnExistingDirectory (0 ms)
+[ RUN      ] SettingsCoverage.SaveWorksWithRelativeDestinationWithoutParentDirectory
+[       OK ] SettingsCoverage.SaveWorksWithRelativeDestinationWithoutParentDirectory (0 ms)
+[ RUN      ] SettingsCoverage.FileStampTracksExistenceSizeAndModificationTime
+[       OK ] SettingsCoverage.FileStampTracksExistenceSizeAndModificationTime (0 ms)
+[----------] 24 tests from SettingsCoverage (20 ms total)
+
+[----------] 21 tests from UnicodeCoverage
+[ RUN      ] UnicodeCoverage.IsValidUtf8AcceptsEmptyAndEveryWellFormedSequenceLength
+[       OK ] UnicodeCoverage.IsValidUtf8AcceptsEmptyAndEveryWellFormedSequenceLength (0 ms)
+[ RUN      ] UnicodeCoverage.IsValidUtf8RejectsOverlongSurrogateTruncatedAndBadLeadSequences
+[       OK ] UnicodeCoverage.IsValidUtf8RejectsOverlongSurrogateTruncatedAndBadLeadSequences (0 ms)
+[ RUN      ] UnicodeCoverage.CountsCodePointsNotBytesAndRejectsInvalidUtf8
+[       OK ] UnicodeCoverage.CountsCodePointsNotBytesAndRejectsInvalidUtf8 (0 ms)
+[ RUN      ] UnicodeCoverage.NfcComposesTwoPartMatrasAndKeepsNuqtaLettersDecomposed
+[       OK ] UnicodeCoverage.NfcComposesTwoPartMatrasAndKeepsNuqtaLettersDecomposed (0 ms)
+[ RUN      ] UnicodeCoverage.NfkcFoldsCompatibilityFormsAndKeepsBengaliUnchanged
+[       OK ] UnicodeCoverage.NfkcFoldsCompatibilityFormsAndKeepsBengaliUnchanged (0 ms)
+[ RUN      ] UnicodeCoverage.NormalizationAndGraphemeSplittingRejectInvalidUtf8
+[       OK ] UnicodeCoverage.NormalizationAndGraphemeSplittingRejectInvalidUtf8 (0 ms)
+[ RUN      ] UnicodeCoverage.InventoryEnumeratesIndependentVowelsAndConsonants
+[       OK ] UnicodeCoverage.InventoryEnumeratesIndependentVowelsAndConsonants (0 ms)
+[ RUN      ] UnicodeCoverage.InventoryEnumeratesSignsMatrasCurrencyAndDigits
+[       OK ] UnicodeCoverage.InventoryEnumeratesSignsMatrasCurrencyAndDigits (0 ms)
+[ RUN      ] UnicodeCoverage.IsBengaliCodepointSpansExactlyTheBengaliBlock
+[       OK ] UnicodeCoverage.IsBengaliCodepointSpansExactlyTheBengaliBlock (0 ms)
+[ RUN      ] UnicodeCoverage.SplitGraphemesGroupsMatrasAndJoinersWithTheirBase
+[       OK ] UnicodeCoverage.SplitGraphemesGroupsMatrasAndJoinersWithTheirBase (0 ms)
+[ RUN      ] UnicodeCoverage.SplitGraphemesSplitsIndependentLettersDigitsAndScripts
+[       OK ] UnicodeCoverage.SplitGraphemesSplitsIndependentLettersDigitsAndScripts (0 ms)
+[ RUN      ] UnicodeCoverage.BijoyEncodesDecomposedNuqtaLettersAndDropsBareNuqta
+[       OK ] UnicodeCoverage.BijoyEncodesDecomposedNuqtaLettersAndDropsBareNuqta (0 ms)
+[ RUN      ] UnicodeCoverage.BijoyAttachesLeftAndTwoPartMatrasToWholeClusterUnits
+[       OK ] UnicodeCoverage.BijoyAttachesLeftAndTwoPartMatrasToWholeClusterUnits (0 ms)
+[ RUN      ] UnicodeCoverage.BijoyEmitsRephOnlyWhenAConsonantFollowsTheVirama
+[       OK ] UnicodeCoverage.BijoyEmitsRephOnlyWhenAConsonantFollowsTheVirama (0 ms)
+[ RUN      ] UnicodeCoverage.BijoyFallsBackToPlainLettersWhenTheRephBaseHasNoGlyph
+[       OK ] UnicodeCoverage.BijoyFallsBackToPlainLettersWhenTheRephBaseHasNoGlyph (0 ms)
+[ RUN      ] UnicodeCoverage.BijoyEncodesStandaloneTwoPartMatrasWhereverTheyAppear
+[       OK ] UnicodeCoverage.BijoyEncodesStandaloneTwoPartMatrasWhereverTheyAppear (0 ms)
+[ RUN      ] UnicodeCoverage.BijoyDecodesOneToFourByteUtf8Sequences
+[       OK ] UnicodeCoverage.BijoyDecodesOneToFourByteUtf8Sequences (0 ms)
+[ RUN      ] UnicodeCoverage.BijoyDropsUnmappedCodePointsAndFlagsTheTextUnencodable
+[       OK ] UnicodeCoverage.BijoyDropsUnmappedCodePointsAndFlagsTheTextUnencodable (0 ms)
+[ RUN      ] UnicodeCoverage.BijoyPassesThroughAsciiBoundariesAndWhitespaceBytes
+[       OK ] UnicodeCoverage.BijoyPassesThroughAsciiBoundariesAndWhitespaceBytes (0 ms)
+[ RUN      ] UnicodeCoverage.BijoyReturnsInvalidUtf8ByteForByteAndReportsItUnencodable
+[       OK ] UnicodeCoverage.BijoyReturnsInvalidUtf8ByteForByteAndReportsItUnencodable (0 ms)
+[ RUN      ] UnicodeCoverage.BijoyEncodesARenderedLineWithClustersDigitsAndCurrency
+[       OK ] UnicodeCoverage.BijoyEncodesARenderedLineWithClustersDigitsAndCurrency (0 ms)
+[----------] 21 tests from UnicodeCoverage (0 ms total)
+
+[----------] 7 tests from CoverageKhiproTest
+[ RUN      ] CoverageKhiproTest.TransliteratesEllipsisAndEscapedDotAndDollarSequences
+[       OK ] CoverageKhiproTest.TransliteratesEllipsisAndEscapedDotAndDollarSequences (0 ms)
+[ RUN      ] CoverageKhiproTest.TransliteratesMultiplicationDivisionAndInequalitySequences
+[       OK ] CoverageKhiproTest.TransliteratesMultiplicationDivisionAndInequalitySequences (0 ms)
+[ RUN      ] CoverageKhiproTest.SlashWithoutJoinerAndUnforcedVowelFormsStayLiteral
+[       OK ] CoverageKhiproTest.SlashWithoutJoinerAndUnforcedVowelFormsStayLiteral (0 ms)
+[ RUN      ] CoverageKhiproTest.InvalidUtf8AndEmptyInputYieldNoOutputAndNoCandidates
+[       OK ] CoverageKhiproTest.InvalidUtf8AndEmptyInputYieldNoOutputAndNoCandidates (0 ms)
+[ RUN      ] CoverageKhiproTest.UnmappedCharactersPassThroughUnchanged
+[       OK ] CoverageKhiproTest.UnmappedCharactersPassThroughUnchanged (0 ms)
+[ RUN      ] CoverageKhiproTest.ForwardsEverySessionOperationToTheSharedImplementation
+[       OK ] CoverageKhiproTest.ForwardsEverySessionOperationToTheSharedImplementation (0 ms)
+[ RUN      ] CoverageKhiproTest.CreatesDictionaryBackedSessionsThroughTheDictionaryBranch
+[       OK ] CoverageKhiproTest.CreatesDictionaryBackedSessionsThroughTheDictionaryBranch (1 ms)
+[----------] 7 tests from CoverageKhiproTest (2 ms total)
+
+[----------] 9 tests from CoverageProbhatTest
+[ RUN      ] CoverageProbhatTest.InvalidUtf8YieldsEmptyAndUnmappedBytesPassThrough
+[       OK ] CoverageProbhatTest.InvalidUtf8YieldsEmptyAndUnmappedBytesPassThrough (0 ms)
+[ RUN      ] CoverageProbhatTest.AppendUtf8ValidatesInvalidEmptyAndOverLimitInput
+[       OK ] CoverageProbhatTest.AppendUtf8ValidatesInvalidEmptyAndOverLimitInput (0 ms)
+[ RUN      ] CoverageProbhatTest.AppendUtf8AcceptsInputAtTheExactCodePointLimit
+[       OK ] CoverageProbhatTest.AppendUtf8AcceptsInputAtTheExactCodePointLimit (0 ms)
+[ RUN      ] CoverageProbhatTest.AppendKeyRejectsWindowsChordsAndKeyUpEvents
+[       OK ] CoverageProbhatTest.AppendKeyRejectsWindowsChordsAndKeyUpEvents (0 ms)
+[ RUN      ] CoverageProbhatTest.AppendKeyHonorsZeroSmallAndOverLimitRepeatCounts
+[       OK ] CoverageProbhatTest.AppendKeyHonorsZeroSmallAndOverLimitRepeatCounts (0 ms)
+[ RUN      ] CoverageProbhatTest.EmptySessionsReportEmptyStatusesForEveryOperation
+[       OK ] CoverageProbhatTest.EmptySessionsReportEmptyStatusesForEveryOperation (0 ms)
+[ RUN      ] CoverageProbhatTest.GenerateCandidatesMirrorTransliteration
+[       OK ] CoverageProbhatTest.GenerateCandidatesMirrorTransliteration (0 ms)
+[ RUN      ] CoverageProbhatTest.ShiftAndCapsLockCombineAsXorOnKeysMarkedInTheKlc
+[       OK ] CoverageProbhatTest.ShiftAndCapsLockCombineAsXorOnKeysMarkedInTheKlc (0 ms)
+[ RUN      ] CoverageProbhatTest.EmptyAltGrLayersProduceNoPreedit
+[       OK ] CoverageProbhatTest.EmptyAltGrLayersProduceNoPreedit (0 ms)
+[----------] 9 tests from CoverageProbhatTest (0 ms total)
+
+[----------] 12 tests from CoverageLayoutSessionTest
+[ RUN      ] CoverageLayoutSessionTest.AppendUtf8EmptyInputReportsEmptyWithoutMutatingState
+[       OK ] CoverageLayoutSessionTest.AppendUtf8EmptyInputReportsEmptyWithoutMutatingState (0 ms)
+[ RUN      ] CoverageLayoutSessionTest.BackspaceReportsEmptyForEmptyAndSingleGraphemeInput
+[       OK ] CoverageLayoutSessionTest.BackspaceReportsEmptyForEmptyAndSingleGraphemeInput (0 ms)
+[ RUN      ] CoverageLayoutSessionTest.CommitAndCommitCandidateOnEmptySessionsReportEmpty
+[       OK ] CoverageLayoutSessionTest.CommitAndCommitCandidateOnEmptySessionsReportEmpty (0 ms)
+[ RUN      ] CoverageLayoutSessionTest.CommitWithoutCandidatesFallsBackToDirectTransliterationAndLearns
+[       OK ] CoverageLayoutSessionTest.CommitWithoutCandidatesFallsBackToDirectTransliterationAndLearns (6 ms)
+[ RUN      ] CoverageLayoutSessionTest.CommitCandidateCommitsTheDictionaryMatchAndRecordsLearning
+[       OK ] CoverageLayoutSessionTest.CommitCandidateCommitsTheDictionaryMatchAndRecordsLearning (1 ms)
+[ RUN      ] CoverageLayoutSessionTest.CommitCandidateOutOfRangeKeepsTheComposition
+[       OK ] CoverageLayoutSessionTest.CommitCandidateOutOfRangeKeepsTheComposition (0 ms)
+[ RUN      ] CoverageLayoutSessionTest.CommitCandidateWithoutDictionarySkipsLearning
+[       OK ] CoverageLayoutSessionTest.CommitCandidateWithoutDictionarySkipsLearning (0 ms)
+[ RUN      ] CoverageLayoutSessionTest.SelectCandidateRejectsOutOfRangeIndicesAndAcceptsValidOnes
+[       OK ] CoverageLayoutSessionTest.SelectCandidateRejectsOutOfRangeIndicesAndAcceptsValidOnes (0 ms)
+[ RUN      ] CoverageLayoutSessionTest.CandidateNavigationWalksForwardAndBackward
+[       OK ] CoverageLayoutSessionTest.CandidateNavigationWalksForwardAndBackward (0 ms)
+[ RUN      ] CoverageLayoutSessionTest.ResetClearsCompositionAndSelectionState
+[       OK ] CoverageLayoutSessionTest.ResetClearsCompositionAndSelectionState (0 ms)
+[ RUN      ] CoverageLayoutSessionTest.SnapshotReportsSelectionConsistentlyAcrossListChanges
+[       OK ] CoverageLayoutSessionTest.SnapshotReportsSelectionConsistentlyAcrossListChanges (0 ms)
+[ RUN      ] CoverageLayoutSessionTest.NextWordPredictionOnlyForwardsPreviousWordWhenEnabled
+[       OK ] CoverageLayoutSessionTest.NextWordPredictionOnlyForwardsPreviousWordWhenEnabled (1 ms)
+[----------] 12 tests from CoverageLayoutSessionTest (10 ms total)
+
+[----------] 4 tests from CoverageInputSessionContractTest
+[ RUN      ] CoverageInputSessionContractTest.ForwardsLogicalTextIntoComposition
+[       OK ] CoverageInputSessionContractTest.ForwardsLogicalTextIntoComposition (0 ms)
+[ RUN      ] CoverageInputSessionContractTest.FallsBackToUsAsciiForPlainTextKeys
+[       OK ] CoverageInputSessionContractTest.FallsBackToUsAsciiForPlainTextKeys (0 ms)
+[ RUN      ] CoverageInputSessionContractTest.RejectsAltWindowsAndKeyUpEventsAsShortcuts
+[       OK ] CoverageInputSessionContractTest.RejectsAltWindowsAndKeyUpEventsAsShortcuts (0 ms)
+[ RUN      ] CoverageInputSessionContractTest.ReturnsEmptyForKeysWithoutAnAsciiMapping
+[       OK ] CoverageInputSessionContractTest.ReturnsEmptyForKeysWithoutAnAsciiMapping (0 ms)
+[----------] 4 tests from CoverageInputSessionContractTest (0 ms total)
+
+[----------] 6 tests from CoverageKeyEventTest
+[ RUN      ] CoverageKeyEventTest.MapsEveryPunctuationKeyInBothShiftStates
+[       OK ] CoverageKeyEventTest.MapsEveryPunctuationKeyInBothShiftStates (0 ms)
+[ RUN      ] CoverageKeyEventTest.MapsSpaceToSpaceInBothShiftStates
+[       OK ] CoverageKeyEventTest.MapsSpaceToSpaceInBothShiftStates (0 ms)
+[ RUN      ] CoverageKeyEventTest.UnknownPhysicalKeysHaveNoAsciiMapping
+[       OK ] CoverageKeyEventTest.UnknownPhysicalKeysHaveNoAsciiMapping (0 ms)
+[ RUN      ] CoverageKeyEventTest.SweepsEveryLetterAndTopRowDigitInBothCases
+[       OK ] CoverageKeyEventTest.SweepsEveryLetterAndTopRowDigitInBothCases (0 ms)
+[ RUN      ] CoverageKeyEventTest.ShortcutModifiersAndAltGrSuppressAsciiMapping
+[       OK ] CoverageKeyEventTest.ShortcutModifiersAndAltGrSuppressAsciiMapping (0 ms)
+[ RUN      ] CoverageKeyEventTest.NumpadKeysNeedNumLockAndTopRowKeysNeverRemap
+[       OK ] CoverageKeyEventTest.NumpadKeysNeedNumLockAndTopRowKeysNeverRemap (0 ms)
+[----------] 6 tests from CoverageKeyEventTest (0 ms total)
+
+[----------] 5 tests from CoverageDeclarativeLayoutTest
+[ RUN      ] CoverageDeclarativeLayoutTest.LoadReturnsFalseForAMissingMappingFile
+[       OK ] CoverageDeclarativeLayoutTest.LoadReturnsFalseForAMissingMappingFile (0 ms)
+[ RUN      ] CoverageDeclarativeLayoutTest.LoadFailsWhenTheMappingPathIsADirectory
+[       OK ] CoverageDeclarativeLayoutTest.LoadFailsWhenTheMappingPathIsADirectory (0 ms)
+[ RUN      ] CoverageDeclarativeLayoutTest.IdReturnsTheConfiguredIdentifier
+[       OK ] CoverageDeclarativeLayoutTest.IdReturnsTheConfiguredIdentifier (0 ms)
+[ RUN      ] CoverageDeclarativeLayoutTest.TransliteratePassesThroughUnmappedUtf8LeadLengths
+[       OK ] CoverageDeclarativeLayoutTest.TransliteratePassesThroughUnmappedUtf8LeadLengths (0 ms)
+[ RUN      ] CoverageDeclarativeLayoutTest.LoadRejectsBrokenLinesEmptyValuesAndDuplicateKeys
+[       OK ] CoverageDeclarativeLayoutTest.LoadRejectsBrokenLinesEmptyValuesAndDuplicateKeys (0 ms)
+[----------] 5 tests from CoverageDeclarativeLayoutTest (0 ms total)
+
+[----------] 2 tests from CoverageLayoutRegistryTest
+[ RUN      ] CoverageLayoutRegistryTest.RejectsEmptyIdsNullLayoutsAndDuplicateRegistrations
+[       OK ] CoverageLayoutRegistryTest.RejectsEmptyIdsNullLayoutsAndDuplicateRegistrations (0 ms)
+[ RUN      ] CoverageLayoutRegistryTest.MetadataIdDefaultsToKeySurvivesExplicitIdsAndFailedRegistration
+[       OK ] CoverageLayoutRegistryTest.MetadataIdDefaultsToKeySurvivesExplicitIdsAndFailedRegistration (0 ms)
+[----------] 2 tests from CoverageLayoutRegistryTest (0 ms total)
+
+[----------] 1 test from CoverageEnglishLayoutTest
+[ RUN      ] CoverageEnglishLayoutTest.GenerateCandidatesRejectEmptyInputAndEchoOtherwise
+[       OK ] CoverageEnglishLayoutTest.GenerateCandidatesRejectEmptyInputAndEchoOtherwise (0 ms)
+[----------] 1 test from CoverageEnglishLayoutTest (0 ms total)
+
+[----------] 1 test from CoverageLinuxAdapterTest
+[ RUN      ] CoverageLinuxAdapterTest.DerivedAdaptersConstructAndDestructThroughTheInterface
+[       OK ] CoverageLinuxAdapterTest.DerivedAdaptersConstructAndDestructThroughTheInterface (0 ms)
+[----------] 1 test from CoverageLinuxAdapterTest (0 ms total)
+
+[----------] 2 tests from DictionaryValidationTest
+[ RUN      ] DictionaryValidationTest.WordValidationCoversEveryUtf8ShapeAndBoundary
+[       OK ] DictionaryValidationTest.WordValidationCoversEveryUtf8ShapeAndBoundary (0 ms)
+[ RUN      ] DictionaryValidationTest.NormalizedValidationRejectsControlsDelAndOversize
+[       OK ] DictionaryValidationTest.NormalizedValidationRejectsControlsDelAndOversize (0 ms)
+[----------] 2 tests from DictionaryValidationTest (0 ms total)
+
+[----------] 49 tests from DictionaryCoverageTest
+[ RUN      ] DictionaryCoverageTest.DictionaryErrorExposesCategoryAndSqliteCode
+[       OK ] DictionaryCoverageTest.DictionaryErrorExposesCategoryAndSqliteCode (1 ms)
+[ RUN      ] DictionaryCoverageTest.AddEntryRejectsInvalidWordsNormalizedKeysAndDigits
+[       OK ] DictionaryCoverageTest.AddEntryRejectsInvalidWordsNormalizedKeysAndDigits (1 ms)
+[ RUN      ] DictionaryCoverageTest.AddEntryClampsFrequenciesIntoStorageRange
+[       OK ] DictionaryCoverageTest.AddEntryClampsFrequenciesIntoStorageRange (1 ms)
+[ RUN      ] DictionaryCoverageTest.AddEntryMergeRejectsInvalidInputsAndClampsFrequency
+[       OK ] DictionaryCoverageTest.AddEntryMergeRejectsInvalidInputsAndClampsFrequency (1 ms)
+[ RUN      ] DictionaryCoverageTest.ConstructorFailsWhenParentDirectoryIsAFile
+[       OK ] DictionaryCoverageTest.ConstructorFailsWhenParentDirectoryIsAFile (0 ms)
+[ RUN      ] DictionaryCoverageTest.ConstructorFailsWhenDatabasePathIsADirectory
+[       OK ] DictionaryCoverageTest.ConstructorFailsWhenDatabasePathIsADirectory (0 ms)
+[ RUN      ] DictionaryCoverageTest.ConstructorAcceptsBareFilenameWithoutParentDirectory
+[       OK ] DictionaryCoverageTest.ConstructorAcceptsBareFilenameWithoutParentDirectory (1 ms)
+[ RUN      ] DictionaryCoverageTest.CachedLookupPrepareFailureWhenEntriesTableMissing
+[       OK ] DictionaryCoverageTest.CachedLookupPrepareFailureWhenEntriesTableMissing (2 ms)
+[ RUN      ] DictionaryCoverageTest.WriterPrepareFailuresWhenEntriesTableMissing
+[       OK ] DictionaryCoverageTest.WriterPrepareFailuresWhenEntriesTableMissing (1 ms)
+[ RUN      ] DictionaryCoverageTest.RecordTransitionThrowsWhenTransitionsTableMissing
+[       OK ] DictionaryCoverageTest.RecordTransitionThrowsWhenTransitionsTableMissing (1 ms)
+[ RUN      ] DictionaryCoverageTest.RemoveUserWordThrowsWhenAliasTableMissing
+[       OK ] DictionaryCoverageTest.RemoveUserWordThrowsWhenAliasTableMissing (1 ms)
+[ RUN      ] DictionaryCoverageTest.RelatedWordsThrowsWhenRelationsTableMissing
+[       OK ] DictionaryCoverageTest.RelatedWordsThrowsWhenRelationsTableMissing (1 ms)
+[ RUN      ] DictionaryCoverageTest.AddWordRelationThrowsWhenRelationsTableMissing
+[       OK ] DictionaryCoverageTest.AddWordRelationThrowsWhenRelationsTableMissing (1 ms)
+[ RUN      ] DictionaryCoverageTest.AllRelationsRoundTripEmptyAndPrepareFailure
+[       OK ] DictionaryCoverageTest.AllRelationsRoundTripEmptyAndPrepareFailure (1 ms)
+[ RUN      ] DictionaryCoverageTest.SchemaVersionThrowsWhenMetadataMissing
+[       OK ] DictionaryCoverageTest.SchemaVersionThrowsWhenMetadataMissing (1 ms)
+[ RUN      ] DictionaryCoverageTest.AddEntryAndMergeThrowWhenInsertViolatesConstraint
+[       OK ] DictionaryCoverageTest.AddEntryAndMergeThrowWhenInsertViolatesConstraint (1 ms)
+[ RUN      ] DictionaryCoverageTest.RecordCommitRollsBackWhenEntryInsertViolatesConstraint
+[       OK ] DictionaryCoverageTest.RecordCommitRollsBackWhenEntryInsertViolatesConstraint (1 ms)
+[ RUN      ] DictionaryCoverageTest.AddUserWordRollsBackWhenInsertViolatesConstraint
+[       OK ] DictionaryCoverageTest.AddUserWordRollsBackWhenInsertViolatesConstraint (1 ms)
+[ RUN      ] DictionaryCoverageTest.RemoveUserWordRollsBackWhenDeleteIsBlocked
+[       OK ] DictionaryCoverageTest.RemoveUserWordRollsBackWhenDeleteIsBlocked (1 ms)
+[ RUN      ] DictionaryCoverageTest.ClearUserEntriesRollsBackWhenPurgeIsBlocked
+[       OK ] DictionaryCoverageTest.ClearUserEntriesRollsBackWhenPurgeIsBlocked (2 ms)
+[ RUN      ] DictionaryCoverageTest.SetWordCategoryRollsBackWhenUpdateIsBlocked
+[       OK ] DictionaryCoverageTest.SetWordCategoryRollsBackWhenUpdateIsBlocked (1 ms)
+[ RUN      ] DictionaryCoverageTest.AddWordRelationThrowsWhenInsertIsBlocked
+[       OK ] DictionaryCoverageTest.AddWordRelationThrowsWhenInsertIsBlocked (1 ms)
+[ RUN      ] DictionaryCoverageTest.AddWordRelationRejectsInvalidWordsAndKinds
+[       OK ] DictionaryCoverageTest.AddWordRelationRejectsInvalidWordsAndKinds (1 ms)
+[ RUN      ] DictionaryCoverageTest.LogEventFailureIsBestEffortForUserWrites
+[       OK ] DictionaryCoverageTest.LogEventFailureIsBestEffortForUserWrites (1 ms)
+[ RUN      ] DictionaryCoverageTest.BulkWriteCommitPersistsEntries
+[       OK ] DictionaryCoverageTest.BulkWriteCommitPersistsEntries (1 ms)
+[ RUN      ] DictionaryCoverageTest.BulkWriteRollbackDiscardsPendingEntries
+[       OK ] DictionaryCoverageTest.BulkWriteRollbackDiscardsPendingEntries (1 ms)
+[ RUN      ] DictionaryCoverageTest.BulkWriteBoundariesRejectNestedBeginAndOrphanCommit
+[       OK ] DictionaryCoverageTest.BulkWriteBoundariesRejectNestedBeginAndOrphanCommit (1 ms)
+[ RUN      ] DictionaryCoverageTest.VacuumCompactsAndPreservesData
+[       OK ] DictionaryCoverageTest.VacuumCompactsAndPreservesData (2 ms)
+[ RUN      ] DictionaryCoverageTest.VacuumThrowsInsideOpenBulkTransaction
+[       OK ] DictionaryCoverageTest.VacuumThrowsInsideOpenBulkTransaction (1 ms)
+[ RUN      ] DictionaryCoverageTest.BackupRejectsDirectoryDestination
+[       OK ] DictionaryCoverageTest.BackupRejectsDirectoryDestination (1 ms)
+[ RUN      ] DictionaryCoverageTest.BackupFailsWhenDestinationIsLocked
+[       OK ] DictionaryCoverageTest.BackupFailsWhenDestinationIsLocked (1 ms)
+[ RUN      ] DictionaryCoverageTest.ConstructorRejectsNewerSchemaVersion
+[       OK ] DictionaryCoverageTest.ConstructorRejectsNewerSchemaVersion (2 ms)
+[ RUN      ] DictionaryCoverageTest.ConstructorSurvivesUnparsableVersionButQueriesFail
+[       OK ] DictionaryCoverageTest.ConstructorSurvivesUnparsableVersionButQueriesFail (2 ms)
+[ RUN      ] DictionaryCoverageTest.MigrationFromV1SchemaAddsAllManagementColumns
+[       OK ] DictionaryCoverageTest.MigrationFromV1SchemaAddsAllManagementColumns (2 ms)
+[ RUN      ] DictionaryCoverageTest.MigrationFromV3SchemaAddsOnlyMissingColumns
+[       OK ] DictionaryCoverageTest.MigrationFromV3SchemaAddsOnlyMissingColumns (1 ms)
+[ RUN      ] DictionaryCoverageTest.ConstructorFailsWhenVersionBumpToTwoIsBlocked
+[       OK ] DictionaryCoverageTest.ConstructorFailsWhenVersionBumpToTwoIsBlocked (2 ms)
+[ RUN      ] DictionaryCoverageTest.ConstructorFailsWhenVersionBumpToThreeIsBlocked
+[       OK ] DictionaryCoverageTest.ConstructorFailsWhenVersionBumpToThreeIsBlocked (2 ms)
+[ RUN      ] DictionaryCoverageTest.ConstructorFailsWhenVersionBumpToFourIsBlocked
+[       OK ] DictionaryCoverageTest.ConstructorFailsWhenVersionBumpToFourIsBlocked (2 ms)
+[ RUN      ] DictionaryCoverageTest.ConstructorFailsWhenLearnedAliasMigrationIsBlocked
+[       OK ] DictionaryCoverageTest.ConstructorFailsWhenLearnedAliasMigrationIsBlocked (2 ms)
+[ RUN      ] DictionaryCoverageTest.FindMatchesRejectsInvalidKeysAndZeroLimit
+[       OK ] DictionaryCoverageTest.FindMatchesRejectsInvalidKeysAndZeroLimit (1 ms)
+[ RUN      ] DictionaryCoverageTest.FindPrefixMatchesRejectsEmptyInvalidAndZeroLimit
+[       OK ] DictionaryCoverageTest.FindPrefixMatchesRejectsEmptyInvalidAndZeroLimit (1 ms)
+[ RUN      ] DictionaryCoverageTest.WordsForPrefixServesCacheHitsAndRejectsInvalidPrefixes
+[       OK ] DictionaryCoverageTest.WordsForPrefixServesCacheHitsAndRejectsInvalidPrefixes (1 ms)
+[ RUN      ] DictionaryCoverageTest.QueryCacheEvictsLeastRecentlyUsedBeyondCapacity
+[       OK ] DictionaryCoverageTest.QueryCacheEvictsLeastRecentlyUsedBeyondCapacity (4 ms)
+[ RUN      ] DictionaryCoverageTest.TransitionCandidatesEscapeWildcardPrefixes
+[       OK ] DictionaryCoverageTest.TransitionCandidatesEscapeWildcardPrefixes (1 ms)
+[ RUN      ] DictionaryCoverageTest.RelatedWordsHonorsKindFilterAndLimit
+[       OK ] DictionaryCoverageTest.RelatedWordsHonorsKindFilterAndLimit (1 ms)
+[ RUN      ] DictionaryCoverageTest.WordsByCategoryZeroLimitAndUnknownCategory
+[       OK ] DictionaryCoverageTest.WordsByCategoryZeroLimitAndUnknownCategory (1 ms)
+[ RUN      ] DictionaryCoverageTest.FindDuplicateNormalizedOrdersGroupsByCopies
+[       OK ] DictionaryCoverageTest.FindDuplicateNormalizedOrdersGroupsByCopies (1 ms)
+[ RUN      ] DictionaryCoverageTest.StatsOnEmptyDatabaseReportsZeros
+[       OK ] DictionaryCoverageTest.StatsOnEmptyDatabaseReportsZeros (1 ms)
+[ RUN      ] DictionaryCoverageTest.StatsPopulatesTiersAndTopCategories
+[       OK ] DictionaryCoverageTest.StatsPopulatesTiersAndTopCategories (1 ms)
+[----------] 49 tests from DictionaryCoverageTest (87 ms total)
+
+[----------] 9 tests from SpellCheckerCoverageTest
+[ RUN      ] SpellCheckerCoverageTest.CheckRejectsEmptyAndMalformedInput
+[       OK ] SpellCheckerCoverageTest.CheckRejectsEmptyAndMalformedInput (1 ms)
+[ RUN      ] SpellCheckerCoverageTest.CheckAcceptsUserWordsThroughAlias
+[       OK ] SpellCheckerCoverageTest.CheckAcceptsUserWordsThroughAlias (1 ms)
+[ RUN      ] SpellCheckerCoverageTest.CheckRanksSuggestionsByScoreThenAlphabet
+[       OK ] SpellCheckerCoverageTest.CheckRanksSuggestionsByScoreThenAlphabet (3 ms)
+[ RUN      ] SpellCheckerCoverageTest.CheckTruncatesSuggestionsAtTen
+[       OK ] SpellCheckerCoverageTest.CheckTruncatesSuggestionsAtTen (5 ms)
+[ RUN      ] SpellCheckerCoverageTest.CheckScoresAliasMatchesAndBreaksScoreTiesAlphabetically
+[       OK ] SpellCheckerCoverageTest.CheckScoresAliasMatchesAndBreaksScoreTiesAlphabetically (4 ms)
+[ RUN      ] SpellCheckerCoverageTest.CheckSkipsCandidateEditsBeyondTheGraphemeLimit
+[       OK ] SpellCheckerCoverageTest.CheckSkipsCandidateEditsBeyondTheGraphemeLimit (7 ms)
+[ RUN      ] SpellCheckerCoverageTest.CheckSuggestsBanglaCorrectionsFromBanglaKeys
+[       OK ] SpellCheckerCoverageTest.CheckSuggestsBanglaCorrectionsFromBanglaKeys (3 ms)
+[ RUN      ] SpellCheckerCoverageTest.GenerateEditsCapsAtMaximumGeneratedEdits
+[       OK ] SpellCheckerCoverageTest.GenerateEditsCapsAtMaximumGeneratedEdits (2 ms)
+[ RUN      ] SpellCheckerCoverageTest.GenerateEditsReplacementsMatchAsciiCase
+[       OK ] SpellCheckerCoverageTest.GenerateEditsReplacementsMatchAsciiCase (1 ms)
+[----------] 9 tests from SpellCheckerCoverageTest (32 ms total)
+
+[----------] 22 tests from CoverageApiSettings
+[ RUN      ] CoverageApiSettings.CApiEngineAndSessionHandlesValidateNullArguments
+[       OK ] CoverageApiSettings.CApiEngineAndSessionHandlesValidateNullArguments (0 ms)
+[ RUN      ] CoverageApiSettings.CApiAppendMapsEveryDocumentedInputStatus
+[       OK ] CoverageApiSettings.CApiAppendMapsEveryDocumentedInputStatus (0 ms)
+[ RUN      ] CoverageApiSettings.CApiBackspaceLifecycleAndSnapshotBufferRules
+[       OK ] CoverageApiSettings.CApiBackspaceLifecycleAndSnapshotBufferRules (0 ms)
+[ RUN      ] CoverageApiSettings.CApiCandidateOutputGuardsCoverEveryRejectedArgument
+[       OK ] CoverageApiSettings.CApiCandidateOutputGuardsCoverEveryRejectedArgument (0 ms)
+[ RUN      ] CoverageApiSettings.SettingsEveryKeyRejectsItsInvalidValuesWithTheExactError
+[       OK ] CoverageApiSettings.SettingsEveryKeyRejectsItsInvalidValuesWithTheExactError (3 ms)
+[ RUN      ] CoverageApiSettings.SettingsEveryKeyAcceptsAValidNonDefaultValue
+[       OK ] CoverageApiSettings.SettingsEveryKeyAcceptsAValidNonDefaultValue (0 ms)
+[ RUN      ] CoverageApiSettings.SettingsEnumRoundTripCoversEverySerializerCase
+[       OK ] CoverageApiSettings.SettingsEnumRoundTripCoversEverySerializerCase (4 ms)
+[ RUN      ] CoverageApiSettings.SettingsStructuralIoAndSaveErrorGuards
+[       OK ] CoverageApiSettings.SettingsStructuralIoAndSaveErrorGuards (0 ms)
+[ RUN      ] CoverageApiSettings.SettingsFileStampEqualityAndMissingPathBehavior
+[       OK ] CoverageApiSettings.SettingsFileStampEqualityAndMissingPathBehavior (0 ms)
+[ RUN      ] CoverageApiSettings.AtomicWriteSurfacesWriteFailureAndRemovesTheTemporaryFile
+[       OK ] CoverageApiSettings.AtomicWriteSurfacesWriteFailureAndRemovesTheTemporaryFile (0 ms)
+[ RUN      ] CoverageApiSettings.AtomicQuarantineReplacesAnExistingTargetOnPosixRename
+[       OK ] CoverageApiSettings.AtomicQuarantineReplacesAnExistingTargetOnPosixRename (0 ms)
+[ RUN      ] CoverageApiSettings.AtomicQuarantineTreatsAVirtualFileProbeAsNothingToQuarantine
+[       OK ] CoverageApiSettings.AtomicQuarantineTreatsAVirtualFileProbeAsNothingToQuarantine (0 ms)
+[ RUN      ] CoverageApiSettings.AtomicQuarantineSurfacesForeignRenameErrorsUnchanged
+[       OK ] CoverageApiSettings.AtomicQuarantineSurfacesForeignRenameErrorsUnchanged (0 ms)
+[ RUN      ] CoverageApiSettings.EngineStorelessSettingsAndDictionaryAccessors
+[       OK ] CoverageApiSettings.EngineStorelessSettingsAndDictionaryAccessors (0 ms)
+[ RUN      ] CoverageApiSettings.EngineRememberDisabledRestoresTheDefaultLayout
+[       OK ] CoverageApiSettings.EngineRememberDisabledRestoresTheDefaultLayout (0 ms)
+[ RUN      ] CoverageApiSettings.EngineReloadSettingsSurfacesFailuresWithoutStateChange
+[       OK ] CoverageApiSettings.EngineReloadSettingsSurfacesFailuresWithoutStateChange (0 ms)
+[ RUN      ] CoverageApiSettings.EngineReloadIfChangedSkipsUntilTheFileActuallyChanges
+[       OK ] CoverageApiSettings.EngineReloadIfChangedSkipsUntilTheFileActuallyChanges (0 ms)
+[ RUN      ] CoverageApiSettings.EngineConfiguredDictionaryIsExposedThroughBothAccessors
+[       OK ] CoverageApiSettings.EngineConfiguredDictionaryIsExposedThroughBothAccessors (1 ms)
+[ RUN      ] CoverageApiSettings.CandidateExactStageBreaksBeforeTheRawInputQuery
+[       OK ] CoverageApiSettings.CandidateExactStageBreaksBeforeTheRawInputQuery (1 ms)
+[ RUN      ] CoverageApiSettings.CandidatePredictionStageBreaksWhenTheListIsAlreadyFull
+[       OK ] CoverageApiSettings.CandidatePredictionStageBreaksWhenTheListIsAlreadyFull (1 ms)
+[ RUN      ] CoverageApiSettings.CandidatePrefixStageBreaksOnceTheCandidateLimitIsReached
+[       OK ] CoverageApiSettings.CandidatePrefixStageBreaksOnceTheCandidateLimitIsReached (1 ms)
+[ RUN      ] CoverageApiSettings.CandidateSpellingStageAppendsCappedSuggestions
+[       OK ] CoverageApiSettings.CandidateSpellingStageAppendsCappedSuggestions (3 ms)
+[----------] 22 tests from CoverageApiSettings (22 ms total)
+
+[----------] 4 tests from CoverageUnicodeTest
+[ RUN      ] CoverageUnicodeTest.SupportedBengaliInventoryMatchesCatalog
+[       OK ] CoverageUnicodeTest.SupportedBengaliInventoryMatchesCatalog (0 ms)
+[ RUN      ] CoverageUnicodeTest.EnglishLayoutGenerateCandidatesRejectsEmptyInput
+[       OK ] CoverageUnicodeTest.EnglishLayoutGenerateCandidatesRejectsEmptyInput (0 ms)
+[ RUN      ] CoverageUnicodeTest.BijoyEncodesAndFlagsDecomposedNuqtaOnOrdinaryConsonant
+[       OK ] CoverageUnicodeTest.BijoyEncodesAndFlagsDecomposedNuqtaOnOrdinaryConsonant (0 ms)
+[ RUN      ] CoverageUnicodeTest.BijoyEncodabilityChecksInvalidUtf8AndValidBangla
+[       OK ] CoverageUnicodeTest.BijoyEncodabilityChecksInvalidUtf8AndValidBangla (0 ms)
+[----------] 4 tests from CoverageUnicodeTest (0 ms total)
+
+[----------] 10 tests from ToolsImportTest
+[ RUN      ] ToolsImportTest.UsageWithoutArgumentsExitsTwo
+[       OK ] ToolsImportTest.UsageWithoutArgumentsExitsTwo (1 ms)
+[ RUN      ] ToolsImportTest.LegacyTsvArgumentImportsInReplaceMode
+[       OK ] ToolsImportTest.LegacyTsvArgumentImportsInReplaceMode (3 ms)
+[ RUN      ] ToolsImportTest.LegacyTxtExtensionAlsoImports
+[       OK ] ToolsImportTest.LegacyTxtExtensionAlsoImports (3 ms)
+[ RUN      ] ToolsImportTest.ImportModeSupportsMergeAndCustomOrigin
+[       OK ] ToolsImportTest.ImportModeSupportsMergeAndCustomOrigin (3 ms)
+[ RUN      ] ToolsImportTest.ImportRejectsUnknownFlags
+[       OK ] ToolsImportTest.ImportRejectsUnknownFlags (2 ms)
+[ RUN      ] ToolsImportTest.ImportReportsMissingWordlist
+[       OK ] ToolsImportTest.ImportReportsMissingWordlist (2 ms)
+[ RUN      ] ToolsImportTest.ImportAllInvalidLinesExitsTwo
+[       OK ] ToolsImportTest.ImportAllInvalidLinesExitsTwo (3 ms)
+[ RUN      ] ToolsImportTest.ImportClampsHugeFrequenciesAndRejectsGarbage
+[       OK ] ToolsImportTest.ImportClampsHugeFrequenciesAndRejectsGarbage (5 ms)
+[ RUN      ] ToolsImportTest.ImportEchoesAtMostTwentyInvalidLines
+[       OK ] ToolsImportTest.ImportEchoesAtMostTwentyInvalidLines (3 ms)
+[ RUN      ] ToolsImportTest.ImportRejectsWhitespaceOnlyWordLines
+[       OK ] ToolsImportTest.ImportRejectsWhitespaceOnlyWordLines (3 ms)
+[----------] 10 tests from ToolsImportTest (31 ms total)
+
+[----------] 3 tests from ToolsExportTest
+[ RUN      ] ToolsExportTest.ExportEmptyDatabaseExitsTwo
+[       OK ] ToolsExportTest.ExportEmptyDatabaseExitsTwo (5 ms)
+[ RUN      ] ToolsExportTest.ExportWritesHeaderAndAllRows
+[       OK ] ToolsExportTest.ExportWritesHeaderAndAllRows (5 ms)
+[ RUN      ] ToolsExportTest.ExportRejectsUnwritableOutputPath
+[       OK ] ToolsExportTest.ExportRejectsUnwritableOutputPath (5 ms)
+[----------] 3 tests from ToolsExportTest (16 ms total)
+
+[----------] 2 tests from ToolsRelationsTest
+[ RUN      ] ToolsRelationsTest.RelationsAddsValidAndRejectsShortAndInvalidLines
+[       OK ] ToolsRelationsTest.RelationsAddsValidAndRejectsShortAndInvalidLines (5 ms)
+[ RUN      ] ToolsRelationsTest.RelationsReportsMissingFileAndAllRejectedCases
+[       OK ] ToolsRelationsTest.RelationsReportsMissingFileAndAllRejectedCases (5 ms)
+[----------] 2 tests from ToolsRelationsTest (10 ms total)
+
+[----------] 1 test from ToolsValidateTest
+[ RUN      ] ToolsValidateTest.ValidateCleanDatabaseExitsZero
+[       OK ] ToolsValidateTest.ValidateCleanDatabaseExitsZero (5 ms)
+[----------] 1 test from ToolsValidateTest (5 ms total)
+
+[----------] 1 test from ToolsStatsTest
+[ RUN      ] ToolsStatsTest.StatsPrintsSchemaCountsCategoriesAndTiers
+[       OK ] ToolsStatsTest.StatsPrintsSchemaCountsCategoriesAndTiers (5 ms)
+[----------] 1 test from ToolsStatsTest (5 ms total)
+
+[----------] 2 tests from ToolsBackupVacuumTest
+[ RUN      ] ToolsBackupVacuumTest.BackupWritesAndVacuumCompacts
+[       OK ] ToolsBackupVacuumTest.BackupWritesAndVacuumCompacts (7 ms)
+[ RUN      ] ToolsBackupVacuumTest.BackupReportsUnusableDestination
+[       OK ] ToolsBackupVacuumTest.BackupReportsUnusableDestination (5 ms)
+[----------] 2 tests from ToolsBackupVacuumTest (12 ms total)
+
+[----------] 2 tests from ToolsArgumentParsingTest
+[ RUN      ] ToolsArgumentParsingTest.UnknownModeAndMissingArgumentsExitTwo
+[       OK ] ToolsArgumentParsingTest.UnknownModeAndMissingArgumentsExitTwo (7 ms)
+[ RUN      ] ToolsArgumentParsingTest.UnknownModeWithoutArgumentExitsTwo
+[       OK ] ToolsArgumentParsingTest.UnknownModeWithoutArgumentExitsTwo (2 ms)
+[----------] 2 tests from ToolsArgumentParsingTest (10 ms total)
+
+[----------] 3 tests from ToolsBenchTest
+[ RUN      ] ToolsBenchTest.BenchRunsSmallWorkloadAndPrintsTimings
+[       OK ] ToolsBenchTest.BenchRunsSmallWorkloadAndPrintsTimings (5 ms)
+[ RUN      ] ToolsBenchTest.BenchRejectsMissingDatabaseArgument
+[       OK ] ToolsBenchTest.BenchRejectsMissingDatabaseArgument (1 ms)
+[ RUN      ] ToolsBenchTest.BenchRejectsZeroWordCount
+[       OK ] ToolsBenchTest.BenchRejectsZeroWordCount (1 ms)
+[----------] 3 tests from ToolsBenchTest (8 ms total)
+
+[----------] 1 test from ToolsDedupeTest
+[ RUN      ] ToolsDedupeTest.BareDedupeRunsTheReportWithoutArguments
+[       OK ] ToolsDedupeTest.BareDedupeRunsTheReportWithoutArguments (5 ms)
+[----------] 1 test from ToolsDedupeTest (5 ms total)
+
+[----------] 3 tests from ToolsExamplesTest
+[ RUN      ] ToolsExamplesTest.EngineDemoPrintsCompositionCandidatesAndCommit
+[       OK ] ToolsExamplesTest.EngineDemoPrintsCompositionCandidatesAndCommit (2 ms)
+[ RUN      ] ToolsExamplesTest.EngineDemoAcceptsCustomRomanInput
+[       OK ] ToolsExamplesTest.EngineDemoAcceptsCustomRomanInput (2 ms)
+[ RUN      ] ToolsExamplesTest.CApiExamplePrintsComposition
+[       OK ] ToolsExamplesTest.CApiExamplePrintsComposition (1 ms)
+[----------] 3 tests from ToolsExamplesTest (5 ms total)
+
+[----------] 15 tests from CoverageFinalGapsTest
+[ RUN      ] CoverageFinalGapsTest.PhoneticSessionNavigationWalksCandidatesForwardAndBackward
+[       OK ] CoverageFinalGapsTest.PhoneticSessionNavigationWalksCandidatesForwardAndBackward (0 ms)
+[ RUN      ] CoverageFinalGapsTest.PhoneticAppendReportsPendingForIncompleteHalantSequence
+[       OK ] CoverageFinalGapsTest.PhoneticAppendReportsPendingForIncompleteHalantSequence (0 ms)
+[ RUN      ] CoverageFinalGapsTest.PhoneticBackspaceLeavingTrailingEscapeStaysPending
+[       OK ] CoverageFinalGapsTest.PhoneticBackspaceLeavingTrailingEscapeStaysPending (0 ms)
+[ RUN      ] CoverageFinalGapsTest.PhoneticCommitOnPendingEscapeCommitsTheLiteralText
+[       OK ] CoverageFinalGapsTest.PhoneticCommitOnPendingEscapeCommitsTheLiteralText (1 ms)
+[ RUN      ] CoverageFinalGapsTest.StatelessPhoneticLayoutWithDictionaryUsesTheSharedSession
+[       OK ] CoverageFinalGapsTest.StatelessPhoneticLayoutWithDictionaryUsesTheSharedSession (4 ms)
+[ RUN      ] CoverageFinalGapsTest.PhoneticCommitWithDictionaryRecordsLearning
+[       OK ] CoverageFinalGapsTest.PhoneticCommitWithDictionaryRecordsLearning (4 ms)
+[ RUN      ] CoverageFinalGapsTest.PhoneticSessionNavigationWithoutCandidatesReportsFalse
+[       OK ] CoverageFinalGapsTest.PhoneticSessionNavigationWithoutCandidatesReportsFalse (0 ms)
+[ RUN      ] CoverageFinalGapsTest.SubornoGenerateCandidatesOnEmptyInputYieldsThePrimaryCandidate
+[       OK ] CoverageFinalGapsTest.SubornoGenerateCandidatesOnEmptyInputYieldsThePrimaryCandidate (0 ms)
+[ RUN      ] CoverageFinalGapsTest.SubornoGenerateCandidatesChAlternatesYieldMultipleCandidates
+[       OK ] CoverageFinalGapsTest.SubornoGenerateCandidatesChAlternatesYieldMultipleCandidates (0 ms)
+[ RUN      ] CoverageFinalGapsTest.BornoTransliterateBackslashEscapesAndTrailingBackslashIsLiteral
+[       OK ] CoverageFinalGapsTest.BornoTransliterateBackslashEscapesAndTrailingBackslashIsLiteral (0 ms)
+[ RUN      ] CoverageFinalGapsTest.BornoTransliterateHandlesTwoThreeAndFourByteUtf8Sequences
+[       OK ] CoverageFinalGapsTest.BornoTransliterateHandlesTwoThreeAndFourByteUtf8Sequences (0 ms)
+[ RUN      ] CoverageFinalGapsTest.RuleBasedLayoutConstructorRejectsInvalidTokenTables
+[       OK ] CoverageFinalGapsTest.RuleBasedLayoutConstructorRejectsInvalidTokenTables (0 ms)
+[ RUN      ] CoverageFinalGapsTest.NationalLayoutPassesUnmappedBytesAndDecodesBengaliOutput
+[       OK ] CoverageFinalGapsTest.NationalLayoutPassesUnmappedBytesAndDecodesBengaliOutput (0 ms)
+[ RUN      ] CoverageFinalGapsTest.KeyEventAsciiMappingCoversEveryPunctuationBothShiftStates
+[       OK ] CoverageFinalGapsTest.KeyEventAsciiMappingCoversEveryPunctuationBothShiftStates (0 ms)
+[ RUN      ] CoverageFinalGapsTest.EngineLoadSettingsCorrectsUnknownStoredLayoutId
+[       OK ] CoverageFinalGapsTest.EngineLoadSettingsCorrectsUnknownStoredLayoutId (0 ms)
+[----------] 15 tests from CoverageFinalGapsTest (11 ms total)
+
+[----------] 24 tests from UiStringsTest
+[ RUN      ] UiStringsTest.ParsesNestedObjectsIntoDottedKeys
+[       OK ] UiStringsTest.ParsesNestedObjectsIntoDottedKeys (0 ms)
+[ RUN      ] UiStringsTest.DecodesJsonEscapes
+[       OK ] UiStringsTest.DecodesJsonEscapes (0 ms)
+[ RUN      ] UiStringsTest.DecodesSurrogatePairsIntoUtf8
+[       OK ] UiStringsTest.DecodesSurrogatePairsIntoUtf8 (0 ms)
+[ RUN      ] UiStringsTest.DecodesOneAndTwoByteUtf8AndAllShortEscapes
+[       OK ] UiStringsTest.DecodesOneAndTwoByteUtf8AndAllShortEscapes (0 ms)
+[ RUN      ] UiStringsTest.RejectsBrokenUnicodeEscapes
+[       OK ] UiStringsTest.RejectsBrokenUnicodeEscapes (0 ms)
+[ RUN      ] UiStringsTest.MissingFileKeepsPreviousTableAndReports
+[       OK ] UiStringsTest.MissingFileKeepsPreviousTableAndReports (0 ms)
+[ RUN      ] UiStringsTest.MalformedJsonIsRejectedWithoutClobbering
+[       OK ] UiStringsTest.MalformedJsonIsRejectedWithoutClobbering (1 ms)
+[ RUN      ] UiStringsTest.NonStringLeavesAreSkippedButTableLoads
+[       OK ] UiStringsTest.NonStringLeavesAreSkippedButTableLoads (0 ms)
+[ RUN      ] UiStringsTest.SkipsNestedArraysAndObjectsInValues
+[       OK ] UiStringsTest.SkipsNestedArraysAndObjectsInValues (0 ms)
+[ RUN      ] UiStringsTest.SkipsSpacedAndEmptyCompositesInsideArrays
+[       OK ] UiStringsTest.SkipsSpacedAndEmptyCompositesInsideArrays (0 ms)
+[ RUN      ] UiStringsTest.RejectsMalformedCompositesInsideArrays
+[       OK ] UiStringsTest.RejectsMalformedCompositesInsideArrays (0 ms)
+[ RUN      ] UiStringsTest.RejectsTruncatedEscapeAndBackslashAtEnd
+[       OK ] UiStringsTest.RejectsTruncatedEscapeAndBackslashAtEnd (0 ms)
+[ RUN      ] UiStringsTest.DecodesLowercaseHexEscapes
+[       OK ] UiStringsTest.DecodesLowercaseHexEscapes (0 ms)
+[ RUN      ] UiStringsTest.RejectsNonStringMemberInsideArrayObject
+[       OK ] UiStringsTest.RejectsNonStringMemberInsideArrayObject (0 ms)
+[ RUN      ] UiStringsTest.AcceptsLeadingWhitespaceBeforeRootObject
+[       OK ] UiStringsTest.AcceptsLeadingWhitespaceBeforeRootObject (0 ms)
+[ RUN      ] UiStringsTest.RejectsMalformedArraysAndNestedObjects
+[       OK ] UiStringsTest.RejectsMalformedArraysAndNestedObjects (7 ms)
+[ RUN      ] UiStringsTest.RejectsTrailingContentAfterRootObject
+[       OK ] UiStringsTest.RejectsTrailingContentAfterRootObject (3 ms)
+[ RUN      ] UiStringsTest.ReadFailureOnUnreadablePathIsReported
+[       OK ] UiStringsTest.ReadFailureOnUnreadablePathIsReported (1 ms)
+[ RUN      ] UiStringsTest.DistinctNestedKeysCanShareALeafName
+[       OK ] UiStringsTest.DistinctNestedKeysCanShareALeafName (0 ms)
+[ RUN      ] UiStringsTest.KeysReturnsSortedDottedList
+[       OK ] UiStringsTest.KeysReturnsSortedDottedList (0 ms)
+[ RUN      ] UiStringsTest.LocaleSettingMapping
+[       OK ] UiStringsTest.LocaleSettingMapping (0 ms)
+[ RUN      ] UiStringsTest.LocaleFileLayout
+[       OK ] UiStringsTest.LocaleFileLayout (0 ms)
+[ RUN      ] UiStringsTest.NullKeyIsSafe
+[       OK ] UiStringsTest.NullKeyIsSafe (0 ms)
+[ RUN      ] UiStringsTest.ShippedLocaleFilesParseWithParallelKeys
+[       OK ] UiStringsTest.ShippedLocaleFilesParseWithParallelKeys (2 ms)
+[----------] 24 tests from UiStringsTest (20 ms total)
+
+[----------] 1 test from PlatformAdapterTest
+[ RUN      ] PlatformAdapterTest.IBusAndFcitxReportUnavailableWithoutHostLibraries
+[       OK ] PlatformAdapterTest.IBusAndFcitxReportUnavailableWithoutHostLibraries (0 ms)
+[----------] 1 test from PlatformAdapterTest (0 ms total)
+
+[----------] 1 test from ToolsUnixImportTest
+[ RUN      ] ToolsUnixImportTest.ImportRollsBackAndAbortsWhenStorageFailsMidway
+[       OK ] ToolsUnixImportTest.ImportRollsBackAndAbortsWhenStorageFailsMidway (36 ms)
+[----------] 1 test from ToolsUnixImportTest (36 ms total)
+
+[----------] 2 tests from ToolsUnixValidateTest
+[ RUN      ] ToolsUnixValidateTest.ValidateDetectsInvalidWordsAndExitsOne
+[       OK ] ToolsUnixValidateTest.ValidateDetectsInvalidWordsAndExitsOne (31 ms)
+[ RUN      ] ToolsUnixValidateTest.ValidateDetectsInvalidNormalizedAndDuplicateGroups
+[       OK ] ToolsUnixValidateTest.ValidateDetectsInvalidNormalizedAndDuplicateGroups (31 ms)
+[----------] 2 tests from ToolsUnixValidateTest (62 ms total)
+
+[----------] 1 test from ToolsUnixExportTest
+[ RUN      ] ToolsUnixExportTest.ExportSkipsTransientLearnedRowsAndKeepsUsedOnes
+[       OK ] ToolsUnixExportTest.ExportSkipsTransientLearnedRowsAndKeepsUsedOnes (31 ms)
+[----------] 1 test from ToolsUnixExportTest (31 ms total)
+
+[----------] 1 test from ToolsUnixDedupeTest
+[ RUN      ] ToolsUnixDedupeTest.DedupeReportsGroupsAndAppliesRemovalsKeepingUserRows
+[       OK ] ToolsUnixDedupeTest.DedupeReportsGroupsAndAppliesRemovalsKeepingUserRows (34 ms)
+[----------] 1 test from ToolsUnixDedupeTest (34 ms total)
+
+[----------] Global test environment tear-down
+[==========] 557 tests from 62 test suites ran. (645 ms total)
+[  PASSED  ] 557 tests.

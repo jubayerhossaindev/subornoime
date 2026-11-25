@@ -1,0 +1,13 @@
+=== TSan build (incremental, restarted) ===
+Wed Nov 25 20:12:49 UTC 2026
+[ 63%] Building CXX object tests/CMakeFiles/suborno_unit_tests.dir/unit/tools_unix_injection_test.cpp.o
+[ 64%] Linking CXX executable ../suborno_unit_tests
+[100%] Built target suborno_unit_tests
+BUILD_EXIT=0
+=== TSan run: DiagnosticsTest (concurrency) ===
+[----------] 7 tests from DiagnosticsTest (296 ms total)
+
+[----------] Global test environment tear-down
+[==========] 7 tests from 1 test suite ran. (297 ms total)
+[  PASSED  ] 7 tests.
+TSAN_EXIT=0

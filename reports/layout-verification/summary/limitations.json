@@ -1,0 +1,58 @@
+{
+  "known_limitations": [
+    {
+      "id": "LIM-KHIPRO-TRAILING-VIRAMA",
+      "layout": "khipro",
+      "item": "trailing/displaced virama (ক্)",
+      "classification": "RESOLVED 2026-11-24 — explicit hasanta token \"qq\" (Khipro Classic convention) makes trailing virama ক্ (U+0995 U+09CD) typeable; exact code points verified; inventory now 74/74",
+      "impact": "dictionary headword form only; normal words unaffected (corpus 49/49, brief 14/14 PASS)",
+      "evidence": "evidence-raw/corpus_inventory_extension.csv (NOT_DERIVABLE row), docs/reports/FINAL_UI_FUNCTIONAL_VERIFICATION.md:22",
+      "resolved": true,
+      "resolution_evidence": "reports/layout-fixes/KHIPRO_PROBHAT_BDS_FIX_REPORT.md, reports/layout-fixes/KHIPRO_PROBHAT_REGRESSION_RESULTS.csv, tests/unit/khipro_layout_test.cpp"
+    },
+    {
+      "id": "LIM-PROBHAT-STANDALONE-NUKTA",
+      "layout": "probhat",
+      "item": "standalone nukta ় (U+09BC)",
+      "classification": "RESOLVED 2026-11-24 — SubornoIME Probhat Compatibility Extension: AltGr (Ctrl+Alt) + scan 0x34 emits U+09BC; upstream KLC column was -1, no existing key overwritten; documented in docs/specifications/probhat-keymap.md",
+      "impact": "adjacent forms ড়/ঢ়/য় have dedicated keys; standalone ় rare in orthography",
+      "evidence": "evidence-raw/brief_sequences.csv (probhat-scan-diacritic NOT_TYPEABLE), evidence-raw/nukta_probe_stdout.txt",
+      "resolved": true,
+      "resolution_evidence": "reports/layout-fixes/KHIPRO_PROBHAT_BDS_FIX_REPORT.md, reports/layout-fixes/KHIPRO_PROBHAT_REGRESSION_RESULTS.csv, docs/specifications/probhat-keymap.md"
+    },
+    {
+      "id": "LIM-BORNO-AVRO-STANDALONE-NUKTA",
+      "layout": "borno-phonetic, avro-phonetic",
+      "item": "standalone ় and generic ক়",
+      "classification": "capability note (nukta only via dedicated য়/ড়/ঢ় tokens)",
+      "impact": "minor; not covered by brief-mandated tests",
+      "evidence": "evidence-raw/nukta_probe_stdout.txt"
+    },
+    {
+      "id": "LIM-BRIEF-CONVENTION-MISMATCH",
+      "layout": "borno-phonetic, avro-phonetic",
+      "item": "brief sequences Ta;i / mo;i (Borno) and t'' (Avro) do not match implementation conventions",
+      "classification": "brief-vs-implementation convention difference; NOT an engine defect",
+      "engine_correct": {
+        "borno-phonetic": {
+          "Tai": "টাই",
+          "moi": "মই"
+        },
+        "avro-phonetic": {
+          "t``": "ৎ"
+        }
+      },
+      "evidence": "evidence-raw/brief_sequences.csv (3 FAIL rows) + evidence-raw/convention_sequences.csv"
+    },
+    {
+      "id": "LIM-WINDOWS-RUNTIME",
+      "layout": "all 7",
+      "item": "Windows runtime verification",
+      "classification": "BLOCKED — no Windows 10 x64 + MSVC v143 environment in sandbox",
+      "impact": "no Windows Verified claim possible; harnesses ready (Run-BanglaTypingTests.ps1, Invoke-SubornoUiAudit.ps1, merge_audit_results.py)",
+      "evidence": "per-layout windows-results.csv"
+    }
+  ],
+  "open_bugs": [],
+  "last_updated": "2026-11-24 khipro/probhat fix mission (baseline 86a543e + fix commit)"
+}

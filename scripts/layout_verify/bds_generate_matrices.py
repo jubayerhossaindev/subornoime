@@ -1,0 +1,314 @@
+#!/usr/bin/env python3
+"""BDS mission — generate the clause-by-clause compliance matrices (PART 8).
+
+Honesty model (PHASE 2 update, 2026-11-24):
+  - PHASE 1: no authorized full BDS text was obtainable without purchase;
+    Clause/Page columns were 'NOT READ (BLOCKED)' everywhere.
+  - PHASE 2: official full texts OBTAINED and READ for BDS 1520 (via the
+    BCC official file store — but the obtained copy is the 2011 Second
+    Revision edition: cover '(Second Revision)', headers 'BDS 1520:2011')
+    and BDS 1834:2011 (via the same BCC source). BDS 1738 and BDS 1935 full
+    texts are still store-only (account+purchase gated; no approval).
+    Clause references in BDS 1520 rows are therefore cited as
+    '(obtained ed.)' and bind to the 2011 Second Revision text; the BDS
+    1520:2018 Third Revision clause text remains UNREAD (BLOCKED).
+  - Requirement summaries tagged [MISSION-PROGRAM] come from the mission's own
+    verification checklist (public scope identities + Unicode data), never
+    from invented BDS clause text.
+  - Status vocabulary: PASS / FAIL / BLOCKED / NOT TESTED / N/A (justified).
+  - 'PASS' = the [MISSION-PROGRAM] requirement has real executed evidence.
+    The BDS clause binding of that requirement stays BLOCKED and is stated
+    in its own row.
+"""
+import csv
+import os
+
+OUT = "/home/z/my-project/workspace/SUBORNOIME/SUBORNOIME/docs/standards/compliance"
+EV = "reports/standards/evidence-raw"
+SRC = "docs/standards/research/BDS_OFFICIAL_SOURCE_REGISTER.md"
+
+COLS = ["Requirement ID", "Standard", "Revision", "Clause", "Page",
+        "Requirement summary", "Requirement type", "Applicability",
+        "Source reference", "Source location", "Source implementation",
+        "Test case", "Expected result", "Actual result", "Evidence", "Status",
+        "Gap", "Fix"]
+
+NB = "NOT READ (BLOCKED)"
+
+
+def row(rid, std, summary, rtype, appl, impl, test, expected, actual, evidence,
+        status, gap="", fix=""):
+    return {
+        "Requirement ID": rid, "Standard": std, "Revision": "2018" if std != "BDS 1834:2011" else "2011",
+        "Clause": NB, "Page": NB, "Requirement summary": summary,
+        "Requirement type": rtype, "Applicability": appl,
+        "Source reference": SRC, "Source location": "official document not obtained",
+        "Source implementation": impl, "Test case": test,
+        "Expected result": expected, "Actual result": actual,
+        "Evidence": evidence, "Status": status, "Gap": gap, "Fix": fix,
+    }
+
+
+def write(name, rows):
+    def count(prefix):
+        return sum(1 for r in rows if r["Status"].startswith(prefix))
+    with open(os.path.join(OUT, name), "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=COLS, lineterminator="\n")
+        w.writeheader()
+        w.writerows(rows)
+    print(f"{name}: {len(rows)} rows, "
+          f"{count('PASS')} PASS, {count('BLOCKED')} BLOCKED, "
+          f"{count('NOT TESTED')} NOT TESTED, {count('N/A')} N/A, "
+          f"{count('UNVERIFIED')} UNVERIFIED, {count('pending')} pending")
+
+
+# ------------------------------------------------------------------ BDS 1738
+b1738 = []
+b1738.append(row("KV-01", "BDS 1738:2018",
+    "Authorized full official standard document obtained and read", "Normative",
+    "Applicable", "n/a (document access)", "n/a",
+    "Full text available for clause-level analysis",
+    "BLOCKED — BSTI BDS Store record requires account; brief-supplied record link 404",
+    "SRC-02/03/04/18; BDS_REVISION_STATUS.md", "BLOCKED — official information unavailable; acquisition path recorded", "Clause-level verification of the whole standard", "Purchase via ec.eservice.bsti.gov.bd (official route recorded)"))
+b1738.append(row("KV-02", "BDS 1738:2018",
+    "Latest revision / amendment / corrigendum verified against official record", "Normative",
+    "Applicable", "n/a (record access)", "n/a",
+    "Current revision status confirmed",
+    "VERIFIED — official BSTI Catalogue 2023 (till June 2023) lists 'Computer Bangla keyboard (First Revision)' with no amendment/corrigendum; BCC IT-standards page (site updated 2026-11-20, fetched 2026-11-24) still lists BDS 1738:2018 as row 24 with no PDF; news sweep found no replacement. Residual: post-June-2023 store changes unverifiable without account",
+    "SRC-06/07/19; BDS_REVISION_STATUS.md", "PASS — revision identity + no-amendment verified from official records (residual store check gated by account)", "Register accuracy", "Store account search after sign-up (optional re-check)"))
+b1738.append(row("KV-03", "BDS 1738:2018",
+    "Exact layout specification (clause-level character distribution and key positions) compared against the National layout", "Normative",
+    "Applicable — National layout", "src/layouts/national/national_layout.cpp (positional, rewritten 2026-11-24)", "docs/specifications/national-keymap.md",
+    "Clause-by-clause mapping comparison",
+    "DIAGRAM-LEVEL COMPARISON DONE — official layout verified against the National Keyboard of Bangladesh diagram republished in public Unicode document L2/19-079 Figure 4 and cross-checked key-by-key with the BornoTSF factual mapping (121/121 engine rows PASS); CLAUSE-LEVEL EQUIVALENCE STILL BLOCKED — authorized full standard text not obtained; no clause number invented anywhere",
+    "SRC-01..07; BDS_NATIONAL_LAYOUT_DISCREPANCY_REPORT.md; national-keymap.md", "BLOCKED — clause binding unavailable; official-diagram-level comparison recorded with evidence", "National layout clause conformance", "Buy standard, transcribe official table into a clean-room test corpus, re-run"))
+b1738.append(row("KV-04", "BDS 1738:2018",
+    "[MISSION-PROGRAM] National layout mapping inventory executes through the real engine session (all defined keys and sequences)", "Normative",
+    "Applicable — National layout", "src/layouts/national/national_layout.cpp (positional: base/shift/Link/Link+Shift layers + Regular-mode sequences)", "national_layout_test.cpp (20 positional tests) + national_positional_verify.cpp",
+    "Every defined key and sequence yields its documented Bengali output",
+    "ALL 121 independent engine rows PASS (base/shift/Link/Link+Shift layers + reph/broken-conjunct/reorder/composition sequences); layout rewritten from the phonetic prototype to the positional Jatiyo layout per the official diagram",
+    f"{EV}/bds_national_positional_engine_rows.csv; unit 609/609", "PASS (mission-program level; BDS clause binding BLOCKED)"))
+b1738.append(row("KV-05", "BDS 1738:2018",
+    "[MISSION-PROGRAM] Bengali digit row output is exactly U+09E6..U+09EF", "Normative",
+    "Applicable", "src/layouts/national/national_layout.cpp (digit-row scan codes 0x02..0x0B base layer)", "BdsConformanceTest.NationalLayoutBengaliDigitRowProducesU09E6ToU09EF",
+    "0..9 -> ০..৯ = U+09E6..U+09EF", "Exact code points emitted; UTF-8 bytes match Unicode reference",
+    f"{EV}/bds_repertoire_crosscheck.csv; unit 586/586", "PASS (mission-program level)"))
+b1738.append(row("KV-06", "BDS 1738:2018",
+    "[MISSION-PROGRAM] Currency sign ৳ = U+09F3 available as documented key output", "Normative",
+    "Applicable", "khipro_layout.cpp:259; avro_phonetic_layout.cpp:87; probhat_layout.cpp 0x05 shift", "existing layout tests + harness",
+    "U+09F3 emitted on documented keys", "U+09F3 emitted (Khipro, Avro '$', Probhat Shift+0x05); byte-exact",
+    f"{EV}/bds_engine_rows_579.csv; src review", "PASS (mission-program level)"))
+b1738.append(row("KV-07", "BDS 1738:2018",
+    "[MISSION-PROGRAM] Punctuation dari । = U+0964 emitted on documented keys", "Normative",
+    "Applicable", "probhat_layout.cpp 0x34 base; national_layout.cpp scan 0x22 shift (Shift+G)", "probhat_layout_test.cpp; national_layout_test.cpp; national evidence rows",
+    "U+0964 emitted", "Exact scalar U+0964 (Probhat 0x34 base; National Shift+G)", f"{EV}/bds_national_positional_engine_rows.csv", "PASS (mission-program level)"))
+b1738.append(row("KV-08", "BDS 1738:2018",
+    "[MISSION-PROGRAM] Shift layer behaves per each layout's own specification (national 4-level model; probhat KLC columns)", "Normative",
+    "Applicable", "probhat_layout.cpp KLC table; national_layout.cpp 4-layer table (base/shift/Link/Link+Shift)", "probhat_layout_test.cpp; national_layout_test.cpp (shift + AltGr session tests)",
+    "Shift/AltGr outputs match documented tables", "National now implements the real 4-layer model of the official diagram (Link = Ctrl+Alt); all shift/AltGr engine rows PASS; upstream Probhat KLC parity test PASS",
+    f"{EV}/bds_national_positional_engine_rows.csv; unit 609/609", "PASS (mission-program level)"))
+b1738.append(row("KV-09", "BDS 1738:2018",
+    "[MISSION-PROGRAM] AltGr layer empty slots remain empty (no overwrite of existing keys)", "Normative",
+    "Applicable — Probhat", "probhat_layout.cpp (AltGr column audit)", "ProbhatLayoutTest.AltGrLayerFollowsTheUpstreamKlcColumns",
+    "Upstream-empty AltGr slots stay empty; only documented extension exists",
+    "Only AltGr+0x34 carries the documented SubornoIME Compatibility Extension; all other upstream-empty slots empty",
+    "probhat_layout_test.cpp; probhat-keymap.md", "PASS (mission-program level)"))
+b1738.append(row("KV-10", "BDS 1738:2018",
+    "[MISSION-PROGRAM] Foreword binds the layout to Unicode 10.0 — no silent Unicode-version substitution", "Informative",
+    "Applicable", "n/a (foreword extract from brief; full text unread)", "n/a",
+    "Unicode version binding respected",
+    "POLICY APPLIED: engine targets current Unicode Bengali block; no claim of version-specific BDS conformance made; no version substitution asserted",
+    "SRC-11/12/13; BDS_APPLICABILITY_ANALYSIS.md §4", "PASS (policy respected; clause text itself BLOCKED)"))
+b1738.append(row("KV-11", "BDS 1738:2018",
+    "[MISSION-PROGRAM] Bijoy-related IP rights preserved — no Bijoy material copied; no conformance claim without clearance", "Normative",
+    "Applicable", "docs/standards/research/BDS_IP_AND_LICENSING_REVIEW.md", "n/a (process)",
+    "No Bijoy-derived mapping/source in repository; claims gated",
+    "Clean-room national layout; BDS claim withheld pending IP clearance + full document",
+    "BDS_IP_AND_LICENSING_REVIEW.md", "PASS (process honoured; final IP clearance pending)"))
+b1738.append(row("KV-12", "BDS 1738:2018",
+    "[MISSION-PROGRAM] Non-interference: phonetic/alternative layouts are NOT forced into the national mapping", "Normative",
+    "Applicable", "seven layouts untouched except documented Khipro/Probhat fixes", "full suite 586/586 + 579-row harness across 6 layouts",
+    "Each layout keeps its own documented identity", "0 FAIL across all layouts; only two documented mission fixes present",
+    f"{EV}/bds_engine_rows_579.csv", "PASS"))
+b1738.append(row("KV-13", "BDS 1738:2018",
+    "[MISSION-PROGRAM] Reserved positions / unassigned keys must not be silently consumed where the layout declares them empty", "Normative",
+    "Applicable", "probhat_layout.cpp upstream-empty audit; national layout", "existing coverage tests",
+    "Declared-empty slots remain empty; unassigned Bengali code points never emitted",
+    "Engine never emits unassigned Bengali code points (block sweep + reserved-point test PASS)",
+    f"{EV}/bds_repertoire_inventory.csv; BdsConformanceTest.ReservedBengaliCodePointsDoNotCorruptEngine", "PASS (mission-program level)"))
+b1738.append(row("KV-14", "BDS 1738:2018",
+    "[MISSION-PROGRAM] Physical scan-code path (not transliterate-only) drives fixed-layout verification", "Normative",
+    "Applicable — Probhat/National", "probhat session append_key path", "harness FP rows; BdsConformanceTest.ProbhatDigitRowProducesU09E7ToU09EF",
+    "Scan-code KeyEvents produce identical output to documented tables",
+    "All scan-code rows PASS (579-row harness drives Probhat with physical scan codes)",
+    f"{EV}/bds_engine_rows_579.csv", "PASS (mission-program level)"))
+b1738.append(row("KV-15", "BDS 1738:2018",
+    "Physical keyboard / Caps Lock / repeat / layout switching behaviour on real Windows hardware", "Normative",
+    "Applicable", "n/a (no Windows runtime in sandbox)", "n/a",
+    "Verified on Windows 10 x64 physical keyboard",
+    "BLOCKED — WINDOWS RUNTIME UNAVAILABLE",
+    "BDS_WINDOWS_RUNTIME_VERIFICATION.md (10 BLOCKED rows)", "BLOCKED — WINDOWS RUNTIME UNAVAILABLE", "Windows runtime re-verification on Windows 10 x64", "scheduled"))
+write("BDS_1738_2018_MATRIX.csv", b1738)
+
+# ------------------------------------------------------------------ BDS 1520
+b1520 = []
+b1520.append(row("CV-01", "BDS 1520:2018",
+    "Authorized full official standard document obtained and read", "Normative",
+    "Applicable", "n/a", "n/a",
+    "Full text available for clause-level analysis",
+    "PARTIAL — official full text OBTAINED and READ, but the BCC-published copy is the 2011 SECOND REVISION edition (cover '(Second Revision)', headers 'BDS 1520:2011', 10 pages, SHA256 ab2bc3c2... recorded); the current 2018 THIRD REVISION text (per official BSTI Catalogue 2023: 10 pages, Gr-B) remains store-only, not purchased (no approval). Status kept BLOCKED for the current-revision clause binding",
+    "SRC-20 (obtained ed.); SRC-19 (catalogue); SRC-02/03/18", "BLOCKED — current 2018 Third Revision text not obtained; obtained 2011-edition clause verification recorded separately (BDS_1520_OBTAINED_EDITION_CLAUSE_VERIFICATION.md)", "Clause-level verification of the 2018 Third Revision", "Purchase via official route"))
+b1520.append(row("CV-02", "BDS 1520:2018",
+    "[MISSION-PROGRAM] Every Bengali block code point (U+0980..U+09FF) encodes and round-trips correctly in the engine", "Normative",
+    "Applicable — character level", "src/unicode/bengali.cpp", "BdsConformanceTest.BengaliBlockUtf8RoundTripSweep + bds_repertoire_verify part A",
+    "128/128 code points: valid UTF-8, count=1, is_bengali_codepoint, NFC idempotent",
+    "128/128 PASS; independent unicodedata cross-check 0 mismatches (96 assigned + 32 reserved)",
+    f"{EV}/bds_repertoire_inventory.csv; {EV}/bds_repertoire_crosscheck.csv", "PASS (mission-program level)"))
+b1520.append(row("CV-03", "BDS 1520:2018",
+    "[MISSION-PROGRAM] UTF-8 serialization byte-exact for every repertoire character", "Normative",
+    "Applicable", "src/unicode/bengali.cpp", "crosscheck utf8_match column",
+    "Engine bytes == Unicode reference bytes", "0 mismatches across the block",
+    f"{EV}/bds_repertoire_crosscheck.csv", "PASS (mission-program level)"))
+b1520.append(row("CV-04", "BDS 1520:2018",
+    "[MISSION-PROGRAM] UTF-16 representation correct (BMP single unit; surrogate rules not applicable inside this block)", "Normative",
+    "Applicable", "src/unicode/bengali.cpp (ICU u_strFromUTF8 path)", "bds_repertoire_verify part A utf16_units column",
+    "Each U+09xx maps to one UTF-16 unit equal to the scalar", "All 128 rows correct",
+    f"{EV}/bds_repertoire_inventory.csv", "PASS (mission-program level)"))
+b1520.append(row("CV-05", "BDS 1520:2018",
+    "[MISSION-PROGRAM] No missing character: virama U+09CD, nukta U+09BC, digits U+09E6..U+09EF, currency U+09F3, dari U+0964 all producible", "Normative",
+    "Applicable", "engine + layouts", "BdsConformanceTest suite + harness",
+    "All required characters producible with exact code points",
+    "All producible; exact scalars verified", f"{EV}/bds_key_sequences.csv; {EV}/bds_engine_rows_579.csv", "PASS (mission-program level)"))
+b1520.append(row("CV-06", "BDS 1520:2018",
+    "[MISSION-PROGRAM] No duplicate code assignment: one character <-> one code point in every output path", "Normative",
+    "Applicable", "layouts + engine", "579-row harness expected_cps == actual_cps",
+    "expected == actual scalar sequences", "579/579 rows exact", f"{EV}/bds_engine_rows_579.csv", "PASS"))
+b1520.append(row("CV-07", "BDS 1520:2018",
+    "[MISSION-PROGRAM] Reserved code positions never emitted and never corrupt processing", "Normative",
+    "Applicable", "engine input validation", "BdsConformanceTest.ReservedBengaliCodePointsDoNotCorruptEngine",
+    "Reserved code points pass through safely, never generated", "PASS (7 reserved points probed)",
+    "unit 586/586", "PASS (mission-program level)"))
+b1520.append(row("CV-08", "BDS 1520:2018",
+    "[MISSION-PROGRAM] Conjunct composition produces the correct sequence (consonant + virama + consonant)", "Normative",
+    "Applicable", "khipro/national/phonetic engines", "BdsConformanceTest.KhiproExplicitJoinAfterViramaStillComposes; harness conjunct rows",
+    "Exact U+0995 U+09CD U+0995-style sequences", "Exact sequences; NFC-stable",
+    f"{EV}/bds_key_sequences.csv (KEY-10); {EV}/bds_engine_rows_579.csv", "PASS"))
+b1520.append(row("CV-09", "BDS 1520:2018",
+    "[MISSION-PROGRAM] Combining-mark ordering follows the standard-mandated canonical order only (nukta ccc=7 before virama ccc=9)", "Normative",
+    "Applicable", "engine commit pipeline", "previous mission FP-166 + current KEY sequences",
+    "No accidental reordering; only documented canonical reordering",
+    "PASS — reordering observed only where the Unicode standard mandates it",
+    f"{EV}/bds_key_sequences.csv; layout-fixes/UNICODE_VERIFICATION.csv", "PASS"))
+b1520.append(row("CV-10", "BDS 1520:2018",
+    "[MISSION-PROGRAM] RRA/RHA/YYA handled as canonical decompositions (U+09A1 U+09BC / U+09A2 U+09BC / U+09AF U+09BC), never as precomposed look-alikes", "Normative",
+    "Applicable", "probhat/khipro outputs; engine NFC", "BdsConformanceTest.EngineNfcMatchesOfficialBengaliNormalizationData; bds_repertoire_verify part C KEY-04..09",
+    "Decomposed canonical forms; NFC does not recompose (composition exclusion); precomposed scalars decompose",
+    "12/12 KEY cases PASS including U+09DC -> U+09A1 U+09BC",
+    f"{EV}/bds_key_sequences.csv; {EV}/bds_normalizationtest_engine.csv", "PASS"))
+b1520.append(row("CV-11", "BDS 1520:2018",
+    "[MISSION-PROGRAM] Normalization conformance: engine NFC matches official NormalizationTest.txt expectations for the Bengali block", "Normative",
+    "Applicable", "src/unicode/bengali.cpp (ICU NFC)", "bds_repertoire_verify part B",
+    "7/7 official Bengali lines match (UAX15-C3 subset for NFC)", "7/7 PASS",
+    f"{EV}/bds_normalizationtest_engine.csv; {EV}/NORMALIZATION_TEST_BN_EXTRACT.txt", "PASS"))
+b1520.append(row("CV-12", "BDS 1520:2018",
+    "[MISSION-PROGRAM] NFC/NFD equivalence and exact byte-level output reported separately; normalization never swallows virama", "Normative",
+    "Applicable", "engine", "KEY-01 virama stability; KEY sequences",
+    "ক্ NFC-stable; normalization changes nothing for BDS-critical sequences",
+    "PASS — virama survives every normalization path",
+    f"{EV}/bds_key_sequences.csv", "PASS"))
+b1520.append(row("CV-13", "BDS 1520:2018",
+    "[MISSION-PROGRAM] Copy/paste and interchange compatibility: committed text is plain NFC-stable UTF-8, no private-use, no surrogates", "Normative",
+    "Applicable", "commit pipeline", "harness unicode_rows + commit parity tests",
+    "Clean interoperable text", "PASS across 579 rows",
+    f"{EV}/bds_unicode_rows.csv; {EV}/bds_engine_rows_579.csv", "PASS"))
+b1520.append(row("CV-14", "BDS 1520:2018",
+    "[MISSION-PROGRAM] Interchange interoperability per official code table", "Normative",
+    "Applicable", "docs/standards/compliance/BDS_1520_OBTAINED_EDITION_ALLOCATION.csv",
+    "Bds1520OfficialCorpusTest.* (5 tests) + bds1520_official_corpus.py",
+    "Byte-level comparison against the official code table",
+    "PASS — official Table 2 transcribed (94 rows: 92 block chars + Daari pair); offset rule 8-bit NN <-> U+09NN verified row-by-row (E4/E5 -> U+0964/U+0965 exceptions documented); engine encodes/normalizes every official character correctly; harness subset check PASS (66 Bangla-script emitted points all inside the official repertoire)",
+    "docs/standards/compliance/BDS_1520_OBTAINED_EDITION_ALLOCATION.csv; unit 591/591; SRC-20", "PASS (obtained 2011 edition; 2018 Third Revision table comparison pending purchase)", "2018 edition re-comparison after purchase"))
+b1520.append(row("CV-15", "BDS 1520:2018",
+    "[MISSION-PROGRAM] Character names / unique allocation / standard code table structure verified against the standard", "Normative",
+    "Applicable", "docs/standards/compliance/BDS_1520_OBTAINED_EDITION_ALLOCATION.csv",
+    "bds1520_official_corpus.py (unicodedata crosscheck + uniqueness + structure)",
+    "Clause-level table comparison",
+    "PASS (obtained ed.) — all 94 printed names read; 6 printed names paraphrase Unicode names (documented per row); all 94 hex codes distinct (clause 6.4 uniqueness); table structure 16x16/256 positions (clause 5) verified; count discrepancy RECORDED: clause 5 states 90 graphic characters, Table 2 prints 94 rows — treated as internal inconsistency of the obtained edition, never silently reconciled",
+    "docs/standards/compliance/BDS_1520_OBTAINED_EDITION_ALLOCATION.csv; docs/standards/compliance/BDS_1520_OBTAINED_EDITION_CLAUSE_VERIFICATION.md", "PASS (obtained 2011 edition; count discrepancy documented)", "Re-verify against 2018 Third Revision after purchase"))
+b1520.append(row("CV-16", "BDS 1520:2018",
+    "[MISSION-PROGRAM] Assamese-specific characters (ৰ U+09F0, ৱ U+09F1): no gratuitous addition; any BDS mandate would be reported, not hidden", "Normative",
+    "Applicable", "no layout emits ৰ/ৱ; engine encodes them correctly", "bds_repertoire_crosscheck rows REPL-9F0/9F1; official corpus rows F0/F1",
+    "No layout change; BDS mandate question answered with clause cited",
+    "ANSWERED (obtained ed.) — official Table 2 DOES allocate positions 15/0 (F0 = 'Bangla letter RA with Middle Diagonal' = U+09F0) and 15/1 (F1 = 'Bangla letter RA with Lower Diagonal' = U+09F1); SubornoIME layouts still do not emit them (no gratuitous addition), engine encodes them correctly; 2018-edition mandate re-check pending",
+    "docs/standards/compliance/BDS_1520_OBTAINED_EDITION_ALLOCATION.csv; bds_repertoire_crosscheck.csv", "PASS (policy honoured; official allocation now reported, not hidden)", ""))
+b1520.append(row("CV-17", "BDS 1520:2018",
+    "File save/reopen character stability in a Windows application session", "Normative",
+    "Applicable", "n/a (Windows app test)", "n/a",
+    "Verified on Windows (save/reopen with IME text)",
+    "NOT TESTED — Windows runtime unavailable; committed text is plain NFC UTF-8 so no engine-level risk identified",
+    "BDS_WINDOWS_RUNTIME_VERIFICATION.md", "NOT TESTED — Windows runtime unavailable", "Windows re-verification", "scheduled"))
+write("BDS_1520_2018_MATRIX.csv", b1520)
+
+# ------------------------------------------------------------------ BDS 1935
+b1935 = []
+b1935.append(row("BV-01", "BDS 1935:2018",
+    "Authorized full official standard document obtained and read", "Normative",
+    "Applicability audited", "n/a", "n/a",
+    "Full text available",
+    "BLOCKED — full text still not obtained; scope now verified from official records: BSTI Catalogue 2023 p.123 entry 'BDS 1935:2018 Bangladesh Standard Code for Information Interchange (BSCII)' — 'specifies Bangla Character Codes intended for the interchange of information among data processing systems including the recording of data in the form of codes on media... applicable to alphabets of the Bangla script' (13 pages, Gr-C, ET); BCC row 27 lists it with no PDF",
+    "SRC-19 (catalogue, scope verified); SRC-22 (BCC re-check); SRC-02/18", "BLOCKED — official full text unavailable; scope sentence verified from official catalogue", "Determine real scope from primary source", "Purchase via official route"))
+b1935.append(row("BV-02", "BDS 1935:2018",
+    "[MISSION-PROGRAM] IME default output remains pure Unicode — no legacy 8-bit BSCII path injected", "Normative",
+    "Applicability audited", "src/unicode + engines", "block sweep + harness",
+    "Every commit is UTF-8/UTF-16 Unicode", "PASS — no legacy path exists in the pipeline",
+    f"{EV}/bds_repertoire_inventory.csv; {EV}/bds_engine_rows_579.csv", "PASS (mission-program level)"))
+b1935.append(row("BV-03", "BDS 1935:2018",
+    "[MISSION-PROGRAM] Separate compatibility/conversion module design constraint recorded (never mixed into default Unicode output)", "Normative",
+    "Applicability audited", "docs/standards/research/BDS_APPLICABILITY_ANALYSIS.md", "n/a (design constraint)",
+    "If BSCII interop is ever required, it is an explicit separate layer",
+    "Constraint recorded; module NOT built (no requirement source read — building one would invent requirements)",
+    "BDS_APPLICABILITY_ANALYSIS.md §1; BDS_BSCII_INTEROPERABILITY.md", "PASS (constraint; module deliberately absent)"))
+b1935.append(row("BV-04", "BDS 1935:2018",
+    "[MISSION-PROGRAM] Invalid code handling: engine rejects/categorizes invalid UTF-8 instead of corrupting output", "Normative",
+    "Applicability audited", "src/unicode/bengali.cpp is_valid_utf8; SUBORNO_STATUS_INVALID_UTF8", "c_api/engine coverage tests + fuzz corpus (0012_invalid_utf8)",
+    "Invalid input flagged, no crash, no mojibake", "PASS — suite green including fuzz corpus",
+    "unit 586/586; tests/fuzz/corpus/0012_invalid_utf8", "PASS"))
+b1935.append(row("BV-05", "BDS 1935:2018",
+    "[MISSION-PROGRAM] Round-trip integrity of committed text (no data loss/corruption through the IME)", "Normative",
+    "Applicability audited", "sessions + commit", "579-row harness byte-equality",
+    "committed == expected bytes", "579/579 exact", f"{EV}/bds_engine_rows_579.csv", "PASS"))
+b1935.append(row("BV-06", "BDS 1935:2018",
+    "BSCII <-> Unicode lossless round-trip conversion", "Normative",
+    "Unresolved (needs full document)", "n/a (module not built)", "n/a",
+    "Depends on official code table",
+    "BLOCKED — no table, no requirement source; cannot be implemented or tested honestly",
+    "SRC-16/18", "BLOCKED — requirement source unavailable", "Read standard; decide whether a separate conversion module is warranted"))
+b1935.append(row("BV-07", "BDS 1935:2018",
+    "Legacy document interoperability", "Normative",
+    "Unresolved (needs full document)", "n/a", "n/a",
+    "Unknown until scope read",
+    "NOT TESTED — no requirement established from primary source; deliberately not fabricated",
+    "SRC-16", "BLOCKED — requirement source unavailable", "Scope reading first"))
+b1935.append(row("BV-08", "BDS 1935:2018",
+    "Reserved code positions handling per the standard's own table", "Normative",
+    "Unresolved", "n/a", "n/a",
+    "Depends on official table",
+    "BLOCKED — table unavailable; engine-level reserved handling verified generically (CV-07)",
+    "SRC-18", "BLOCKED — table unavailable", "Read standard"))
+write("BDS_1935_2018_MATRIX.csv", b1935)
+
+# ------------------------------------------------------------------ Master
+master = []
+for r in b1738:
+    m = dict(r); m["Standard"] = r["Standard"]; master.append(m)
+for r in b1520:
+    master.append(dict(r))
+for r in b1935:
+    master.append(dict(r))
+master.append(row("MV-01", "BDS 1834:2011",
+    "Applicability decision for a Windows desktop IME", "Normative",
+    "N/A (justified)", "n/a", "n/a",
+    "N/A with written justification + BSTI confirmation pending",
+    "N/A CONFIRMED FROM PRIMARY TEXT — BDS 1834:2011 full text obtained via BCC (6 pages, SHA256 0e9f2364... recorded) and read: clause 1.1 'defines layouts for input of Bangla characters, signs, symbols and currency marks using industry standard 3 X 4 Mobile Keypad'; clause 2 'This standard defines a layout with 12 keys (3 X 4 Keypad)' — mobile-phone product scope confirmed from the official document itself; BSTI written confirmation still queued (inquiry Q10)",
+    "SRC-21 (obtained full text); docs/standards/compliance/BDS_1834_2011_APPLICABILITY.md", "N/A (justified, now grounded in the official text) / pending confirmation"))
+write("BDS_MASTER_COMPLIANCE_MATRIX.csv", master)

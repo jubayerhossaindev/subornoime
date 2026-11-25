@@ -1,0 +1,20 @@
+=== Debug configure (CMAKE_PREFIX_PATH=/home/z/my-project/tools/gtest-install) ===
+-- Configuring done (0.5s)
+-- Generating done (0.1s)
+-- Build files have been written to: /home/z/my-project/suborno-ime/SUBORNOIME/build/debug
+CONFIG_EXIT=0
+=== Debug build ===
+[ 99%] Building CXX object tests/CMakeFiles/suborno_unit_tests.dir/unit/tools_unix_injection_test.cpp.o
+[100%] Linking CXX executable ../suborno_unit_tests
+[100%] Built target suborno_unit_tests
+BUILD_EXIT=0
+=== Debug ctest ===
+
+67% tests passed, 1 tests failed out of 3
+
+Total Test time (real) = 765.00 sec
+
+The following tests FAILED:
+	  1 - suborno.unit (Failed)
+Errors while running CTest
+CTEST_EXIT=0

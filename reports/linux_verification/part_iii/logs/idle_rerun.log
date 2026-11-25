@@ -1,0 +1,60 @@
+=== IDLE baseline: full unit suite (pre-D-003-fix) ===
+Wed Nov 25 20:08:53 UTC 2026
+
+[----------] Global test environment tear-down
+[==========] 686 tests from 80 test suites ran. (33852 ms total)
+[  PASSED  ] 686 tests.
+EXIT_CODE=0
+=== D-003 post-fix: PerformanceBudget idle x3 ===
+--- run 1 ---
+[       OK ] PerformanceBudget.SingleKeystrokeAppendStaysWithinCeiling (19 ms)
+[       OK ] PerformanceBudget.BackspaceAndSnapshotStayWithinCeiling (0 ms)
+[       OK ] PerformanceBudget.CompositionCommitPipelineStaysWithinCeiling (7 ms)
+[       OK ] PerformanceBudget.CandidateNavigationStaysWithinCeiling (57 ms)
+[       OK ] PerformanceBudget.EngineSessionPipelineStaysWithinCeiling (1 ms)
+[       OK ] PerformanceBudget.AutoRepeatLoopStaysWithinCeiling (1 ms)
+[  PASSED  ] 6 tests.
+--- run 2 ---
+[       OK ] PerformanceBudget.SingleKeystrokeAppendStaysWithinCeiling (14 ms)
+[       OK ] PerformanceBudget.BackspaceAndSnapshotStayWithinCeiling (0 ms)
+[       OK ] PerformanceBudget.CompositionCommitPipelineStaysWithinCeiling (7 ms)
+[       OK ] PerformanceBudget.CandidateNavigationStaysWithinCeiling (31 ms)
+[       OK ] PerformanceBudget.EngineSessionPipelineStaysWithinCeiling (1 ms)
+[       OK ] PerformanceBudget.AutoRepeatLoopStaysWithinCeiling (1 ms)
+[  PASSED  ] 6 tests.
+--- run 3 ---
+[       OK ] PerformanceBudget.SingleKeystrokeAppendStaysWithinCeiling (36 ms)
+[       OK ] PerformanceBudget.BackspaceAndSnapshotStayWithinCeiling (0 ms)
+[       OK ] PerformanceBudget.CompositionCommitPipelineStaysWithinCeiling (13 ms)
+[       OK ] PerformanceBudget.CandidateNavigationStaysWithinCeiling (82 ms)
+[       OK ] PerformanceBudget.EngineSessionPipelineStaysWithinCeiling (1 ms)
+[       OK ] PerformanceBudget.AutoRepeatLoopStaysWithinCeiling (1 ms)
+[  PASSED  ] 6 tests.
+=== D-003 post-fix: PerformanceBudget UNDER CONTENTION (TSan+ASan compiling) ===
+--- contended run 1 ---
+[       OK ] PerformanceBudget.SingleKeystrokeAppendStaysWithinCeiling (26 ms)
+[       OK ] PerformanceBudget.BackspaceAndSnapshotStayWithinCeiling (0 ms)
+[       OK ] PerformanceBudget.CompositionCommitPipelineStaysWithinCeiling (15 ms)
+[       OK ] PerformanceBudget.CandidateNavigationStaysWithinCeiling (52 ms)
+[       OK ] PerformanceBudget.EngineSessionPipelineStaysWithinCeiling (1 ms)
+[       OK ] PerformanceBudget.AutoRepeatLoopStaysWithinCeiling (1 ms)
+[  PASSED  ] 6 tests.
+exit=0
+--- contended run 2 ---
+[       OK ] PerformanceBudget.SingleKeystrokeAppendStaysWithinCeiling (13 ms)
+[       OK ] PerformanceBudget.BackspaceAndSnapshotStayWithinCeiling (0 ms)
+[       OK ] PerformanceBudget.CompositionCommitPipelineStaysWithinCeiling (7 ms)
+[       OK ] PerformanceBudget.CandidateNavigationStaysWithinCeiling (73 ms)
+[       OK ] PerformanceBudget.EngineSessionPipelineStaysWithinCeiling (1 ms)
+[       OK ] PerformanceBudget.AutoRepeatLoopStaysWithinCeiling (1 ms)
+[  PASSED  ] 6 tests.
+exit=0
+--- contended run 3 ---
+[       OK ] PerformanceBudget.SingleKeystrokeAppendStaysWithinCeiling (25 ms)
+[       OK ] PerformanceBudget.BackspaceAndSnapshotStayWithinCeiling (0 ms)
+[       OK ] PerformanceBudget.CompositionCommitPipelineStaysWithinCeiling (12 ms)
+[       OK ] PerformanceBudget.CandidateNavigationStaysWithinCeiling (84 ms)
+[       OK ] PerformanceBudget.EngineSessionPipelineStaysWithinCeiling (1 ms)
+[       OK ] PerformanceBudget.AutoRepeatLoopStaysWithinCeiling (1 ms)
+[  PASSED  ] 6 tests.
+exit=0

@@ -1,0 +1,21 @@
+#!/usr/bin/make -f
+# Standard dh/cmake build. The portable core builds with the system SQLite3
+# package; the CMakeLists.txt falls back to find_package(SQLite3) when the
+# vcpkg toolchain is absent — exactly the case here.
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+export DEB_CMAKE_OPTIONS = -DBUILD_TESTING=ON -DSUBORNO_BUILD_BENCHMARKS=OFF
+
+%:
+	dh $@ --buildsystem=cmake --builddirectory=build/deb
+
+override_dh_auto_configure:
+	dh_auto_configure -- -DBUILD_TESTING=ON -DSUBORNO_BUILD_BENCHMARKS=OFF
+
+override_dh_auto_test:
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	dh_auto_test -- -R "suborno\."
+endif
+
+override_dh_installdocs:
+	dh_installdocs README.md CHANGELOG.md

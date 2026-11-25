@@ -1,0 +1,60 @@
+test_id,layout,suite,input,expected,actual,verdict,detail
+ENG-CORP-001,borno-phonetic,corpus,ami,আমি,আমি,PASS,cps=U+0986 U+09AE U+09BF; dict_top=আমি
+ENG-CORP-002,borno-phonetic,corpus,tumi,তুমি,তুমি,PASS,cps=U+09A4 U+09C1 U+09AE U+09BF; dict_top=আমি
+ENG-CORP-003,borno-phonetic,corpus,bangla,বাংলা,বাংলা,PASS,cps=U+09AC U+09BE U+0982 U+09B2 U+09BE; dict_top=বাংলা
+ENG-CORP-004,borno-phonetic,corpus,bangladesh,বাংলাদেশ,বাংলাদেশ,PASS,cps=U+09AC U+09BE U+0982 U+09B2 U+09BE U+09A6 U+09C7 U+09B6; dict_top=বাংলাদেশ
+ENG-CORP-005,borno-phonetic,corpus,suborN,সুবর্ণ,সুবর্ণ,PASS,cps=U+09B8 U+09C1 U+09AC U+09B0 U+09CD U+09A3; dict_top=সুবর্ণ
+ENG-CORP-006,borno-phonetic,corpus,kompiuTar,কম্পিউটার,কম্পিউটার,PASS,cps=U+0995 U+09AE U+09CD U+09AA U+09BF U+0989 U+099F U+09BE U+09B0; dict_top=কম্পিউটার
+ENG-CORP-007,borno-phonetic,corpus,prozukti,প্রযুক্তি,প্রযুক্তি,PASS,cps=U+09AA U+09CD U+09B0 U+09AF U+09C1 U+0995 U+09CD U+09A4 U+09BF; dict_top=প্রযুক্তি
+ENG-CORP-008,borno-phonetic,corpus,kIbOrD,কীবোর্ড,কীবোর্ড,PASS,cps=U+0995 U+09C0 U+09AC U+09CB U+09B0 U+09CD U+09A1; dict_top=কীবোর্ড
+ENG-CORP-009,borno-phonetic,corpus,ovr,অভ্র,অভ্র,PASS,cps=U+0985 U+09AD U+09CD U+09B0; dict_top=অভ্র
+ENG-CORP-010,borno-phonetic,corpus,borN,বর্ণ,বর্ণ,PASS,cps=U+09AC U+09B0 U+09CD U+09A3; dict_top=বর্ণ
+ENG-CORP-011,borno-phonetic,corpus,sbadhInota,স্বাধীনতা,স্বাধীনতা,PASS,cps=U+09B8 U+09CD U+09AC U+09BE U+09A7 U+09C0 U+09A8 U+09A4 U+09BE; dict_top=স্বাধীনতা
+ENG-CORP-012,borno-phonetic,corpus,bidzaloy,বিদ্যালয়,বিদ্যালয়,PASS,cps=U+09AC U+09BF U+09A6 U+09CD U+09AF U+09BE U+09B2 U+09AF U+09BC; dict_top=বিদ্যালয়
+ENG-CORP-013,borno-phonetic,corpus,prrithibI,পৃথিবী,পৃথিবী,PASS,cps=U+09AA U+09C3 U+09A5 U+09BF U+09AC U+09C0; dict_top=পৃথিবী
+ENG-CORP-014,borno-phonetic,corpus,manuSh,মানুষ,মানুষ,PASS,cps=U+09AE U+09BE U+09A8 U+09C1 U+09B7; dict_top=মানুষ
+ENG-CORP-015,borno-phonetic,corpus,shikSha,শিক্ষা,শিক্ষা,PASS,cps=U+09B6 U+09BF U+0995 U+09CD U+09B7 U+09BE; dict_top=শিক্ষা
+ENG-CORP-016,borno-phonetic,corpus,bzoboharokarI,ব্যবহারকারী,ব্যবহারকারী,PASS,cps=U+09AC U+09CD U+09AF U+09AC U+09B9 U+09BE U+09B0 U+0995 U+09BE U+09B0 U+09C0; dict_top=ব্যবহারকারী
+ENG-CORP-017,borno-phonetic,corpus,sofoToOyzar,সফটওয়্যার,সফটওয়্যার,PASS,cps=U+09B8 U+09AB U+099F U+0993 U+09AF U+09BC U+09CD U+09AF U+09BE U+09B0; dict_top=সফটওয়্যার
+ENG-CORP-018,borno-phonetic,corpus,desh,দেশ,দেশ,PASS,cps=U+09A6 U+09C7 U+09B6; dict_top=দেশ
+ENG-CORP-019,borno-phonetic,corpus,moi,মই,মই,PASS,cps=U+09AE U+0987; dict_top=মই
+ENG-CORP-020,borno-phonetic,corpus,dOl,দোল,দোল,PASS,cps=U+09A6 U+09CB U+09B2; dict_top=দোল
+ENG-CORP-021,borno-phonetic,corpus,nOUka,নৌকা,নৌকা,PASS,cps=U+09A8 U+09CC U+0995 U+09BE; dict_top=নৌকা
+ENG-CORP-022,borno-phonetic,corpus,borN,বর্ণ,বর্ণ,PASS,cps=U+09AC U+09B0 U+09CD U+09A3; dict_top=বর্ণ
+ENG-CORP-023,borno-phonetic,corpus,manuSh,মানুষ,মানুষ,PASS,cps=U+09AE U+09BE U+09A8 U+09C1 U+09B7; dict_top=মানুষ
+ENG-CORP-024,borno-phonetic,corpus,karz,কার্য,কার্য,PASS,cps=U+0995 U+09BE U+09B0 U+09CD U+09AF; dict_top=কার্য
+ENG-CORP-025,borno-phonetic,corpus,kSh,ক্ষ,ক্ষ,PASS,cps=U+0995 U+09CD U+09B7; dict_top=ক্ষ
+ENG-CORP-026,borno-phonetic,corpus,jNG,জ্ঞ,জ্ঞ,PASS,cps=U+099C U+09CD U+099E; dict_top=জ্ঞ
+ENG-CORP-027,borno-phonetic,corpus,tr,ত্র,ত্র,PASS,cps=U+09A4 U+09CD U+09B0; dict_top=ত্র
+ENG-CORP-028,borno-phonetic,corpus,shr,শ্র,শ্র,PASS,cps=U+09B6 U+09CD U+09B0; dict_top=শ্র
+ENG-CORP-029,borno-phonetic,corpus,kr,ক্র,ক্র,PASS,cps=U+0995 U+09CD U+09B0; dict_top=ক্র
+ENG-CORP-030,borno-phonetic,corpus,gr,গ্র,গ্র,PASS,cps=U+0997 U+09CD U+09B0; dict_top=গ্র
+ENG-CORP-031,borno-phonetic,corpus,pr,প্র,প্র,PASS,cps=U+09AA U+09CD U+09B0; dict_top=প্রযুক্তি
+ENG-CORP-032,borno-phonetic,corpus,br,ব্র,ব্র,PASS,cps=U+09AC U+09CD U+09B0; dict_top=ব্র
+ENG-CORP-033,borno-phonetic,corpus,nd,ন্দ,ন্দ,PASS,cps=U+09A8 U+09CD U+09A6; dict_top=ন্দ
+ENG-CORP-034,borno-phonetic,corpus,ntr,ন্ত্র,ন্ত্র,PASS,cps=U+09A8 U+09CD U+09A4 U+09CD U+09B0; dict_top=ন্ত্র
+ENG-CORP-035,borno-phonetic,corpus,ShT,ষ্ট,ষ্ট,PASS,cps=U+09B7 U+09CD U+099F; dict_top=ষ্ট
+ENG-CORP-036,borno-phonetic,corpus,Ngk,ঙ্ক,ঙ্ক,PASS,cps=U+0999 U+09CD U+0995; dict_top=ঙ্ক
+ENG-CORP-037,borno-phonetic,corpus,Ngg,ঙ্গ,ঙ্গ,PASS,cps=U+0999 U+09CD U+0997; dict_top=ঙ্গ
+ENG-CORP-038,borno-phonetic,corpus,NGc,ঞ্চ,ঞ্চ,PASS,cps=U+099E U+09CD U+099A; dict_top=ঞ্চ
+ENG-CORP-039,borno-phonetic,corpus,mp,ম্প,ম্প,PASS,cps=U+09AE U+09CD U+09AA; dict_top=ম্প
+ENG-CORP-040,borno-phonetic,corpus,hm,হ্ম,হ্ম,PASS,cps=U+09B9 U+09CD U+09AE; dict_top=হ্ম
+ENG-CORP-041,borno-phonetic,corpus,karzokrom,কার্যক্রম,কার্যক্রম,PASS,cps=U+0995 U+09BE U+09B0 U+09CD U+09AF U+0995 U+09CD U+09B0 U+09AE; dict_top=কার্যক্রম
+ENG-CORP-042,borno-phonetic,corpus,raShTr,রাষ্ট্র,রাষ্ট্র,PASS,cps=U+09B0 U+09BE U+09B7 U+09CD U+099F U+09CD U+09B0; dict_top=রাষ্ট্র
+ENG-CORP-043,borno-phonetic,corpus,shroddha,শ্রদ্ধা,শ্রদ্ধা,PASS,cps=U+09B6 U+09CD U+09B0 U+09A6 U+09CD U+09A7 U+09BE; dict_top=শ্র
+ENG-CORP-044,borno-phonetic,corpus,bijNGan,বিজ্ঞান,বিজ্ঞান,PASS,cps=U+09AC U+09BF U+099C U+09CD U+099E U+09BE U+09A8; dict_top=বিজ্ঞান
+ENG-CORP-045,borno-phonetic,corpus,bishbobidzaloy,বিশ্ববিদ্যালয়,বিশ্ববিদ্যালয়,PASS,cps=U+09AC U+09BF U+09B6 U+09CD U+09AC U+09AC U+09BF U+09A6 U+09CD U+09AF U+09BE U+09B2 U+09AF U+09BC; dict_top=বিদ্যালয়
+ENG-CORP-046,borno-phonetic,corpus,sbadhInota,স্বাধীনতা,স্বাধীনতা,PASS,cps=U+09B8 U+09CD U+09AC U+09BE U+09A7 U+09C0 U+09A8 U+09A4 U+09BE; dict_top=স্বাধীনতা
+ENG-CORP-047,borno-phonetic,corpus,prozukti,প্রযুক্তি,প্রযুক্তি,PASS,cps=U+09AA U+09CD U+09B0 U+09AF U+09C1 U+0995 U+09CD U+09A4 U+09BF; dict_top=প্রযুক্তি
+ENG-CORP-048,borno-phonetic,corpus,jonopriy,জনপ্রিয়,জনপ্রিয়,PASS,cps=U+099C U+09A8 U+09AA U+09CD U+09B0 U+09BF U+09AF U+09BC; dict_top=জনপ্রিয়
+ENG-CORP-049,borno-phonetic,corpus,gurutbopUrN,গুরুত্বপূর্ণ,গুরুত্বপূর্ণ,PASS,cps=U+0997 U+09C1 U+09B0 U+09C1 U+09A4 U+09CD U+09AC U+09AA U+09C2 U+09B0 U+09CD U+09A3; dict_top=গুরুত্বপূর্ণ
+ENG-PARA-1,borno-phonetic,paragraph,(phrase),আমি বাংলা লিখতে ভালোবাসি। SubornoIME একটি বাংলা ইনপুট মেথড। আমি প্রতিদিন কম্পিউটারে বাংলা টাইপ করি।,আমি বাংলা লিখতে ভালোবাসি। SubornoIME একটি বাংলা ইনপুট মেথড। আমি প্রতিদিন কম্পিউটারে বাংলা টাইপ করি।,PASS,
+ENG-PARA-2,borno-phonetic,paragraph,(phrase),"বাংলাদেশ আমার প্রিয় দেশ। আমাদের মাতৃভাষা বাংলা। বাংলা ভাষার রয়েছে সমৃদ্ধ ইতিহাস, সাহিত্য ও সংস্কৃতি।","বাংলাদেশ আমার প্রিয় দেশ। আমাদের মাতৃভাষা বাংলা। বাংলা ভাষার রয়েছে সমৃদ্ধ ইতিহাস, সাহিত্য ও সংস্কৃতি।",PASS,
+ENG-PARA-3,borno-phonetic,paragraph,(phrase),"SubornoIME-এর মাধ্যমে আমি বাংলা, English এবং বিভিন্ন ধরনের যুক্তবর্ণ টাইপ করতে পারি। প্রযুক্তি, শিক্ষা, বিজ্ঞান ও গবেষণার ক্ষেত্রে বাংলা ভাষার ব্যবহার অত্যন্ত গুরুত্বপূর্ণ।","SubornoIME-এর মাধ্যমে আমি বাংলা, English এবং বিভিন্ন ধরনের যুক্তবর্ণ টাইপ করতে পারি। প্রযুক্তি, শিক্ষা, বিজ্ঞান ও গবেষণার ক্ষেত্রে বাংলা ভাষার ব্যবহার অত্যন্ত গুরুত্বপূর্ণ।",PASS,
+ENG-EDIT-01,borno-phonetic,editing,backspace_removes_one_unit,কম্পিউটার,কম্পিউটা,PASS,"phonetic layout: removes one Latin input character; [""commit_after_2_backspaces='কম্পিউট'""]"
+ENG-EDIT-02,borno-phonetic,editing,backspace_inside_conjunct,নক্ষত্র,নক্ষত,PASS,"no stray Unicode left after deleting a conjunct block; [""commit_after_2_backspaces='কম্পিউট'""]"
+ENG-EDIT-03,borno-phonetic,editing,backspace_on_empty_is_noop,empty,empty,PASS,"no crash, composition stays empty"
+ENG-SW-01,all-6,switching,layout_cycle_no_contamination,,,PASS,"[""suborno-phonetic->আমি ok"",""probhat->বাংলা ok"",""national->তুমি ok"",""khipro->আমি ok"",""avro-phonetic->তুমি ok"",""borno-phonetic->বাংলা ok""]"
+ENG-SW-02,engine,switching,engine_set_active_layout,"probhat,national","probhat,national",PASS,unknown id rejected: true
+ENG-SW-03,engine,switching,restart_layout_persistence,probhat,probhat,PASS,settings.ini saved with active_layout_id=probhat; a NEW Engine instance (simulated restart) restores it
+ENG-SW-04,suborno+probhat,switching,per_window_session_independence,আমি,আমি | আমি,PASS,switching_mode=per_application_window mirror

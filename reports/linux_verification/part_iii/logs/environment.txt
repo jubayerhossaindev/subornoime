@@ -1,0 +1,17 @@
+=== Environment snapshot ===
+Wed Nov 25 19:25:25 UTC 2026
+Linux c-6b071461-140d72b5-02986b72437f 5.10.134-013.15.kangaroo.al8.x86_64 #1 SMP Thu Jul 30 12:54:59 UTC 2026 x86_64 GNU/Linux
+g++ (Debian 14.2.0-19) 14.2.0
+cmake version 4.4.5
+cores: 2
+Model name:                         Intel(R) Xeon(R) Processor
+               total        used        free      shared  buff/cache   available
+Mem:           3.9Gi       985Mi       1.2Gi        52Ki       2.0Gi       3.0Gi
+clang: ABSENT
+doxygen: ABSENT
+pwsh: ABSENT
+/usr/bin/time: ABSENT
+clang-format: /home/z/.venv/bin/clang-format
+google/benchmark cmake config: 
+libtsan: /usr/lib/gcc/x86_64-linux-gnu/14/libtsan.so
+libasan: /usr/lib/gcc/x86_64-linux-gnu/14/libasan.so

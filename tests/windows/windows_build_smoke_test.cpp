@@ -1,0 +1,385 @@
+#include <Windows.h>
+#include <filesystem>
+#include <fstream>
+#include <gtest/gtest.h>
+#include <iterator>
+#include <msctf.h>
+#include <oleauto.h>
+#include <string>
+#include <vector>
+#include <wil/com.h>
+#include <wil/resource.h>
+
+#include "suborno/dictionary/dictionary.hpp"
+#include "suborno/platform/windows/app_paths.hpp"
+#include "suborno/platform/windows/tsf/candidate_list_ui_element.hpp"
+#include "suborno/platform/windows/tsf/guids.hpp"
+extern "C" __control_entrypoint(DllExport) HRESULT WINAPI DllCanUnloadNow();
+extern "C" _Check_return_ HRESULT WINAPI DllGetClassObject(_In_ REFCLSID class_id,
+                                                           _In_ REFIID interface_id,
+                                                           _Outptr_ void** object);
+extern "C" HRESULT WINAPI DllRegisterServer();
+extern "C" HRESULT WINAPI DllUnregisterServer();
+
+namespace {
+
+bool is_process_elevated() noexcept {
+    HANDLE token = nullptr;
+    if (!::OpenProcessToken(::GetCurrentProcess(), TOKEN_QUERY, &token)) {
+        return false;
+    }
+
+    TOKEN_ELEVATION elevation{};
+    DWORD returned_size = 0;
+    const BOOL queried =
+        ::GetTokenInformation(token, TokenElevation, &elevation, sizeof(elevation), &returned_size);
+    ::CloseHandle(token);
+    return queried != FALSE && returned_size == sizeof(elevation) && elevation.TokenIsElevated != 0;
+}
+
+class ComApartment final {
+  public:
+    ComApartment()
+        : result_(::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED)) {}
+
+    ~ComApartment() {
+        if (SUCCEEDED(result_)) {
+            ::CoUninitialize();
+        }
+    }
+
+    bool initialized() const noexcept {
+        return SUCCEEDED(result_) || result_ == RPC_E_CHANGED_MODE;
+    }
+
+  private:
+    HRESULT result_;
+};
+
+}  // namespace
+
+TEST(WindowsBuildSmokeTest, LoadsTheNativeWindowsModuleTarget) {
+    EXPECT_NE(::GetModuleHandleW(L"suborno_windows_tsf.dll"), nullptr);
+}
+
+TEST(WindowsUserDataTest, MigratesSettingsAndSqliteDataWithoutReplacingNewerFiles) {
+    const std::filesystem::path root =
+        std::filesystem::temp_directory_path()
+        / (L"SubornoMigration-" + std::to_wstring(::GetCurrentProcessId()) + L"-"
+           + std::to_wstring(::GetTickCount64()));
+    const std::filesystem::path legacy_directory = root / L"Local";
+    const std::filesystem::path user_directory = root / L"Roaming";
+    std::error_code filesystem_error;
+    std::filesystem::create_directories(legacy_directory, filesystem_error);
+    ASSERT_FALSE(filesystem_error);
+
+    const std::filesystem::path legacy_database = legacy_directory / L"dictionary.sqlite3";
+    {
+        suborno::dictionary::Dictionary dictionary(legacy_database.string());
+        dictionary.add_entry("বাংলা", "বাংলা", 3);
+    }
+    {
+        std::ofstream settings(legacy_directory / L"settings.ini", std::ios::binary);
+        ASSERT_TRUE(settings.is_open());
+        settings << "legacy-settings";
+    }
+
+    ASSERT_EQ(
+        suborno::platform::windows::prepare_user_data_directory(user_directory, legacy_directory),
+        S_OK);
+    const auto new_database = user_directory / L"dictionaries" / L"user_candidates.db";
+    ASSERT_TRUE(std::filesystem::exists(new_database));
+    ASSERT_TRUE(std::filesystem::exists(user_directory / L"dictionaries" / L"suborno_learnt_bn"));
+    ASSERT_TRUE(std::filesystem::exists(user_directory / L"layouts"));
+    {
+        std::ifstream settings(user_directory / L"settings.ini", std::ios::binary);
+        ASSERT_TRUE(settings.is_open());
+        EXPECT_EQ(std::string(std::istreambuf_iterator<char>(settings), {}), "legacy-settings");
+    }
+
+    {
+        suborno::dictionary::Dictionary dictionary(new_database.string());
+        EXPECT_EQ(dictionary.find_matches("বাংলা"), (std::vector<std::string>{"বাংলা"}));
+        dictionary.add_entry("বই", "বই", 1);
+    }
+
+    {
+        std::ofstream settings(user_directory / L"settings.ini",
+                               std::ios::binary | std::ios::trunc);
+        ASSERT_TRUE(settings.is_open());
+        settings << "new-settings";
+    }
+    ASSERT_EQ(
+        suborno::platform::windows::prepare_user_data_directory(user_directory, legacy_directory),
+        S_OK);
+    {
+        std::ifstream settings(user_directory / L"settings.ini", std::ios::binary);
+        ASSERT_TRUE(settings.is_open());
+        EXPECT_EQ(std::string(std::istreambuf_iterator<char>(settings), {}), "new-settings");
+    }
+    {
+        suborno::dictionary::Dictionary dictionary(new_database.string());
+        EXPECT_EQ(dictionary.find_matches("বই"), (std::vector<std::string>{"বই"}));
+    }
+
+    std::filesystem::remove_all(root, filesystem_error);
+    EXPECT_FALSE(filesystem_error);
+}
+
+TEST(WindowsSharedDataTest, ReportsProgramDataSharedDirectories) {
+    std::filesystem::path shared;
+    ASSERT_EQ(suborno::platform::windows::get_shared_data_directory(shared), S_OK);
+    EXPECT_EQ(shared.filename(), L"Suborno");
+
+    std::filesystem::path assets, fonts, themes, dictionaries, layouts;
+    ASSERT_EQ(suborno::platform::windows::get_shared_assets_directory(assets), S_OK);
+    ASSERT_EQ(suborno::platform::windows::get_shared_fonts_directory(fonts), S_OK);
+    ASSERT_EQ(suborno::platform::windows::get_shared_themes_directory(themes), S_OK);
+    ASSERT_EQ(suborno::platform::windows::get_shared_dictionaries_directory(dictionaries), S_OK);
+    ASSERT_EQ(suborno::platform::windows::get_shared_layouts_directory(layouts), S_OK);
+
+    EXPECT_EQ(assets, shared / L"assets");
+    EXPECT_EQ(fonts, shared / L"assets" / L"fonts");
+    EXPECT_EQ(themes, shared / L"assets" / L"themes");
+    EXPECT_EQ(dictionaries, shared / L"dictionaries");
+    EXPECT_EQ(layouts, shared / L"layouts");
+}
+
+TEST(WindowsUserDataPathTest, ReportsRoamingAppDataUserPaths) {
+    std::filesystem::path user;
+    ASSERT_EQ(suborno::platform::windows::get_user_data_directory(user), S_OK);
+    EXPECT_EQ(user.filename(), L"Suborno");
+
+    std::filesystem::path settings, dictionary, user_layouts;
+    ASSERT_EQ(suborno::platform::windows::get_user_settings_path(settings), S_OK);
+    ASSERT_EQ(suborno::platform::windows::get_user_dictionary_path(dictionary), S_OK);
+    ASSERT_EQ(suborno::platform::windows::get_user_layouts_directory(user_layouts), S_OK);
+
+    EXPECT_EQ(settings, user / L"settings.ini");
+    EXPECT_EQ(dictionary, user / L"dictionaries" / L"user_candidates.db");
+    EXPECT_EQ(user_layouts, user / L"layouts");
+}
+
+TEST(WindowsTsfContractTest, CreatesTheTextServiceAndTracksServerLocks) {
+    EXPECT_EQ(DllCanUnloadNow(), S_OK);
+
+    wil::com_ptr<IClassFactory> factory;
+    ASSERT_EQ(DllGetClassObject(suborno::platform::windows::CLSID_SubornoTextService,
+                                IID_IClassFactory,
+                                reinterpret_cast<void**>(factory.put())),
+              S_OK);
+    ASSERT_NE(factory.get(), nullptr);
+    EXPECT_EQ(DllCanUnloadNow(), S_FALSE);
+
+    EXPECT_EQ(factory->LockServer(TRUE), S_OK);
+    EXPECT_EQ(factory->LockServer(FALSE), S_OK);
+
+    wil::com_ptr<ITfTextInputProcessor> service;
+    ASSERT_EQ(factory->CreateInstance(
+                  nullptr, IID_ITfTextInputProcessor, reinterpret_cast<void**>(service.put())),
+              S_OK);
+    ASSERT_NE(service.get(), nullptr);
+
+    wil::com_ptr<ITfKeyEventSink> key_sink;
+    EXPECT_EQ(
+        service->QueryInterface(IID_ITfKeyEventSink, reinterpret_cast<void**>(key_sink.put())),
+        S_OK);
+    key_sink.reset();
+
+    // BornoTSF parity contract: the four V16-audit-gap interfaces must be
+
+    // exposed by the text service.
+
+    wil::com_ptr<ITfTextEditSink> text_edit_sink;
+    EXPECT_EQ(service->QueryInterface(IID_ITfTextEditSink,
+                                      reinterpret_cast<void**>(text_edit_sink.put())),
+              S_OK);
+    text_edit_sink.reset();
+    wil::com_ptr<ITfThreadFocusSink> thread_focus_sink;
+    EXPECT_EQ(service->QueryInterface(IID_ITfThreadFocusSink,
+                                      reinterpret_cast<void**>(thread_focus_sink.put())),
+              S_OK);
+    thread_focus_sink.reset();
+    wil::com_ptr<ITfDisplayAttributeProvider> display_attribute_provider;
+    EXPECT_EQ(service->QueryInterface(IID_ITfDisplayAttributeProvider,
+                                      reinterpret_cast<void**>(display_attribute_provider.put())),
+              S_OK);
+    display_attribute_provider.reset();
+
+    service.reset();
+    factory.reset();
+    EXPECT_EQ(DllCanUnloadNow(), S_OK);
+}
+
+TEST(WindowsTsfContractTest, RejectsUnknownClassesAndBalancesServerLocks) {
+    int placeholder = 0;
+    void* object = &placeholder;
+    EXPECT_EQ(DllGetClassObject(GUID_NULL, IID_IClassFactory, &object), CLASS_E_CLASSNOTAVAILABLE);
+    EXPECT_EQ(object, nullptr);
+
+    wil::com_ptr<IClassFactory> factory;
+    ASSERT_EQ(DllGetClassObject(suborno::platform::windows::CLSID_SubornoTextService,
+                                IID_IClassFactory,
+                                reinterpret_cast<void**>(factory.put())),
+              S_OK);
+    EXPECT_EQ(factory->LockServer(FALSE), E_UNEXPECTED);
+}
+
+TEST(WindowsTsfContractTest, RegistersAndUnregistersTheLanguageProfile) {
+    if (!is_process_elevated()) {
+        GTEST_SKIP() << "This test performs real Windows COM/TSF registration. "
+                        "Run the test from an elevated terminal to exercise registration.";
+    }
+
+    ComApartment apartment;
+    ASSERT_TRUE(apartment.initialized());
+
+    DllUnregisterServer();
+    const HRESULT registered = DllRegisterServer();
+    EXPECT_EQ(registered, S_OK);
+
+    if (SUCCEEDED(registered)) {
+        wil::com_ptr<ITfInputProcessorProfiles> profiles;
+        const HRESULT profiles_result = ::CoCreateInstance(CLSID_TF_InputProcessorProfiles,
+                                                           nullptr,
+                                                           CLSCTX_INPROC_SERVER,
+                                                           IID_PPV_ARGS(profiles.put()));
+        EXPECT_EQ(profiles_result, S_OK);
+        if (SUCCEEDED(profiles_result)) {
+            wil::unique_bstr description;
+            const HRESULT description_result = profiles->GetLanguageProfileDescription(
+                suborno::platform::windows::CLSID_SubornoTextService,
+                MAKELANGID(0x45, 0x02),
+                suborno::platform::windows::GUID_LANGUAGE_PROFILE_SUBORNO_BENGALI,
+                description.put());
+            EXPECT_EQ(description_result, S_OK);
+            if (SUCCEEDED(description_result) && description.get() != nullptr) {
+                EXPECT_STREQ(description.get(), L"Suborno (Bengali, Bangladesh)");
+                BOOL enabled = FALSE;
+                EXPECT_EQ(profiles->IsEnabledLanguageProfile(
+                              suborno::platform::windows::CLSID_SubornoTextService,
+                              MAKELANGID(0x45, 0x02),
+                              suborno::platform::windows::GUID_LANGUAGE_PROFILE_SUBORNO_BENGALI,
+                              &enabled),
+                          S_OK);
+                EXPECT_NE(enabled, FALSE);
+            } else {
+                ADD_FAILURE() << "The registered language profile has no description.";
+            }
+        }
+    }
+
+    EXPECT_EQ(DllUnregisterServer(), S_OK);
+}
+
+TEST(CandidateListUIElementTest, SupportsDefaultAndHostDefinedCandidatePages) {
+    std::vector<suborno::layout::Candidate> candidates;
+    for (std::size_t index = 0; index < 10; ++index) {
+        candidates.push_back({
+            .text = "candidate-" + std::to_string(index),
+            .normalized_text = "candidate-" + std::to_string(index),
+            .stable_id = "candidate:" + std::to_string(index),
+        });
+    }
+
+    suborno::platform::windows::CandidateListUIElement::Options default_options;
+    auto* element = new suborno::platform::windows::CandidateListUIElement(
+        nullptr, candidates, 0, default_options, {}, {});
+
+    UINT page_count = 0;
+    EXPECT_EQ(element->GetPageIndex(nullptr, 0, &page_count), S_OK);
+    EXPECT_EQ(page_count, 2U);
+
+    // The default Options persist ui.candidate_fixed_height=on, so the
+
+    // default page size is the fixed five-row window (fixed_candidates_per_page,
+
+    // page starts {0, 5} for ten candidates). The earlier draft asserted 8U
+
+    // here, contradicting the designed default; the real MSVC run of
+
+    // 2026-11-25 caught the mismatch. The auto-height 8-per-page mode is
+
+    // exercised separately below.
+
+    UINT default_pages[2]{};
+    EXPECT_EQ(element->GetPageIndex(default_pages, 2, &page_count), S_OK);
+    EXPECT_EQ(default_pages[0], 0U);
+    EXPECT_EQ(default_pages[1], 5U);
+
+    EXPECT_EQ(element->SetSelection(9), S_OK);
+    UINT current_page = 0;
+    EXPECT_EQ(element->GetCurrentPage(&current_page), S_OK);
+    EXPECT_EQ(current_page, 1U);
+
+    UINT custom_pages[]{0, 3, 7};
+    EXPECT_EQ(element->SetPageIndex(custom_pages, 3), S_OK);
+    EXPECT_EQ(element->GetCurrentPage(&current_page), S_OK);
+    EXPECT_EQ(current_page, 2U);
+
+    UINT actual_custom_pages[3]{};
+    EXPECT_EQ(element->GetPageIndex(actual_custom_pages, 3, &page_count), S_OK);
+    EXPECT_EQ(actual_custom_pages[0], 0U);
+    EXPECT_EQ(actual_custom_pages[1], 3U);
+    EXPECT_EQ(actual_custom_pages[2], 7U);
+
+    element->Release();
+
+    // Auto-height mode (ui.candidate_fixed_height=off) pages eight candidates
+
+    // at a time: page starts {0, 8} for the same ten candidates.
+
+    auto auto_options = default_options;
+    auto_options.fixed_height = false;
+    auto* auto_element = new suborno::platform::windows::CandidateListUIElement(
+        nullptr, candidates, 0, auto_options, {}, {});
+    UINT auto_page_count = 0;
+    EXPECT_EQ(auto_element->GetPageIndex(nullptr, 0, &auto_page_count), S_OK);
+    EXPECT_EQ(auto_page_count, 2U);
+    UINT auto_pages[2]{};
+    EXPECT_EQ(auto_element->GetPageIndex(auto_pages, 2, &auto_page_count), S_OK);
+    EXPECT_EQ(auto_pages[0], 0U);
+    EXPECT_EQ(auto_pages[1], 8U);
+    EXPECT_EQ(auto_element->SetSelection(9), S_OK);
+    UINT auto_current_page = 0;
+    EXPECT_EQ(auto_element->GetCurrentPage(&auto_current_page), S_OK);
+    EXPECT_EQ(auto_current_page, 1U);
+    auto_element->Release();
+}
+
+TEST(CandidateListUIElementTest, ExposesCandidateStringsAndSelectionThroughTsfContracts) {
+    const std::vector<suborno::layout::Candidate> candidates{
+        {.text = "আমি", .normalized_text = "ami", .stable_id = "candidate:ami"},
+        {.text = "আমরা", .normalized_text = "amra", .stable_id = "candidate:amra"},
+    };
+    suborno::platform::windows::CandidateListUIElement::Options options;
+    options.vertical_orientation = false;  // horizontal row layout
+
+    auto* element = new suborno::platform::windows::CandidateListUIElement(
+        nullptr, candidates, 1, options, {}, {});
+
+    UINT count = 0;
+    EXPECT_EQ(element->GetCount(&count), S_OK);
+    EXPECT_EQ(count, 2U);
+
+    UINT selection = 0;
+    EXPECT_EQ(element->GetSelection(&selection), S_OK);
+    EXPECT_EQ(selection, 1U);
+
+    BSTR candidate = nullptr;
+    EXPECT_EQ(element->GetString(0, &candidate), S_OK);
+    ASSERT_NE(candidate, nullptr);
+    EXPECT_EQ(std::wstring(candidate), L"আমি");
+    ::SysFreeString(candidate);
+
+    GUID element_guid{};
+    EXPECT_EQ(element->GetGUID(&element_guid), S_OK);
+    EXPECT_TRUE(::IsEqualGUID(element_guid,
+                              suborno::platform::windows::suborno_candidate_list_uielement_guid));
+
+    UINT page_count = 0;
+    EXPECT_EQ(element->GetPageIndex(nullptr, 0, &page_count), S_OK);
+    EXPECT_EQ(page_count, 1U);
+
+    element->Release();
+}

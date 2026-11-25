@@ -1,0 +1,54 @@
+# Doxyfile for SubornoIME public API documentation
+#
+# Template: fcitx5 Doxyfile.in. Placeholders (@PROJECT_NAME@,
+# @PROJECT_VERSION@, @CMAKE_SOURCE_DIR@) are substituted by CMake when this
+# file is configured into the build tree:
+#   configure_file(docs/api/Doxyfile.in build/docs/Doxyfile @ONLY)
+
+PROJECT_NAME            = "@PROJECT_NAME@"
+PROJECT_NUMBER          = "@PROJECT_VERSION@"
+PROJECT_BRIEF           = "Native Bangla input method — portable C++20 core"
+
+INPUT                   = "@CMAKE_SOURCE_DIR@/include/suborno"
+RECURSIVE               = YES
+EXCLUDE_PATTERNS        = */.git/*
+FILE_PATTERNS           = *.h *.hpp
+
+EXTENSION_MAPPING       =
+STRIP_CODE_COMMENTS     = NO
+
+GENERATE_HTML           = YES
+OUTPUT_DIRECTORY        = @CMAKE_BINARY_DIR@/docs/api
+HTML_OUTPUT             = html
+GENERATE_LATEX          = NO
+
+EXTRACT_ALL             = NO
+EXTRACT_STATIC          = YES
+EXTRACT_PRIVATE         = NO
+
+OUTPUT_LANGUAGE         = English
+TAB_SIZE                = 4
+
+# Member-level docs are added progressively; undocumented members do not
+# fail the build. Files, classes, functions and parameters must stay
+# documented (see docs/engineering/DOXYGEN_STANDARDS.md).
+WARN_IF_UNDOCUMENTED    = NO
+WARN_NO_PARAMDOC        = NO
+WARN_AS_ERROR           = NO
+
+SOURCE_BROWSER          = YES
+INLINE_SOURCES          = NO
+REFERENCED_BY_RELATION  = YES
+REFERENCES_RELATION     = YES
+
+HAVE_DOT                = YES
+DOT_IMAGE_FORMAT        = svg
+INTERACTIVE_SVG         = YES
+CALL_GRAPH              = NO
+CALLER_GRAPH            = NO
+
+SEARCHENGINE            = YES
+SERVER_BASED_SEARCH     = NO
+
+QUIET                   = YES
+WARNINGS                = YES

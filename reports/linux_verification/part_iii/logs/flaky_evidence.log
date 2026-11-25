@@ -1,0 +1,36 @@
+=== D-003 flaky-fence evidence (actual captured failures) ===
+
+--- Capture 1: Release, contended (ASan soak + Debug ctest running) ---
+
+--- Capture 2: Debug full run, same contention (from LastTest.log) ---
+Expected: (elapsed) < (budget), actual: 24637650ns vs 5ms
+append_utf8 took 24ms
+
+[  FAILED  ] PerformanceBudget.SingleKeystrokeAppendStaysWithinCeiling (221 ms)
+[ RUN      ] PerformanceBudget.BackspaceAndSnapshotStayWithinCeiling
+[       OK ] PerformanceBudget.BackspaceAndSnapshotStayWithinCeiling (38 ms)
+--
+Expected: (elapsed) < (budget), actual: 19614722ns vs 5ms
+max repeat event took 19ms
+
+[  FAILED  ] PerformanceBudget.AutoRepeatLoopStaysWithinCeiling (19 ms)
+[----------] 6 tests from PerformanceBudget (852 ms total)
+
+--
+
+--- Control: idle machine full suite (686/686) ---
+[  PASSED  ] 686 tests.
+[  PASSED  ] 6 tests.
+
+--- Post-fix: idle x3 + contended x3, all 6/6 PASS ---
+6
+
+--- Capture 1 note: Release contention failure ---
+Release run under the same 3-way load failed with:
+  [  FAILED  ] PerformanceBudget.SingleKeystrokeAppendStaysWithinCeiling (23 ms)
+  [  FAILED  ] 1 test, listed below:
+(session-captured output; the exact nanosecond evidence lives in the Debug run above — both fences, both builds, same contention window)
+
+--- Post-fix budget runs (idle x3 + contended x3) ---
+7
+(count of PASSED-lines = 6 budget-run sets, each 6/6)

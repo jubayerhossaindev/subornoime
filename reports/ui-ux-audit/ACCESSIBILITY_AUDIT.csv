@@ -1,0 +1,24 @@
+check_id,surface,check,implementation,source_evidence,functional_status,visual_status,execution_date
+ACC-KB-01,Settings,Tab / Shift+Tab focus cycle,"custom cycle (page controls -> Save -> Cancel), skips section/status",handle_settings_key_down L2900-2936,PASS (logic),BLOCKED (runtime focus ring visual),2026-11-24
+ACC-KB-02,Settings,Ctrl+Tab / Ctrl+Shift+Tab page cycle,"4 pages both directions, focus reset",L2865-2885,PASS (logic),BLOCKED,2026-11-24
+ACC-KB-03,Settings,Space on checkbox/dropdown/button,toggle / open / run,L2943-2958,PASS (logic),BLOCKED,2026-11-24
+ACC-KB-04,Settings,"Esc = Cancel, Enter = Save (footer focus)",staged discard / commit,L2959-2990 (footer key paths),PASS (logic),BLOCKED,2026-11-24
+ACC-KB-05,Settings,Slider keys Left/Right/PgUp/PgDn/Home/End,±1 / ±10 / min / max,L2960-2990,PASS (logic),BLOCKED,2026-11-24
+ACC-KB-06,About,Tab order over 5 hotspots + Space/Enter + Esc close,kAboutHotspots order,L1000-1022,PASS (logic),BLOCKED,2026-11-24
+ACC-KB-07,Menu popup,Up/Down/Enter/Esc incl. keystroke routing from owner,L322-330 + show_menu_popup loop L120-133,PASS (logic),BLOCKED,2026-11-24
+ACC-KB-08,OSK,Esc hides window,L718,PASS (logic),BLOCKED,2026-11-24
+ACC-KB-09,Tray menu,Native TrackPopupMenu keyboard model,L3799-3890,PASS (logic - native),BLOCKED,2026-11-24
+ACC-KB-10,Global,Layout hotkey + encoding hotkey + Ctrl+Alt+E toggle,WM_HOTKEY L1841-1846,PASS (logic),BLOCKED,2026-11-24
+ACC-UIA-01,All 6 custom surfaces,IRawElementProviderSimple + Fragment(+Root) providers,ui_accessibility.cpp ElementProvider L89-843,PASS (logic; 557-suite contracts),BLOCKED (live UIA tree),2026-11-24
+ACC-UIA-02,Settings,AutomationIds sidebar.* + action.* (29 actions),control_automation_id L1252-1266,PASS (logic),BLOCKED,2026-11-24
+ACC-UIA-03,Settings,Patterns Invoke/Toggle/ExpandCollapse/RangeValue,GetPatternProvider L190-198,PASS (logic),BLOCKED,2026-11-24
+ACC-UIA-04,Topbar/OSK/Toast/Menus,zone.* / osk.* / toast.message / menu.item.<n> ids,"topbar.cpp L101-127, osk_window.cpp L405-456, toast_window.cpp L63, menu_popup.cpp L78",PASS (logic),BLOCKED,2026-11-24
+ACC-UIA-05,All surfaces,UIA_E_ELEMENTNOTAVAILABLE liveness + exception barriers,ui_accessibility.cpp header L20-31,PASS (logic),BLOCKED,2026-11-24
+ACC-UIA-06,All surfaces,notify_focus_changed on focus moves,app L2935/L2884,PASS (logic),BLOCKED,2026-11-24
+ACC-SR-01,All,Narrator end-to-end announcements,Manual-Test-Protocol §1 steps 1-8,BLOCKED (no screen reader/no Windows),BLOCKED,2026-11-24
+ACC-VIS-01,Both themes,WCAG AA text contrast >= 4.5:1,22 pairs recomputed 2026-11-24: 20 PASS; 2 sub-floor pairs (dark text_inactive on raised/hover) have ZERO current consumers - documented pairing rule holds (ui_theme.hpp L77-86),PASS (executed recompute),PASS (metric) / BLOCKED (display),2026-11-24
+ACC-VIS-02,All,Focus ring >= 3:1 + 2 px ring outside control,draw_focus_ring L2016-2030; focus token 4.16:1,PASS (logic+metric),BLOCKED,2026-11-24
+ACC-VIS-03,All,High Contrast palette from system colors,system_color_palette() L172-199; WM_THEMECHANGED on 5 surfaces,PASS (logic),BLOCKED,2026-11-24
+ACC-VIS-04,Toast/menus,Color never sole carrier (status word labels),toast kinds + status.* word keys,PASS (logic),BLOCKED,2026-11-24
+ACC-VIS-05,All,Icon-only controls carry tooltips + UIA HelpText,topbar 4 zones,PASS (logic),BLOCKED,2026-11-24
+ACC-HC-01,All,High Contrast toggle live repaint,refresh_active_theme on WM_THEMECHANGED,PASS (logic),BLOCKED,2026-11-24

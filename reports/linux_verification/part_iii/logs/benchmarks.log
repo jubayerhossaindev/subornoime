@@ -1,0 +1,49 @@
+=== Configure with SUBORNO_BUILD_BENCHMARKS=ON (Release, separate dir) ===
+-- google/benchmark not found — SUBORNO_BUILD_BENCHMARKS disabled (CI latency fences live in tests/unit/performance_budget_test.cpp)
+    /home/z/my-project/suborno-ime/SUBORNOIME/build/bench-attempt/benchmarks
+    /home/z/my-project/suborno-ime/SUBORNOIME/benchmarks
+-- Configuring incomplete, errors occurred!
+CONFIG_EXIT=0
+=== Does benchmark target exist? ===
+gmake: Makefile: No such file or directory
+gmake: *** No rule to make target 'Makefile'.  Stop.
+=== ls build dirs ===
+bench-attempt
+debug
+final
+sanitizers
+verify
+-- The CXX compiler identification is GNU 14.2.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found ICU: /usr/include (found version "76.1") found components: uc i18n
+-- Found SQLite3: /usr/lib/x86_64-linux-gnu/libsqlite3.so (found version "3.46.1")
+-- The C compiler identification is GNU 14.2.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- google/benchmark not found — SUBORNO_BUILD_BENCHMARKS disabled (CI latency fences live in tests/unit/performance_budget_test.cpp)
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+CMake Error at CMakeLists.txt:90 (add_subdirectory):
+  The binary directory
+
+    /home/z/my-project/suborno-ime/SUBORNOIME/build/bench-attempt/benchmarks
+
+  is already used to build a source directory.  It cannot be used to build
+  source directory
+
+    /home/z/my-project/suborno-ime/SUBORNOIME/benchmarks
+
+  Specify a unique binary directory name.
+
+
+-- Configuring incomplete, errors occurred!
+-- google/benchmark not found — SUBORNO_BUILD_BENCHMARKS disabled (CI latency fences live in tests/unit/performance_budget_test.cpp)
+-- Generating done (0.3s)

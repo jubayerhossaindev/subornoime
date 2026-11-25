@@ -1,0 +1,122 @@
+row_id,key,layer,driver,expected_utf8,actual_utf8,expected_codepoints,actual_codepoints,status
+NAT-001,1,base,transliterate base-keystroke,১,১,U+09E7,U+09E7,PASS
+NAT-002,2,base,transliterate base-keystroke,২,২,U+09E8,U+09E8,PASS
+NAT-003,3,base,transliterate base-keystroke,৩,৩,U+09E9,U+09E9,PASS
+NAT-004,4,base,transliterate base-keystroke,৪,৪,U+09EA,U+09EA,PASS
+NAT-005,5,base,transliterate base-keystroke,৫,৫,U+09EB,U+09EB,PASS
+NAT-006,6,base,transliterate base-keystroke,৬,৬,U+09EC,U+09EC,PASS
+NAT-007,7,base,transliterate base-keystroke,৭,৭,U+09ED,U+09ED,PASS
+NAT-008,8,base,transliterate base-keystroke,৮,৮,U+09EE,U+09EE,PASS
+NAT-009,9,base,transliterate base-keystroke,৯,৯,U+09EF,U+09EF,PASS
+NAT-010,0,base,transliterate base-keystroke,০,০,U+09E6,U+09E6,PASS
+NAT-011,Shift+1,shift,transliterate shift-keystroke,!,!,U+0021,U+0021,PASS
+NAT-012,Shift+2,shift,transliterate shift-keystroke,@,@,U+0040,U+0040,PASS
+NAT-013,Shift+3,shift,transliterate shift-keystroke,#,#,U+0023,U+0023,PASS
+NAT-014,Shift+4,shift,transliterate shift-keystroke,৳,৳,U+09F3,U+09F3,PASS
+NAT-015,Shift+5,shift,transliterate shift-keystroke,%,%,U+0025,U+0025,PASS
+NAT-016,Shift+6,shift,transliterate shift-keystroke,^,^,U+005E,U+005E,PASS
+NAT-017,Shift+7,shift,transliterate shift-keystroke,ঁ,ঁ,U+0981,U+0981,PASS
+NAT-018,Shift+8,shift,transliterate shift-keystroke,*,*,U+002A,U+002A,PASS
+NAT-019,Shift+9,shift,transliterate shift-keystroke,(,(,U+0028,U+0028,PASS
+NAT-020,Shift+0,shift,transliterate shift-keystroke,),),U+0029,U+0029,PASS
+NAT-021,Link+1,altgr,session.append_key Ctrl+Alt,৴,৴,U+09F4,U+09F4,PASS
+NAT-022,Link+2,altgr,session.append_key Ctrl+Alt,৵,৵,U+09F5,U+09F5,PASS
+NAT-023,Link+3,altgr,session.append_key Ctrl+Alt,৶,৶,U+09F6,U+09F6,PASS
+NAT-024,Link+4,altgr,session.append_key Ctrl+Alt,৷,৷,U+09F7,U+09F7,PASS
+NAT-025,Link+5,altgr,session.append_key Ctrl+Alt,৸,৸,U+09F8,U+09F8,PASS
+NAT-026,Link+6,altgr,session.append_key Ctrl+Alt,ৠ,ৠ,U+09E0,U+09E0,PASS
+NAT-027,Link+7,altgr,session.append_key Ctrl+Alt,৺,৺,U+09FA,U+09FA,PASS
+NAT-028,Link+8,altgr,session.append_key Ctrl+Alt,ৡ,ৡ,U+09E1,U+09E1,PASS
+NAT-029,Link+9,altgr,session.append_key Ctrl+Alt,ঌ,ঌ,U+098C,U+098C,PASS
+NAT-030,Link+0,altgr,session.append_key Ctrl+Alt,৹,৹,U+09F9,U+09F9,PASS
+NAT-031,Link+Shift+1,shift_altgr,session.append_key Ctrl+Alt+Shift,ঀ,ঀ,U+0980,U+0980,PASS
+NAT-032,Link+Shift+2,shift_altgr,session.append_key Ctrl+Alt+Shift,,,,,PASS
+NAT-033,Link+Shift+3,shift_altgr,session.append_key Ctrl+Alt+Shift,ঽ,ঽ,U+09BD,U+09BD,PASS
+NAT-034,Link+Shift+4,shift_altgr,session.append_key Ctrl+Alt+Shift,৲,৲,U+09F2,U+09F2,PASS
+NAT-035,Link+Shift+5,shift_altgr,session.append_key Ctrl+Alt+Shift,ৄ,ৄ,U+09C4,U+09C4,PASS
+NAT-036,Link+Shift+6,shift_altgr,session.append_key Ctrl+Alt+Shift,ৠ,ৠ,U+09E0,U+09E0,PASS
+NAT-037,Link+Shift+7,shift_altgr,session.append_key Ctrl+Alt+Shift,ৼ,ৼ,U+09FC,U+09FC,PASS
+NAT-038,Link+Shift+8,shift_altgr,session.append_key Ctrl+Alt+Shift,ৣ,ৣ,U+09E3,U+09E3,PASS
+NAT-039,Link+Shift+9,shift_altgr,session.append_key Ctrl+Alt+Shift,ৢ,ৢ,U+09E2,U+09E2,PASS
+NAT-040,Link+Shift+0,shift_altgr,session.append_key Ctrl+Alt+Shift,৽,৽,U+09FD,U+09FD,PASS
+NAT-041,q,base,transliterate base-keystroke,ঙ,ঙ,U+0999,U+0999,PASS
+NAT-042,w,base,transliterate base-keystroke,য,য,U+09AF,U+09AF,PASS
+NAT-043,e,base,transliterate base-keystroke,ড,ড,U+09A1,U+09A1,PASS
+NAT-044,r,base,transliterate base-keystroke,প,প,U+09AA,U+09AA,PASS
+NAT-045,t,base,transliterate base-keystroke,ট,ট,U+099F,U+099F,PASS
+NAT-046,y,base,transliterate base-keystroke,চ,চ,U+099A,U+099A,PASS
+NAT-047,u,base,transliterate base-keystroke,জ,জ,U+099C,U+099C,PASS
+NAT-048,i,base,transliterate base-keystroke,হ,হ,U+09B9,U+09B9,PASS
+NAT-049,o,base,transliterate base-keystroke,গ,গ,U+0997,U+0997,PASS
+NAT-050,p,base,transliterate base-keystroke,ড়,ড়,U+09A1 U+09BC,U+09A1 U+09BC,PASS
+NAT-051,Shift+Q,shift,transliterate shift-keystroke,ং,ং,U+0982,U+0982,PASS
+NAT-052,Shift+W,shift,transliterate shift-keystroke,য়,য়,U+09AF U+09BC,U+09AF U+09BC,PASS
+NAT-053,Shift+E,shift,transliterate shift-keystroke,ঢ,ঢ,U+09A2,U+09A2,PASS
+NAT-054,Shift+R,shift,transliterate shift-keystroke,ফ,ফ,U+09AB,U+09AB,PASS
+NAT-055,Shift+T,shift,transliterate shift-keystroke,ঠ,ঠ,U+09A0,U+09A0,PASS
+NAT-056,Shift+Y,shift,transliterate shift-keystroke,ছ,ছ,U+099B,U+099B,PASS
+NAT-057,Shift+U,shift,transliterate shift-keystroke,ঝ,ঝ,U+099D,U+099D,PASS
+NAT-058,Shift+I,shift,transliterate shift-keystroke,ঞ,ঞ,U+099E,U+099E,PASS
+NAT-059,Shift+O,shift,transliterate shift-keystroke,ঘ,ঘ,U+0998,U+0998,PASS
+NAT-060,Shift+P,shift,transliterate shift-keystroke,ঢ়,ঢ়,U+09A2 U+09BC,U+09A2 U+09BC,PASS
+NAT-061,a,base,transliterate base-keystroke,ৃ,ৃ,U+09C3,U+09C3,PASS
+NAT-062,s,base,transliterate base-keystroke,ু,ু,U+09C1,U+09C1,PASS
+NAT-063,d,base,transliterate base-keystroke,ি,ি,U+09BF,U+09BF,PASS
+NAT-064,f,base,transliterate base-keystroke,া,া,U+09BE,U+09BE,PASS
+NAT-065,g,base,transliterate base-keystroke,্,্,U+09CD,U+09CD,PASS
+NAT-066,h,base,transliterate base-keystroke,ব,ব,U+09AC,U+09AC,PASS
+NAT-067,j,base,transliterate base-keystroke,ক,ক,U+0995,U+0995,PASS
+NAT-068,k,base,transliterate base-keystroke,ত,ত,U+09A4,U+09A4,PASS
+NAT-069,l,base,transliterate base-keystroke,দ,দ,U+09A6,U+09A6,PASS
+NAT-070,Shift+A,shift,transliterate shift-keystroke,র্,র্,U+09B0 U+09CD,U+09B0 U+09CD,PASS
+NAT-071,Shift+S,shift,transliterate shift-keystroke,ূ,ূ,U+09C2,U+09C2,PASS
+NAT-072,Shift+D,shift,transliterate shift-keystroke,ী,ী,U+09C0,U+09C0,PASS
+NAT-073,Shift+F,shift,transliterate shift-keystroke,অ,অ,U+0985,U+0985,PASS
+NAT-074,Shift+G,shift,transliterate shift-keystroke,।,।,U+0964,U+0964,PASS
+NAT-075,Shift+H,shift,transliterate shift-keystroke,ভ,ভ,U+09AD,U+09AD,PASS
+NAT-076,Shift+J,shift,transliterate shift-keystroke,খ,খ,U+0996,U+0996,PASS
+NAT-077,Shift+K,shift,transliterate shift-keystroke,থ,থ,U+09A5,U+09A5,PASS
+NAT-078,Shift+L,shift,transliterate shift-keystroke,ধ,ধ,U+09A7,U+09A7,PASS
+NAT-079,z,base,transliterate base-keystroke,্র,্র,U+09CD U+09B0,U+09CD U+09B0,PASS
+NAT-080,x,base,transliterate base-keystroke,ও,ও,U+0993,U+0993,PASS
+NAT-081,c,base,transliterate base-keystroke,ে,ে,U+09C7,U+09C7,PASS
+NAT-082,v,base,transliterate base-keystroke,র,র,U+09B0,U+09B0,PASS
+NAT-083,b,base,transliterate base-keystroke,ন,ন,U+09A8,U+09A8,PASS
+NAT-084,n,base,transliterate base-keystroke,স,স,U+09B8,U+09B8,PASS
+NAT-085,m,base,transliterate base-keystroke,ম,ম,U+09AE,U+09AE,PASS
+NAT-086,Shift+Z,shift,transliterate shift-keystroke,্য,্য,U+09CD U+09AF,U+09CD U+09AF,PASS
+NAT-087,Shift+X,shift,transliterate shift-keystroke,ৗ,ৗ,U+09D7,U+09D7,PASS
+NAT-088,Shift+C,shift,transliterate shift-keystroke,ৈ,ৈ,U+09C8,U+09C8,PASS
+NAT-089,Shift+V,shift,transliterate shift-keystroke,ল,ল,U+09B2,U+09B2,PASS
+NAT-090,Shift+B,shift,transliterate shift-keystroke,ণ,ণ,U+09A3,U+09A3,PASS
+NAT-091,Shift+N,shift,transliterate shift-keystroke,ষ,ষ,U+09B7,U+09B7,PASS
+NAT-092,Shift+M,shift,transliterate shift-keystroke,শ,শ,U+09B6,U+09B6,PASS
+NAT-093,\,base,transliterate base-keystroke,ৎ,ৎ,U+09CE,U+09CE,PASS
+NAT-094,Shift+\,shift,transliterate shift-keystroke,ঃ,ঃ,U+0983,U+0983,PASS
+NAT-095,Link+-,altgr,session.append_key Ctrl+Alt,×,×,U+00D7,U+00D7,PASS
+NAT-096,Link+Shift+-,shift_altgr,session.append_key Ctrl+Alt+Shift,÷,÷,U+00F7,U+00F7,PASS
+NAT-097,Link+Shift+G,shift_altgr,session.append_key Ctrl+Alt+Shift,॥,॥,U+0965,U+0965,PASS
+NAT-098,Link+f,altgr,session.append_key Ctrl+Alt,আ,আ,U+0986,U+0986,PASS
+NAT-099,Link+d,altgr,session.append_key Ctrl+Alt,ই,ই,U+0987,U+0987,PASS
+NAT-100,Link+Shift+D,shift_altgr,session.append_key Ctrl+Alt+Shift,ঈ,ঈ,U+0988,U+0988,PASS
+NAT-101,Link+s,altgr,session.append_key Ctrl+Alt,উ,উ,U+0989,U+0989,PASS
+NAT-102,Link+Shift+S,shift_altgr,session.append_key Ctrl+Alt+Shift,ঊ,ঊ,U+098A,U+098A,PASS
+NAT-103,Link+a,altgr,session.append_key Ctrl+Alt,ঋ,ঋ,U+098B,U+098B,PASS
+NAT-104,Link+c,altgr,session.append_key Ctrl+Alt,এ,এ,U+098F,U+098F,PASS
+NAT-105,Link+Shift+C,shift_altgr,session.append_key Ctrl+Alt+Shift,ঐ,ঐ,U+0990,U+0990,PASS
+NAT-106,Link+x,altgr,session.append_key Ctrl+Alt,ো,ো,U+09CB,U+09CB,PASS
+NAT-107,Link+Shift+X,shift_altgr,session.append_key Ctrl+Alt+Shift,ঔ,ঔ,U+0994,U+0994,PASS
+NAT-108,"Link+,",altgr,session.append_key Ctrl+Alt,,,,,PASS
+NAT-109,Link+.,altgr,session.append_key Ctrl+Alt,,,,,PASS
+NAT-110,reph single consonant (kar-ma),sequence,transliterate,কর্ম,কর্ম,U+0995 U+09B0 U+09CD U+09AE,U+0995 U+09B0 U+09CD U+09AE,PASS
+NAT-111,reph on cluster,sequence,transliterate,র্ক্ক,র্ক্ক,U+09B0 U+09CD U+0995 U+09CD U+0995,U+09B0 U+09CD U+0995 U+09CD U+0995,PASS
+NAT-112,broken conjunct double hasanta,sequence,transliterate,ক্‌ক,ক্‌ক,U+0995 U+09CD U+200C U+0995,U+0995 U+09CD U+200C U+0995,PASS
+NAT-113,candrabindu aa-kar reorder (bam),sequence,transliterate,বাঁ,বাঁ,U+09AC U+09BE U+0981,U+09AC U+09BE U+0981,PASS
+NAT-114,invalid A+aakar becomes AA letter,sequence,transliterate,আ,আ,U+0986,U+0986,PASS
+NAT-115,ra-kar reorder (kru),sequence,transliterate,ক্রু,ক্রু,U+0995 U+09CD U+09B0 U+09C1,U+0995 U+09CD U+09B0 U+09C1,PASS
+NAT-116,ya-phala reorder (kyu),sequence,transliterate,ক্যু,ক্যু,U+0995 U+09CD U+09AF U+09C1,U+0995 U+09CD U+09AF U+09C1,PASS
+NAT-117,ra ya-phala with ZWJ,sequence,transliterate,র‍্য,র‍্য,U+09B0 U+200D U+09CD U+09AF,U+09B0 U+200D U+09CD U+09AF,PASS
+NAT-118,o-kar composition (ko),sequence,transliterate,কো,কো,U+0995 U+09CB,U+0995 U+09CB,PASS
+NAT-119,au-kar composition (kau),sequence,transliterate,কৌ,কৌ,U+0995 U+09CC,U+0995 U+09CC,PASS
+NAT-120,word bangla,sequence,transliterate,বাংলা,বাংলা,U+09AC U+09BE U+0982 U+09B2 U+09BE,U+09AC U+09BE U+0982 U+09B2 U+09BE,PASS
+NAT-121,word nomoshkar,sequence,transliterate,নমস্কার,নমস্কার,U+09A8 U+09AE U+09B8 U+09CD U+0995 U+09BE U+09B0,U+09A8 U+09AE U+09B8 U+09CD U+0995 U+09BE U+09B0,PASS

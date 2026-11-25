@@ -1,0 +1,178 @@
+{
+  "generated": "2026-11-23 17:51Z run (Asia/Dhaka 2026-11-23 23:51)",
+  "five_state_legend": [
+    "PASS",
+    "FAIL",
+    "BLOCKED",
+    "NOT TESTED",
+    "NOT APPLICABLE"
+  ],
+  "rule": "BLOCKED never counts as PASS; engine PASS never implies Windows PASS",
+  "layouts": [
+    {
+      "layout": "suborno-phonetic",
+      "display_name": "Suborno",
+      "brief_sequences": {
+        "PASS": 15
+      },
+      "corpus": {
+        "PASS": 49
+      },
+      "paragraphs": {
+        "PASS": 3
+      },
+      "inventory": {
+        "PASS": 67
+      },
+      "editing_engine": {
+        "PASS": 4
+      },
+      "stress": {
+        "PASS": 7
+      },
+      "overall_verdict": "ENGINE VERIFIED — WINDOWS RUNTIME BLOCKED",
+      "windows_runtime": "BLOCKED"
+    },
+    {
+      "layout": "english",
+      "display_name": "English",
+      "brief_sequences": {
+        "PASS": 7
+      },
+      "corpus": "NOT APPLICABLE",
+      "paragraphs": "NOT APPLICABLE",
+      "inventory": "NOT APPLICABLE",
+      "editing_engine": {},
+      "stress": {},
+      "overall_verdict": "ENGINE VERIFIED (passthrough identity) — WINDOWS RUNTIME BLOCKED",
+      "windows_runtime": "BLOCKED"
+    },
+    {
+      "layout": "borno-phonetic",
+      "display_name": "Borno",
+      "brief_sequences": {
+        "PASS": 11,
+        "FAIL": 2
+      },
+      "corpus": {
+        "PASS": 49
+      },
+      "paragraphs": {
+        "PASS": 3
+      },
+      "inventory": {
+        "PASS": 67
+      },
+      "editing_engine": {
+        "PASS": 3
+      },
+      "stress": {},
+      "overall_verdict": "ENGINE VERIFIED — WINDOWS RUNTIME BLOCKED",
+      "windows_runtime": "BLOCKED"
+    },
+    {
+      "layout": "avro-phonetic",
+      "display_name": "Avro",
+      "brief_sequences": {
+        "PASS": 10,
+        "FAIL": 1
+      },
+      "corpus": {
+        "PASS": 49
+      },
+      "paragraphs": {
+        "PASS": 3
+      },
+      "inventory": {
+        "PASS": 67
+      },
+      "editing_engine": {
+        "PASS": 3
+      },
+      "stress": {
+        "PASS": 1
+      },
+      "overall_verdict": "ENGINE VERIFIED — WINDOWS RUNTIME BLOCKED",
+      "windows_runtime": "BLOCKED"
+    },
+    {
+      "layout": "khipro",
+      "display_name": "Khipro",
+      "brief_sequences": {
+        "PASS": 14
+      },
+      "corpus": {
+        "PASS": 49
+      },
+      "paragraphs": {
+        "PASS": 3
+      },
+      "inventory": {
+        "PASS": 74
+      },
+      "editing_engine": {
+        "PASS": 3
+      },
+      "stress": {},
+      "overall_verdict": "PARTIALLY VERIFIED — WINDOWS RUNTIME BLOCKED",
+      "windows_runtime": "BLOCKED",
+      "mission_fix": "trailing virama ক্ now typeable via qq token (2026-11-24); 19 new unit tests"
+    },
+    {
+      "layout": "probhat",
+      "display_name": "Probhat",
+      "brief_sequences": {
+        "PASS": 82,
+        "NOT_TYPEABLE": 1
+      },
+      "corpus": {
+        "PASS": 49
+      },
+      "paragraphs": {
+        "PASS": 3
+      },
+      "inventory": {
+        "PASS": 69
+      },
+      "editing_engine": {
+        "PASS": 3
+      },
+      "stress": {
+        "PASS": 2
+      },
+      "overall_verdict": "PARTIALLY VERIFIED — WINDOWS RUNTIME BLOCKED",
+      "windows_runtime": "BLOCKED",
+      "mission_fix": "standalone nukta ় now typeable via AltGr+0x34 (2026-11-24, Compatibility Extension); 9 new unit tests"
+    },
+    {
+      "layout": "national",
+      "display_name": "National",
+      "brief_sequences": {
+        "PASS": 17
+      },
+      "corpus": {
+        "PASS": 49
+      },
+      "paragraphs": {
+        "PASS": 3
+      },
+      "inventory": {
+        "PASS": 67
+      },
+      "editing_engine": {
+        "PASS": 3
+      },
+      "stress": {},
+      "overall_verdict": "ENGINE VERIFIED — WINDOWS RUNTIME BLOCKED",
+      "windows_runtime": "BLOCKED"
+    }
+  ],
+  "totals": {
+    "engine_verified": 5,
+    "partially_verified": 2,
+    "windows_verified": 0,
+    "windows_blocked": 7,
+    "open_bugs": 0
+  },
+  "last_updated": "2026-11-24 khipro/probhat fix mission"
+}

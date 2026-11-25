@@ -1,0 +1,24 @@
+layout,keys,expected,actual,verdict,note
+borno-phonetic,Tai,টাই,টাই,PASS,Borno: T+a+i (o-style empty-dependent not needed; i after vowel)
+borno-phonetic,moi,মই,মই,PASS,Borno: o token has empty dependent form -> vowel break
+borno-phonetic,mo;i,মই,ম;ই,FAIL,brief convention: ';' is NOT a break key in Borno
+borno-phonetic,Ta;i,টাই,টা;ই,FAIL,brief convention: ';' is NOT a break key in Borno
+borno-phonetic,a`,া,া,PASS,Borno accent key (backtick) forces dependent vowel form
+borno-phonetic,ka`,কা,কা,PASS,Borno accent after vowel token
+avro-phonetic,t``,ৎ,ৎ,PASS,Avro khanda token = t + backtick + backtick (0x60 0x60)
+avro-phonetic,t'',ৎ,ত'',FAIL,brief convention: apostrophes are NOT the Avro khanda token
+avro-phonetic,ut``s,উৎস,উৎস,PASS,Avro khanda inside word
+avro-phonetic,y,য়,য়,PASS,Avro y produces য় (nukta handling)
+khipro,t;i,তই,তই,PASS,Khipro lowercase t + break + i (case-sensitive layout)
+khipro,Ta;i,Tআই,Tআই,PASS,control: khipro is case-sensitive; uppercase T is not a token (literal passthrough)
+khipro,m;i,মই,মই,PASS,Khipro ';' break key
+national,Ta;i,টাই,টাই,PASS,National ';' break key
+national,m;i,মই,মই,PASS,National ';' break key
+national,tX,ত্,ত্,PASS,control: national explicit halant after t -> trailing virama
+borno-phonetic,tX,তৎ,তৎ,PASS,control: borno X is khanda-ta token (t+X = তৎ)
+national,pX,প্,প্,PASS,control: national CAN emit trailing virama (unlike khipro)
+national,X,,,PASS,control: bare halant token emits nothing
+khipro,Ta;i,Tআই,Tআই,PASS,control: khipro is case-sensitive; uppercase T is not a token (literal passthrough)
+borno-phonetic,"k,,",ক্,ক্,PASS,Borno explicit hasanta
+avro-phonetic,"k,,",ক্,ক্,PASS,Avro explicit hasanta
+khipro,"y,,z",য়্য,য়্য,PASS,Khipro nukta keeps run alive then joins

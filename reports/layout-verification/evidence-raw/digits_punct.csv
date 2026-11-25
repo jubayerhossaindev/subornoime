@@ -1,0 +1,28 @@
+layout,keys,expected,actual,verdict,note
+suborno-phonetic,1421,১৪২১,১৪২১,PASS,digit row transliteration
+borno-phonetic,1421,১৪২১,১৪২১,PASS,digit row transliteration
+avro-phonetic,1421,১৪২১,১৪২১,PASS,digit row transliteration
+khipro,1421,১৪২১,১৪২১,PASS,digit row transliteration
+national,1421,১৪২১,১৪২১,PASS,digit row transliteration
+probhat,১৪২১,১৪২১,১৪২১,PASS,physical digit-row scan codes
+suborno-phonetic,:danda:,।,।,PASS,control token :danda:
+borno-phonetic,.,।,।,PASS,dot token -> danda
+avro-phonetic,.,।,।,PASS,dot token -> danda
+khipro,.,।,।,PASS,khipro danda = single dot ('..' = escaped literal dot by design)
+khipro,..,.,.,PASS,khipro escaped literal full stop (khipro_layout.cpp:176-183)
+national,..,।,।,PASS,dot-dot -> danda
+probhat,।,।,।,PASS,scan 0x34 base
+suborno-phonetic,ami.,(evidence-dump),আমি.,INFO,trailing dot after word
+suborno-phonetic,",",(evidence-dump),",",INFO,comma
+suborno-phonetic,?,(evidence-dump),?,INFO,question mark
+borno-phonetic,",",(evidence-dump),",",INFO,comma
+borno-phonetic,?,(evidence-dump),?,INFO,question mark
+avro-phonetic,",",(evidence-dump),",",INFO,comma
+avro-phonetic,?,(evidence-dump),?,INFO,question mark
+khipro,",",(evidence-dump),",",INFO,comma
+khipro,?,(evidence-dump),?,INFO,question mark
+national,",",(evidence-dump),",",INFO,comma
+national,?,(evidence-dump),?,INFO,question mark
+probhat,",",(evidence-dump),",",INFO,scan 0x33
+probhat,.,(evidence-dump),.,INFO,scan 0x53
+probhat,?,(evidence-dump),?,INFO,shift 0x35

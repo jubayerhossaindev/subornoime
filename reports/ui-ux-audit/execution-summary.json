@@ -1,0 +1,75 @@
+{
+  "audit": "COMPLETE EXISTING UI/UX AUDIT",
+  "execution_date": "2026-11-24",
+  "repository_head": "f8f33d2fb2e13854b9fb4442ce1dfe3f9340e02a",
+  "branch": "main",
+  "working_tree": "clean at audit start",
+  "test_suite": {
+    "unit": "557/557 PASS (re-run at HEAD)",
+    "integration": "2/2 PASS (re-run at HEAD)"
+  },
+  "matrix": {
+    "total_rows": 133,
+    "carried_from_129_row_matrix": 129,
+    "new_rows": 4,
+    "functional": {
+      "PASS": 24,
+      "FAIL": 0,
+      "BLOCKED": 95,
+      "NOT TESTED": 0,
+      "NOT APPLICABLE": 14
+    },
+    "visual": {
+      "PASS": 1,
+      "ISSUE FOUND": 0,
+      "BLOCKED": 95,
+      "NOT TESTED": 23,
+      "NOT APPLICABLE": 14
+    }
+  },
+  "screenshots": {
+    "captured": 0,
+    "blocked": 20,
+    "note": "No Windows desktop in sandbox; zero screenshots fabricated"
+  },
+  "automation_checks_harness": {
+    "canonical_count": 84,
+    "brief_claimed": 85,
+    "executed_in_sandbox": 0,
+    "note": "Invoke-SubornoUiAudit.ps1 enumerates exactly 84 happy-path check IDs; requires Windows PowerShell 5.1 + built Suborno.exe"
+  },
+  "findings": {
+    "Critical": 4,
+    "High": 6,
+    "Medium": 15,
+    "Low": 7,
+    "Informational": 2,
+    "Blocker-class": 1
+  },
+  "fix_pass": {
+    "applied": true,
+    "scope": "evidence tooling + docs only; zero UI/backend source changes",
+    "items": [
+      "N-01 FIXED: scripts/i18n_key_check.py + scripts/contrast_check.py added; executed at HEAD: parity OK 160=160, 0 missing, 0 dead; contrast 22 pairs 0 required failures",
+      "N-02 FIXED: scripts/layout_verify/merge_audit_results.py + scripts/windows-ui-audit/functional/checkmap.json added; merge contract tested with synthetic results (PASS upgrade w/ level, PASS-without-level rejected, FAIL flip with (was X) note, NOT APPLICABLE untouched, unmatched reported); checkmap 98 ids, all targets valid",
+      "N-03 FIXED: scripts/windows-ui-audit/README.md corrected to match actual harness behavior (dropdowns enumerated not selected, no slider keyboard step, no OSK Notepad typing, no About Esc check, topbar zones asserted not invoked); merge example path corrected",
+      "N-04 NOT FIXED (by design): UI layout change requires Windows visual verification - recorded as recommendation",
+      "N-05 NOT FIXED (by design): embedded manifest is an MSVC build change - recorded as recommendation"
+    ],
+    "test_suite_after_fix": "557/557 unit + 2/2 integration PASS (unchanged; no compiled code touched)"
+  },
+  "previous_reports_reconciliation": {
+    "reports_read": 16,
+    "fixed_claims_re_verified": 27,
+    "still_present": 0,
+    "regression": 0,
+    "blocked_rows_carried": 92
+  },
+  "verdict": {
+    "visual_quality": "NEEDS RUNTIME EVIDENCE (source-level: consistent token system, WCAG AA recompute PASS; live visuals BLOCKED)",
+    "functional_quality": "ENGINE/LOGIC VERIFIED (557/557+2/2); WINDOWS RUNTIME BLOCKED (92 rows)",
+    "accessibility_quality": "SOURCE IMPLEMENTATION COMPLETE (UIA providers 6/6 surfaces, keyboard models implemented); Narrator/live UIA BLOCKED",
+    "overall": "NEEDS IMPROVEMENT - not a Windows-runtime-audited product; no BLOCKED row was converted to PASS"
+  },
+  "environment": "Linux sandbox (GCC 13, no Windows/MSVC); Windows targets compile only in MSVC CI (windows-2022 runner)"
+}

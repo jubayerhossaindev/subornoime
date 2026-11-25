@@ -1,0 +1,16 @@
+=== Full unit suite: listed test cases ===
+Running main() from /home/z/my-project/tools/googletest-1.15.2/googletest/src/gtest_main.cc
+AtomicFileTest.
+  ReplacesExistingFileWithCompleteContents
+686
+=== Per-suite counts (Part III) ===
+=== Executed run (Part III suites) ===
+[----------] Global test environment tear-down
+[==========] 34 tests from 5 test suites ran. (43550 ms total)
+[  PASSED  ] 34 tests.
+EXIT_CODE=0
+=== Full unit suite executed summary ===
+[----------] Global test environment tear-down
+[==========] 686 tests from 80 test suites ran. (44108 ms total)
+[  PASSED  ] 686 tests.
+EXIT_CODE=0

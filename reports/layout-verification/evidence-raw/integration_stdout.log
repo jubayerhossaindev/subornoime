@@ -1,0 +1,13 @@
+Running main() from /tmp/googletest-1.15.2/googletest/src/gtest_main.cc
+[==========] Running 2 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 2 tests from TargetGraphSmokeTest
+[ RUN      ] TargetGraphSmokeTest.LinksPortableCoreAndProductionDependencies
+[       OK ] TargetGraphSmokeTest.LinksPortableCoreAndProductionDependencies (0 ms)
+[ RUN      ] TargetGraphSmokeTest.DictionaryAndLayoutManageRealInputWorkflow
+[       OK ] TargetGraphSmokeTest.DictionaryAndLayoutManageRealInputWorkflow (1 ms)
+[----------] 2 tests from TargetGraphSmokeTest (1 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (1 ms total)
+[  PASSED  ] 2 tests.

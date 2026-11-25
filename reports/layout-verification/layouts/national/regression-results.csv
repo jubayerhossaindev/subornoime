@@ -1,0 +1,11 @@
+test_id,bug_or_fix,gtest_id,layout,verdict,run
+REG-01,F-1/F-2,LayoutTypingRegressionTest.NationalExplicitHasantaFormsConjuncts,national,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-02,F-1/F-2,LayoutTypingRegressionTest.NationalPreviouslyMissingCharacters,national,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-03,F-1/F-2,LayoutTypingRegressionTest.NationalBreaksAndIndependentVowels,national,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-04,—,NationalLayoutTest.BasicConsonantTransliteration,national,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-05,—,NationalLayoutTest.VowelTransliteration,national,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-06,—,NationalLayoutTest.Signs,national,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-07,—,NationalLayoutTest.Clusters,national,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-08,—,NationalLayoutTest.Words,national,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-09,—,NationalLayoutTest.Candidates,national,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-10,—,NationalLayoutTest.EmptyInputYieldsNoCandidates,national,PASS,unit run 2026-11-23 (build/ubuntu-dev)

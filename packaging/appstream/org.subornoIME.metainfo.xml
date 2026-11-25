@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AppStream metainfo: prerequisite for GNOME Software / Ubuntu Software
+     listing. Validate with: appstreamcli validate org.subornoIME.metainfo.xml -->
+<component type="inputmethod">
+  <id>org.subornoIME.metainfo</id>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Suborno</name>
+  <summary>Type Bangla naturally with a native phonetic input engine</summary>
+  <description>
+    <p>
+      Suborno is a native Bengali (Bangla) input method built with modern
+      C++20. It provides phonetic composition (Suborno, Borno, Avro mapping
+      families), the Probhat, Khipro and Bangladesh national keyboard
+      layouts, Unicode-aware candidate ranking, spell correction and a
+      SQLite-backed personal dictionary that learns from committed text.
+    </p>
+    <p>
+      The portable core exposes a C API, ships command-line tools for
+      dictionary import and benchmarking, and integrates natively with the
+      Windows Text Services Framework.
+    </p>
+  </description>
+  <icon type="stock">org.subornoIME</icon>
+  <developer_name translatable="false">SUBORNO contributors</developer_name>
+  <url type="homepage">https://github.com/jubayerhossaingalaxy/SUBORNOIME</url>
+  <url type="bugtracker">https://github.com/jubayerhossaingalaxy/SUBORNOIME/issues</url>
+  <content_rating type="oars-1.1" />
+  <provides>
+    <binary>suborno_dictionary_import</binary>
+    <binary>suborno_dictionary_bench</binary>
+  </provides>
+  <releases>
+    <release version="0.1.0" date="2026-11-21">
+      <description>
+        <p>
+          First packaging release: portable engine with phonetic, Probhat,
+          Khipro and national layouts, candidate ranking, spell correction,
+          personal dictionary, C API and Windows TSF integration.
+        </p>
+      </description>
+    </release>
+  </releases>
+</component>

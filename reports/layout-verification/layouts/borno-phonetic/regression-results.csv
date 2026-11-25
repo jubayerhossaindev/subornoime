@@ -1,0 +1,8 @@
+test_id,bug_or_fix,gtest_id,layout,verdict,run
+REG-01,BUG-05,EngineTest.LayoutDisplayNamesAreCorrectAndScriptClean,borno-phonetic,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-02,—,LayoutTypingRegressionTest.BornoAccentKeyBreaksVowelCollisions,borno-phonetic,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-03,—,BornoPhoneticLayoutTest.ConvertsIndependentAndDependentVowels,borno-phonetic,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-04,—,BornoPhoneticLayoutTest.PreservesCaseSensitiveConsonantTokens,borno-phonetic,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-05,—,BornoPhoneticLayoutTest.ComposesConsonantRunsAndExplicitControls,borno-phonetic,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-06,—,BornoPhoneticLayoutTest.EscapesLiteralGraphemesAndPreservesUnknownText,borno-phonetic,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-07,—,BornoPhoneticLayoutTest.ExposesIndependentCandidateIdentity,borno-phonetic,PASS,unit run 2026-11-23 (build/ubuntu-dev)

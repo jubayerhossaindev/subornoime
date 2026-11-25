@@ -1,0 +1,14 @@
+{
+    // Recommended extensions for the Suborno IME workspace.
+    "recommendations": [
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-vscode.cmake-tools",
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-themes",
+        "ms-vscode.cpptools-extension-pack",
+        "xaver.clang-format",
+        "ms-python.python",
+        "eamodio.gitlens",
+        "streetsidesoftware.code-spell-checker"
+    ]
+}

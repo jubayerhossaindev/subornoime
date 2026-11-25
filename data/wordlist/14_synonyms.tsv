@@ -1,0 +1,152 @@
+# Synonym groups (প্রতিশব্দ): entries are real words; the synonym LINKS live
+# in relations.tsv (word -> kind -> related).
+# word<TAB>frequency<TAB>category<TAB>register
+গৃহ	900	synonym	sadhu
+আবাস	900	synonym
+নিবাস	800	synonym
+নিবাসন	700	synonym	sadhu
+সদন	700	synonym	sadhu
+নিকেতন	800	synonym	sadhu
+স্থল	700	synonym	sadhu
+বাসস্থান	800	synonym
+মহীধর	700	synonym	sadhu
+প্রাশস্য	700	synonym	sadhu
+স্তুতি	800	synonym	sadhu
+উক্তি	800	synonym	sadhu
+বচন	800	synonym	sadhu
+উত্তরের	600	synonym
+জবাব	900	synonym
+আকুলতা	700	synonym
+উদ্বেলে	600	synonym
+বাসনা	800	synonym
+কামনা	1000	synonym
+স্পৃহা	800	synonym
+চিন্তা	1000	synonym
+মনন	700	synonym
+মনস্তত্ত্ব	700	synonym
+মনস্তত্ব	700	synonym
+মননশীল	700	synonym
+দেউল	800	synonym
+মন্দিরের	600	synonym
+দেবগৃহ	700	synonym
+প্রাসাদ	800	synonym
+রাজবাড়ি	700	synonym
+রাজপ্রাসাদ	700	synonym
+নিধন	800	synonym
+সর্বনাশ	800	synonym
+জীবনের	600	synonym
+আত্মহত্যা	800	synonym
+শেষকৃত্য	800	synonym
+উচ্চাভিলাষ	700	synonym
+মহামতি	700	synonym
+বাধা	800	synonym
+প্রতিবন্ধক	700	synonym
+বিঘ্ন	800	synonym
+সংবর্ধক	700	synonym
+সম্বর্ধনা	700	synonym
+অভিনন্দন	800	synonym
+শুভেচ্ছা	900	synonym
+শুভকামনা	800	synonym
+শুভাশিস	800	synonym
+স্বপ্নযান	700	synonym
+মতলব	700	synonym
+মন্তব্যের	600	synonym
+উত্থাপন	700	synonym
+উপস্থাপন	800	synonym
+সংগ্রামের	600	synonym
+ভ্রম	800	synonym
+অবিশ্বাস	800	synonym
+সংশয়ের	600	synonym
+নিশ্চয়ে	600	synonym
+নিশ্চয়তা	800	synonym
+নিশ্চয়তার	600	synonym
+বিশ্লেষণ	900	synonym
+মূল্যায়ন	800	synonym
+পর্যালোচনা	800	synonym
+বিশ্লেষণের	600	synonym
+বিশ্লেষণী	700	synonym
+বিশ্লেষণে	600	synonym
+তুলনা	900	synonym
+তুলনায়	700	synonym
+তুলনাতে	700	synonym
+তুলনীয়	700	synonym
+সাক্ষাৎকার	700	synonym
+সাক্ষাৎ	800	synonym
+মুখোমুখি	800	synonym
+সরাসরি	900	synonym
+সরাসরিভাবে	700	synonym
+অভিপ্রায়ের	600	synonym
+মূলকথা	700	synonym
+সারকথা	700	synonym
+সারসংক্ষেপ	700	synonym
+নিষ্কর্ষ	700	synonym
+উপসংহার	800	synonym
+মূলভাব	700	synonym
+সারাংশ	800	synonym
+সারসংক্ষেপে	600	synonym
+উপলব্ধি	900	synonym
+উপলব্ধির	600	synonym
+অনুভূতি	900	synonym
+ভাব	800	synonym
+ভাবনার	600	synonym
+অনুভূতির	600	synonym
+প্রতিক্রিয়া	800	synonym
+প্রতিক্রিয়ার	600	synonym
+প্রতিক্রিয়াশীল	700	synonym
+প্রতিপাদন	700	synonym
+প্রতিপাদনের	600	synonym
+প্রমাণের	600	synonym
+সাক্ষ্যের	600	synonym
+সুখবর	800	synonym
+দুঃসংবাদ	700	synonym
+ঘটনা	1200	synonym
+কাণ্ড	800	synonym
+হানা	800	synonym
+বিপদ	1200	synonym
+দুর্যোগ	800	synonym
+বিপদের	600	synonym
+বিপদে	600	synonym
+দুর্দান্ত	800	synonym
+দুর্দান্তের	600	synonym
+ক্ষুদ্র	800	synonym	sadhu
+অণু	800	synonym
+খর্ব	800	synonym
+সামান্য	900	synonym
+সামান্যের	600	synonym
+সামান্যতা	700	synonym
+নিরীহ	800	synonym
+নিরিহ	700	synonym
+নির্বাহ	800	synonym
+নির্বাহের	600	synonym
+সঞ্চালন	800	synonym
+সঞ্চালনা	700	synonym
+পরিচালনা	900	synonym
+পরিচালনার	600	synonym
+সম্পাদন	700	synonym
+সম্পাদনা	800	synonym
+সম্পাদনের	600	synonym
+প্রণয়ন	700	synonym
+রচনা	900	synonym
+রচনার	600	synonym
+গ্রন্থরচনা	700	synonym
+কাব্যরচনা	700	synonym
+প্রাগৈতিহাসিক	700	synonym
+প্রাচীনত্ব	700	synonym
+অনাদি	700	synonym
+অনন্তের	600	synonym
+অসীম	800	synonym
+অসীমতা	700	synonym
+সীমাহীন	700	synonym
+অসীমের	600	synonym
+উৎপত্তি	900	synonym
+উৎস	900	synonym
+আবির্ভাব	800	synonym
+আবির্ভাবের	600	synonym
+সূচনার	600	synonym
+শুরুর	600	synonym
+পরিসমাপ্তি	800	synonym
+সমাপ্তি	800	synonym
+পরিত্রাণ	800	synonym
+উদ্ধার	900	synonym
+উদ্ধারের	600	synonym
+অবমুক্তি	700	synonym

@@ -1,0 +1,12 @@
+test_id,layout,group,keys,expected,actual,expected_cps,actual_cps,verdict,note
+BRIEF-001,avro-phonetic,brief-sequence,ami,আমি,আমি,U+0986 U+09AE U+09BF,U+0986 U+09AE U+09BF,PASS,
+BRIEF-002,avro-phonetic,brief-sequence,sbadhInota,স্বাধীনতা,স্বাধীনতা,U+09B8 U+09CD U+09AC U+09BE U+09A7 U+09C0 U+09A8 U+09A4 U+09BE,U+09B8 U+09CD U+09AC U+09BE U+09A7 U+09C0 U+09A8 U+09A4 U+09BE,PASS,
+BRIEF-003,avro-phonetic,brief-sequence,kompiuTar,কম্পিউটার,কম্পিউটার,U+0995 U+09AE U+09CD U+09AA U+09BF U+0989 U+099F U+09BE U+09B0,U+0995 U+09AE U+09CD U+09AA U+09BF U+0989 U+099F U+09BE U+09B0,PASS,
+BRIEF-004,avro-phonetic,brief-sequence,jonopriy,জনপ্রিয়,জনপ্রিয়,U+099C U+09A8 U+09AA U+09CD U+09B0 U+09BF U+09AF U+09BC,U+099C U+09A8 U+09AA U+09CD U+09B0 U+09BF U+09AF U+09BC,PASS,
+BRIEF-005,avro-phonetic,brief-sequence,rri,ঋ,ঋ,U+098B,U+098B,PASS,
+BRIEF-006,avro-phonetic,brief-sequence,Ng,ঙ,ঙ,U+0999,U+0999,PASS,
+BRIEF-007,avro-phonetic,brief-sequence,R,ড়,ড়,U+09DC,U+09A1 U+09BC,PASS,
+BRIEF-008,avro-phonetic,brief-sequence,Rh,ঢ়,ঢ়,U+09DD,U+09A2 U+09BC,PASS,
+BRIEF-009,avro-phonetic,brief-sequence,y,য়,য়,U+09AF U+09BC,U+09AF U+09BC,PASS,
+BRIEF-010,avro-phonetic,brief-sequence,"k,,",ক্,ক্,U+0995 U+09CD,U+0995 U+09CD,PASS,
+BRIEF-011,avro-phonetic,brief-sequence,t'',ৎ,ত'',U+09CE,U+09A4 U+0027 U+0027,FAIL,

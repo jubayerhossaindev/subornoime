@@ -1,0 +1,13 @@
+usr/bin/suborno_dictionary_import
+usr/bin/suborno_dictionary_bench
+usr/bin/suborno_engine_demo
+usr/bin/suborno_c_api_example
+packaging/appstream/org.subornoIME.metainfo.xml usr/share/metainfo
+packaging/linux/icons/org.subornoIME-16.png usr/share/icons/hicolor/16x16/apps
+packaging/linux/icons/org.subornoIME-24.png usr/share/icons/hicolor/24x24/apps
+packaging/linux/icons/org.subornoIME-32.png usr/share/icons/hicolor/32x32/apps
+packaging/linux/icons/org.subornoIME-48.png usr/share/icons/hicolor/48x48/apps
+packaging/linux/icons/org.subornoIME-64.png usr/share/icons/hicolor/64x64/apps
+packaging/linux/icons/org.subornoIME-128.png usr/share/icons/hicolor/128x128/apps
+packaging/linux/icons/org.subornoIME-256.png usr/share/icons/hicolor/256x256/apps
+packaging/linux/icons/org.subornoIME-512.png usr/share/icons/hicolor/512x512/apps

@@ -1,0 +1,53 @@
+{
+    // Suborno IME — VS Code editor configuration.
+    // Formatting policy lives in .clang-format; clangd uses the compile
+    // commands produced by the CMake presets (build/<preset>/compile_commands.json).
+    "editor.formatOnSave": true,
+    "editor.rulers": [100],
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false,
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "files.associations": {
+        "*.inc": "cpp",
+        "*.in": "cpp",
+        "*.mim": "lisp",
+        "optional": "cpp",
+        "variant": "cpp",
+        "span": "cpp",
+        "string_view": "cpp",
+        "filesystem": "cpp",
+        "format": "cpp",
+        "jthread": "cpp",
+        "stop_token": "cpp"
+    },
+    // clangd: C++20 language server over the CMake-generated compile database.
+    "clangd.arguments": [
+        "--compile-commands-dir=${workspaceFolder}/build/ubuntu-dev",
+        "--header-insertion=never",
+        "--background-index",
+        "--clang-tidy",
+        "--function-arg-placeholders=false"
+    ],
+    // CMake Tools: use the repository presets (ubuntu-dev for local work).
+    "cmake.useCMakePresets": "always",
+    "cmake.configureOnOpen": false,
+    "cmake.options.statusBarVisibility": "compact",
+    // clang-format (LLVM extension) reads .clang-format from the repo root.
+    "clang-format.style": "file",
+    "[cpp]": {
+        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+    },
+    "[c]": {
+        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+    },
+    // Markdown documents keep their own line endings; do not reformat.
+    "[markdown]": {
+        "editor.formatOnSave": false
+    },
+    "search.exclude": {
+        "**/build": true,
+        "**/data": true
+    }
+}

@@ -1,0 +1,11 @@
+=== Debug post-D-003 rebuild + ctest ===
+Wed Nov 25 20:14:49 UTC 2026
+[100%] Linking CXX executable ../suborno_fuzz_smoke
+[100%] Built target suborno_fuzz_smoke
+    Start 3: suborno.fuzz_smoke
+3/3 Test #3: suborno.fuzz_smoke ...............   Passed    1.75 sec
+
+100% tests passed out of 3
+
+Total Test time (real) = 605.79 sec
+CTEST_EXIT=0

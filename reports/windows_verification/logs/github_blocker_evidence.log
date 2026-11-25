@@ -1,0 +1,22 @@
+=== gh-cli availability proof ===
+/home/z/my-project/tools/gh-cli/gh_2.105.0_linux_amd64/bin/gh
+gh version 2.105.0 (2026-11-17)
+
+=== git remotes ===
+(empty output = NO remote configured)
+
+=== gh auth status (exact) ===
+You are not logged into any GitHub hosts. To log in, run: gh auth login
+AUTH_EXIT=1
+
+=== GH_TOKEN / GITHUB_TOKEN presence ===
+GH_TOKEN: absent
+GITHUB_TOKEN: absent
+
+=== api.github.com reachability ===
+{"message":"API rate limit exceeded for 8.212.10.159. (But here's the good news: Authenticated requests get a higher rate limit. Check out the documentation for more details.)","documentation_url":"https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"}
+
+=== push dry-run proof (no remote) ===
+error: src refspec ci/suborno-v19-windows-verification does not match any
+error: failed to push some refs to 'origin'
+PUSH_EXIT=1

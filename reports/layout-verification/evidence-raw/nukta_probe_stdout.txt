@@ -1,0 +1,6 @@
+suborno-phonetic | standalone_nukta: can_type=true output=':nukta:' | k+nukta: keys='k:nukta:' output='ক়'
+borno-phonetic | standalone_nukta: can_type=false output='' | k+nukta: keys='' output='(not derivable)'
+avro-phonetic | standalone_nukta: can_type=false output='' | k+nukta: keys='' output='(not derivable)'
+khipro | standalone_nukta: can_type=true output='়' | k+nukta: keys='k,,' output='ক়'
+probhat | standalone_nukta: can_type=true output='NO_KEY' | k+nukta: keys='ক়' output='ক'
+national | standalone_nukta: can_type=true output='়' | k+nukta: keys='k`' output='ক়'

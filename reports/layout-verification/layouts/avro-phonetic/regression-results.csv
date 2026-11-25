@@ -1,0 +1,7 @@
+test_id,bug_or_fix,gtest_id,layout,verdict,run
+REG-01,—,LayoutTypingRegressionTest.AvroUnchangedHeadlines,avro-phonetic,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-02,—,AvroPhoneticLayoutTest.HandlesAccentKeyOverrides,avro-phonetic,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-03,—,AvroPhoneticLayoutTest.ConvertsIndependentAndDependentVowels,avro-phonetic,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-04,—,AvroPhoneticLayoutTest.SupportsRephPhalaAndSpecialSigns,avro-phonetic,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-05,—,AvroPhoneticLayoutTest.PreservesCaseSensitiveConsonantTokens,avro-phonetic,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-06,—,AvroPhoneticLayoutTest.PreservesLiteralAndUnknownUnicodeText,avro-phonetic,PASS,unit run 2026-11-23 (build/ubuntu-dev)

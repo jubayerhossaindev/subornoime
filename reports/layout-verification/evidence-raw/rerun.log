@@ -1,0 +1,35 @@
+== [1/4] verify_main (core corpus + sentences + suites) ==
+/home/z/my-project/download/layout_verification/verify_lib.cpp: In function ‘std::vector<std::__cxx11::basic_string<char> > verify::derive_keystrokes(const std::string&, const std::string&, int, std::string*)’:
+/home/z/my-project/download/layout_verification/verify_lib.cpp:611:8: warning: capture of variable ‘kFragSets’ with non-automatic storage duration
+  611 |       [kFragSets](const std::string &id) -> const std::vector<std::string> & {
+      |        ^~~~~~~~~
+/home/z/my-project/download/layout_verification/verify_lib.cpp:594:8: note: ‘const std::unordered_map<std::__cxx11::basic_string<char>, std::vector<std::__cxx11::basic_string<char> > >* kFragSets’ declared here
+  594 |       *kFragSets = [] {
+      |        ^~~~~~~~~
+== [2/4] corpus_ext (extended 402-item inventory) ==
+/home/z/my-project/download/layout_verification/verify_lib.cpp: In function ‘std::vector<std::__cxx11::basic_string<char> > verify::derive_keystrokes(const std::string&, const std::string&, int, std::string*)’:
+/home/z/my-project/download/layout_verification/verify_lib.cpp:611:8: warning: capture of variable ‘kFragSets’ with non-automatic storage duration
+  611 |       [kFragSets](const std::string &id) -> const std::vector<std::string> & {
+      |        ^~~~~~~~~
+/home/z/my-project/download/layout_verification/verify_lib.cpp:594:8: note: ‘const std::unordered_map<std::__cxx11::basic_string<char>, std::vector<std::__cxx11::basic_string<char> > >* kFragSets’ declared here
+  594 |       *kFragSets = [] {
+      |        ^~~~~~~~~
+== [3/4] probe_runner (chandrabindu/nga probe) ==
+/home/z/my-project/download/layout_verification/verify_lib.cpp: In function ‘std::vector<std::__cxx11::basic_string<char> > verify::derive_keystrokes(const std::string&, const std::string&, int, std::string*)’:
+/home/z/my-project/download/layout_verification/verify_lib.cpp:611:8: warning: capture of variable ‘kFragSets’ with non-automatic storage duration
+  611 |       [kFragSets](const std::string &id) -> const std::vector<std::string> & {
+      |        ^~~~~~~~~
+/home/z/my-project/download/layout_verification/verify_lib.cpp:594:8: note: ‘const std::unordered_map<std::__cxx11::basic_string<char>, std::vector<std::__cxx11::basic_string<char> > >* kFragSets’ declared here
+  594 |       *kFragSets = [] {
+      |        ^~~~~~~~~
+== [4/4] run ==
+verify_main OK
+corpus_ext OK
+probe_runner OK
+--- verify_main stdout tail ---
+evidence written to evidence.json (pass=353 fail=0 not_derivable=0)
+--- corpus_ext stdout tail ---
+total=402 pass=401 fail=0 not_derivable=1
+--- probe stdout ---
+probe written to chandrabindu_nga_probe.txt
+ALL RERUNS DONE in /tmp/layout_verify_rerun

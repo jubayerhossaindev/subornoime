@@ -1,0 +1,13 @@
+check_id,text,code_points,utf8_hex,nfc_same,category,property,verdict,note
+UNI-001,্,U+09CD,e0a78d,yes,engine,Mn ccc=9; no decomposition; virama,PASS,engine-verified
+UNI-002,়,U+09BC,e0a6bc,yes,engine,Mn ccc=7; no decomposition; nukta,PASS,engine-verified
+UNI-003,ক্,U+0995 U+09CD,e0a695e0a78d,yes,engine,Khipro trailing virama output,PASS,engine-verified
+UNI-004,ক়,U+0995 U+09BC,e0a695e0a6bc,yes,engine,Probhat consonant+nukta output,PASS,engine-verified
+UNI-005,়,U+09BC,e0a6bc,yes,engine,Probhat standalone nukta output,PASS,engine-verified
+UNI-006,ড়,U+09A1 U+09BC,e0a6a1e0a6bc,yes,engine,decomposed RRHA (composition exclusion),PASS,engine-verified
+UNI-007,ঢ়,U+09A2 U+09BC,e0a6a2e0a6bc,yes,engine,decomposed RHA (composition exclusion),PASS,engine-verified
+UNI-008,য়,U+09AF U+09BC,e0a6afe0a6bc,yes,engine,decomposed YYA (composition exclusion),PASS,engine-verified
+UNI-009,ক্ত,U+0995 U+09CD U+09A4,e0a695e0a78de0a6a4,yes,engine,explicit join via khipro qq,PASS,engine-verified
+UNI-010,ক়্,U+0995 U+09BC U+09CD,e0a695e0a6bce0a78d,yes,engine,canonical order nukta<virama at commit,PASS,engine-verified
+UNI-UTF8-01,্,U+09CD,e0a78d,yes,engine,UTF-8 E0 A7 8D,PASS,exact byte sequence
+UNI-UTF8-02,়,U+09BC,e0a6bc,yes,engine,UTF-8 E0 A6 BC,PASS,exact byte sequence

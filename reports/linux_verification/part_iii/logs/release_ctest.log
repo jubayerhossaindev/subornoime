@@ -1,0 +1,26 @@
+=== Release incremental build ===
+ninja: no work to do.
+=== ctest (Release, BUILD_TESTING=ON) ===
+Test project /home/z/my-project/suborno-ime/SUBORNOIME/build/final
+    Start 1: suborno.unit
+1/3 Test #1: suborno.unit .....................   Passed   44.72 sec
+    Start 2: suborno.integration
+2/3 Test #2: suborno.integration ..............   Passed    0.00 sec
+    Start 3: suborno.fuzz_smoke
+3/3 Test #3: suborno.fuzz_smoke ...............   Passed    0.16 sec
+
+100% tests passed out of 3
+
+Total Test time (real) =  44.88 sec
+EXIT_CODE=0
+=== post-format Release rebuild ===
+[67/69] Linking CXX executable suborno_fuzz_smoke
+[68/69] Linking CXX executable suborno_unit_tests
+=== post-format ctest ===
+
+Total Test time (real) =  70.57 sec
+
+The following tests FAILED:
+	  1 - suborno.unit (Failed)
+Errors while running CTest
+CTEST_EXIT=0

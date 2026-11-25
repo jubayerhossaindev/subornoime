@@ -1,0 +1,89 @@
+=== StabilitySoak run 1 (Release) ===
+command: ./suborno_unit_tests --gtest_filter=StabilitySoak.*
+exit_code: 0
+wall_seconds: 68.335
+peak_child_rss_kib: 12788
+---- command stdout tail ----
+[       OK ] StabilitySoak.RapidTypingBurstsPreserveCompositionAcrossCommits (15261 ms)
+[ RUN      ] StabilitySoak.UnboundedRawInputNeverGrowsPastTheLimit
+[       OK ] StabilitySoak.UnboundedRawInputNeverGrowsPastTheLimit (52754 ms)
+[ RUN      ] StabilitySoak.FocusChangeChurnRecoversEveryCycle
+[       OK ] StabilitySoak.FocusChangeChurnRecoversEveryCycle (54 ms)
+[ RUN      ] StabilitySoak.MixedChurnThroughTheKeyMatrixStaysConsistent
+[       OK ] StabilitySoak.MixedChurnThroughTheKeyMatrixStaysConsistent (141 ms)
+[----------] 4 tests from StabilitySoak (68294 ms total)
+
+[----------] Global test environment tear-down
+[==========] 4 tests from 1 test suite ran. (68301 ms total)
+[  PASSED  ] 4 tests.
+=== StabilitySoak run 2 (Release, repeatability) ===
+command: ./suborno_unit_tests --gtest_filter=StabilitySoak.*
+exit_code: 0
+wall_seconds: 67.413
+peak_child_rss_kib: 12828
+---- command stdout tail ----
+[       OK ] StabilitySoak.RapidTypingBurstsPreserveCompositionAcrossCommits (15188 ms)
+[ RUN      ] StabilitySoak.UnboundedRawInputNeverGrowsPastTheLimit
+[       OK ] StabilitySoak.UnboundedRawInputNeverGrowsPastTheLimit (52009 ms)
+[ RUN      ] StabilitySoak.FocusChangeChurnRecoversEveryCycle
+[       OK ] StabilitySoak.FocusChangeChurnRecoversEveryCycle (19 ms)
+[ RUN      ] StabilitySoak.MixedChurnThroughTheKeyMatrixStaysConsistent
+[       OK ] StabilitySoak.MixedChurnThroughTheKeyMatrixStaysConsistent (191 ms)
+[----------] 4 tests from StabilitySoak (67409 ms total)
+
+[----------] Global test environment tear-down
+[==========] 4 tests from 1 test suite ran. (67409 ms total)
+[  PASSED  ] 4 tests.
+
+### §6 PerformanceBudget 5 repeated runs (per-test ms)
+--- run 1 ---
+ PerformanceBudget.SingleKeystrokeAppendStaysWithinCeiling	[ RUN      ] PerformanceBudget.BackspaceAndSnapshotStayWithinCeiling
+ PerformanceBudget.CompositionCommitPipelineStaysWithinCeiling	[ RUN      ] PerformanceBudget.CandidateNavigationStaysWithinCeiling
+ PerformanceBudget.EngineSessionPipelineStaysWithinCeiling	[ RUN      ] PerformanceBudget.AutoRepeatLoopStaysWithinCeiling
+--- run 2 ---
+ PerformanceBudget.SingleKeystrokeAppendStaysWithinCeiling	[ RUN      ] PerformanceBudget.BackspaceAndSnapshotStayWithinCeiling
+ PerformanceBudget.CompositionCommitPipelineStaysWithinCeiling	[ RUN      ] PerformanceBudget.CandidateNavigationStaysWithinCeiling
+ PerformanceBudget.EngineSessionPipelineStaysWithinCeiling	[ RUN      ] PerformanceBudget.AutoRepeatLoopStaysWithinCeiling
+--- run 3 ---
+ PerformanceBudget.SingleKeystrokeAppendStaysWithinCeiling	[ RUN      ] PerformanceBudget.BackspaceAndSnapshotStayWithinCeiling
+ PerformanceBudget.CompositionCommitPipelineStaysWithinCeiling	[ RUN      ] PerformanceBudget.CandidateNavigationStaysWithinCeiling
+ PerformanceBudget.EngineSessionPipelineStaysWithinCeiling	[ RUN      ] PerformanceBudget.AutoRepeatLoopStaysWithinCeiling
+--- run 4 ---
+ PerformanceBudget.SingleKeystrokeAppendStaysWithinCeiling	[ RUN      ] PerformanceBudget.BackspaceAndSnapshotStayWithinCeiling
+ PerformanceBudget.CompositionCommitPipelineStaysWithinCeiling	[ RUN      ] PerformanceBudget.CandidateNavigationStaysWithinCeiling
+ PerformanceBudget.EngineSessionPipelineStaysWithinCeiling	[ RUN      ] PerformanceBudget.AutoRepeatLoopStaysWithinCeiling
+--- run 5 ---
+ PerformanceBudget.SingleKeystrokeAppendStaysWithinCeiling	[ RUN      ] PerformanceBudget.BackspaceAndSnapshotStayWithinCeiling
+ PerformanceBudget.CompositionCommitPipelineStaysWithinCeiling	[ RUN      ] PerformanceBudget.CandidateNavigationStaysWithinCeiling
+ PerformanceBudget.EngineSessionPipelineStaysWithinCeiling	[ RUN      ] PerformanceBudget.AutoRepeatLoopStaysWithinCeiling
+### §6 PerformanceBudget — 5 repeated runs, per-test durations (ms)
+--- run 1 ---
+[       OK ] PerformanceBudget.BackspaceAndSnapshotStayWithinCeiling (5 ms)
+[       OK ] PerformanceBudget.CompositionCommitPipelineStaysWithinCeiling (40 ms)
+[       OK ] PerformanceBudget.CandidateNavigationStaysWithinCeiling (56 ms)
+[       OK ] PerformanceBudget.EngineSessionPipelineStaysWithinCeiling (1 ms)
+[       OK ] PerformanceBudget.AutoRepeatLoopStaysWithinCeiling (1 ms)
+--- run 2 ---
+[       OK ] PerformanceBudget.BackspaceAndSnapshotStayWithinCeiling (5 ms)
+[       OK ] PerformanceBudget.CompositionCommitPipelineStaysWithinCeiling (15 ms)
+[       OK ] PerformanceBudget.CandidateNavigationStaysWithinCeiling (58 ms)
+[       OK ] PerformanceBudget.EngineSessionPipelineStaysWithinCeiling (1 ms)
+[       OK ] PerformanceBudget.AutoRepeatLoopStaysWithinCeiling (1 ms)
+--- run 3 ---
+[       OK ] PerformanceBudget.SingleKeystrokeAppendStaysWithinCeiling (13 ms)
+[       OK ] PerformanceBudget.BackspaceAndSnapshotStayWithinCeiling (5 ms)
+[       OK ] PerformanceBudget.CompositionCommitPipelineStaysWithinCeiling (7 ms)
+[       OK ] PerformanceBudget.CandidateNavigationStaysWithinCeiling (62 ms)
+[       OK ] PerformanceBudget.EngineSessionPipelineStaysWithinCeiling (1 ms)
+[       OK ] PerformanceBudget.AutoRepeatLoopStaysWithinCeiling (1 ms)
+--- run 4 ---
+[       OK ] PerformanceBudget.CompositionCommitPipelineStaysWithinCeiling (14 ms)
+[       OK ] PerformanceBudget.CandidateNavigationStaysWithinCeiling (87 ms)
+[       OK ] PerformanceBudget.EngineSessionPipelineStaysWithinCeiling (1 ms)
+[       OK ] PerformanceBudget.AutoRepeatLoopStaysWithinCeiling (1 ms)
+--- run 5 ---
+[       OK ] PerformanceBudget.BackspaceAndSnapshotStayWithinCeiling (5 ms)
+[       OK ] PerformanceBudget.CompositionCommitPipelineStaysWithinCeiling (35 ms)
+[       OK ] PerformanceBudget.CandidateNavigationStaysWithinCeiling (59 ms)
+[       OK ] PerformanceBudget.EngineSessionPipelineStaysWithinCeiling (1 ms)
+[       OK ] PerformanceBudget.AutoRepeatLoopStaysWithinCeiling (1 ms)

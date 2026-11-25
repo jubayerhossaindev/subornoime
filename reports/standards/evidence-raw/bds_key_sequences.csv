@@ -1,0 +1,13 @@
+test_id,input_cp,expected_nfc_cp,engine_nfc_cp,note,result
+KEY-01,0995 09CD,0995 09CD,0995 09CD,virama sequence stable under NFC,PASS
+KEY-02,09BC,09BC,09BC,standalone nukta stable,PASS
+KEY-03,0995 09BC,0995 09BC,0995 09BC,KA+NUKTA stable (no precomposed KA-NUKTA exists),PASS
+KEY-04,09A1 09BC,09A1 09BC,09A1 09BC,DDA+NUKTA: composition exclusion keeps decomposed,PASS
+KEY-05,09DC,09A1 09BC,09A1 09BC,RRA singleton decomposes to DDA+NUKTA,PASS
+KEY-06,09A2 09BC,09A2 09BC,09A2 09BC,DDHA+NUKTA stable,PASS
+KEY-07,09DD,09A2 09BC,09A2 09BC,RHA singleton decomposes to DDHA+NUKTA,PASS
+KEY-08,09AF 09BC,09AF 09BC,09AF 09BC,YA+NUKTA stable,PASS
+KEY-09,09DF,09AF 09BC,09AF 09BC,YYA singleton decomposes to YA+NUKTA,PASS
+KEY-10,0995 09CD 0995,0995 09CD 0995,0995 09CD 0995,KA+virama+KA conjunct base stable,PASS
+KEY-11,09C7 09BE,09CB,09CB,E+AA composes to O-sign (NFC composition works),PASS
+KEY-12,09CB,09CB,09CB,O-sign stays composed,PASS

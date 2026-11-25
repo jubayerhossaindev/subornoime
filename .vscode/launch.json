@@ -1,0 +1,63 @@
+{
+    // Debug configurations for the Suborno IME test targets and engine demo.
+    // The unit/integration test binaries live in the preset build directory
+    // (build/ubuntu-dev) on Linux; on Windows use the msvc preset binaries.
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(lldb) Launch suborno_unit_tests",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/ubuntu-dev/suborno_unit_tests",
+            "args": ["--gtest_break_on_failure"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "preLaunchTask": "Build & run unit + integration tests"
+        },
+        {
+            "name": "(lldb) Launch suborno_integration_tests",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/ubuntu-dev/suborno_integration_tests",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb"
+        },
+        {
+            "name": "(gdb) Launch suborno_unit_tests",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/ubuntu-dev/suborno_unit_tests",
+            "args": ["--gtest_filter=${input:gtestFilter}"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb"
+        },
+        {
+            "name": "(Windows) Launch suborno_unit_tests (MSVC)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/windows-msvc/Release/suborno_unit_tests.exe",
+            "args": ["--gtest_break_on_failure"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "gtestFilter",
+            "type": "promptString",
+            "description": "GoogleTest filter, e.g. EngineTest.LayoutDisplayNamesAreCorrectAndScriptClean",
+            "default": "*"
+        }
+    ]
+}

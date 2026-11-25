@@ -1,0 +1,230 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "ubuntu-dev",
+      "displayName": "Ubuntu development (Clang 23, Ninja)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/ubuntu-dev",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_COMPILER": "clang++-23",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "BUILD_TESTING": "ON",
+        "SUBORNO_BUILD_BENCHMARKS": "OFF",
+        "VCPKG_MANIFEST_FEATURES": "testing"
+      }
+    },
+    {
+      "name": "ubuntu-ci",
+      "displayName": "Ubuntu CI (Clang 23, Ninja)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/ubuntu-ci",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_COMPILER": "clang++-23",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "BUILD_TESTING": "ON",
+        "SUBORNO_ENABLE_MSVC_ANALYSIS": "OFF",
+        "VCPKG_MANIFEST_FEATURES": "testing"
+      }
+    },
+    {
+      "name": "ubuntu-bench",
+      "displayName": "Ubuntu benchmark CI (Clang 23, Ninja)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/ubuntu-bench",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_COMPILER": "clang++-23",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "BUILD_TESTING": "ON",
+        "SUBORNO_BUILD_BENCHMARKS": "ON",
+        "SUBORNO_ENABLE_MSVC_ANALYSIS": "OFF",
+        "VCPKG_MANIFEST_FEATURES": "testing"
+      }
+    },
+    {
+      "name": "ubuntu-gcc-ci",
+      "displayName": "Ubuntu GCC 13 compatibility CI (Ninja)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/ubuntu-gcc-ci",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_COMPILER": "g++-13",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "BUILD_TESTING": "ON",
+        "SUBORNO_BUILD_BENCHMARKS": "OFF",
+        "VCPKG_MANIFEST_FEATURES": "testing"
+      }
+    },
+    {
+      "name": "ubuntu-sanitizers-clang",
+      "displayName": "Ubuntu ASan/UBSan CI (Clang 23, Ninja)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/ubuntu-sanitizers-clang",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_COMPILER": "clang++-23",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "BUILD_TESTING": "ON",
+        "SUBORNO_ENABLE_SANITIZERS": "ON",
+        "SUBORNO_BUILD_BENCHMARKS": "OFF",
+        "VCPKG_MANIFEST_FEATURES": "testing"
+      }
+    },
+    {
+      "name": "windows-msvc",
+      "displayName": "Windows production (MSVC v143, x64)",
+      "generator": "Visual Studio 17 2022",
+      "architecture": {
+        "value": "x64",
+        "strategy": "set"
+      },
+      "toolset": {
+        "value": "v143",
+        "strategy": "set"
+      },
+      "binaryDir": "${sourceDir}/build/windows-msvc",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "20",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>",
+        "BUILD_TESTING": "ON",
+        "SUBORNO_ENABLE_MSVC_ANALYSIS": "ON",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static",
+        "VCPKG_MANIFEST_FEATURES": "testing"
+      }
+    },
+    {
+      "name": "windows-msvc-minimal-icu-poc",
+      "displayName": "Windows MSVC v143 — minimal ICU data POC",
+      "generator": "Visual Studio 17 2022",
+      "architecture": {
+        "value": "x64",
+        "strategy": "set"
+      },
+      "toolset": {
+        "value": "v143",
+        "strategy": "set"
+      },
+      "binaryDir": "${sourceDir}/build/icu-minimal-poc",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "20",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "OFF",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>",
+        "BUILD_TESTING": "ON",
+        "SUBORNO_ENABLE_MSVC_ANALYSIS": "ON",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static",
+        "VCPKG_MANIFEST_FEATURES": "testing"
+      },
+      "environment": {
+        "ICU_DATA_FILTER_FILE": "${sourceDir}/cmake/icu/suborno-data-filter.json",
+        "VCPKG_BINARY_SOURCES": "clear"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "ubuntu-dev",
+      "configurePreset": "ubuntu-dev",
+      "jobs": 1
+    },
+    {
+      "name": "ubuntu-ci",
+      "configurePreset": "ubuntu-ci",
+      "jobs": 2
+    },
+    {
+      "name": "ubuntu-bench",
+      "configurePreset": "ubuntu-bench",
+      "jobs": 2
+    },
+    {
+      "name": "ubuntu-gcc-ci",
+      "configurePreset": "ubuntu-gcc-ci",
+      "jobs": 2
+    },
+    {
+      "name": "ubuntu-sanitizers-clang",
+      "configurePreset": "ubuntu-sanitizers-clang",
+      "jobs": 1
+    },
+    {
+      "name": "windows-msvc-release",
+      "configurePreset": "windows-msvc",
+      "configuration": "Release",
+      "jobs": 2
+    },
+    {
+      "name": "windows-msvc-debug",
+      "configurePreset": "windows-msvc",
+      "configuration": "Debug",
+      "jobs": 2
+    },
+    {
+      "name": "windows-msvc-minimal-icu-poc",
+      "configurePreset": "windows-msvc-minimal-icu-poc",
+      "configuration": "Release",
+      "jobs": 1
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "ubuntu-dev",
+      "configurePreset": "ubuntu-dev",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "ubuntu-ci",
+      "configurePreset": "ubuntu-ci",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "ubuntu-gcc-ci",
+      "configurePreset": "ubuntu-gcc-ci",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "ubuntu-sanitizers-clang",
+      "configurePreset": "ubuntu-sanitizers-clang",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-msvc-release",
+      "configurePreset": "windows-msvc",
+      "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-msvc-debug",
+      "configurePreset": "windows-msvc",
+      "configuration": "Debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

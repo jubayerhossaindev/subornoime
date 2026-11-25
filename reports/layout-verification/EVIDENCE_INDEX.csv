@@ -1,0 +1,13 @@
+evidence_path,sha256_first16,what_it_proves,execution
+evidence-raw/evidence.json,36528c523b39b5ab,corpus 294/294 + paragraphs 18/18 + editing 19P/9B + composition 7P/2NA + switching 4/4 + stress 11P/4B — per-layout rows,2026-11-23 17:51Z run (Asia/Dhaka 2026-11-23 23:51)
+evidence-raw/corpus_inventory_extension.csv,adc62dfa416c1c82,extended 402-case inventory: 401 PASS + 1 NOT_DERIVABLE (khipro ক্),2026-11-23 17:51Z run (Asia/Dhaka 2026-11-23 23:51)
+evidence-raw/brief_sequences.csv,427fe9659079a106,brief-mandated sequences: 163 PASS + 3 convention-mismatch + 1 NOT_TYPEABLE + 7 switch-chains PASS,2026-11-23 17:51Z run (Asia/Dhaka 2026-11-23 23:51)
+evidence-raw/brief_summary.json,44f703c8e78dc844,brief-probe totals + per-row JSON,2026-11-23 17:51Z run (Asia/Dhaka 2026-11-23 23:51)
+evidence-raw/convention_sequences.csv,e98c699b84e34e50,authoritative engine conventions for disputed sequences (Tai/moi/t``) + controls,2026-11-23 17:51Z run (Asia/Dhaka 2026-11-23 23:51)
+evidence-raw/digits_punct.csv,4dd3c8b23edfa832,"digits 1421→১৪২১ (6/6), danda (6/6), punctuation evidence dumps",2026-11-23 17:51Z run (Asia/Dhaka 2026-11-23 23:51)
+evidence-raw/nukta_probe_stdout.txt,c953b2ddb042ad88,standalone/attached nukta capability per layout,2026-11-23 17:51Z run (Asia/Dhaka 2026-11-23 23:51)
+evidence-raw/chandrabindu_nga_probe.txt,64bb13948402153a,chandrabindu + nga 6 words x 6 layouts = 36/36 PASS + dict 4/4,2026-11-23 17:51Z run (Asia/Dhaka 2026-11-23 23:51)
+evidence-raw/ctest_full.log,c5e581aa149606ac,ctest ubuntu-dev: 2/2 suites (unit + integration),2026-11-23 17:51Z run (Asia/Dhaka 2026-11-23 23:51)
+evidence-raw/unit_stdout.log,c0dc744a60bfe617,gtest: 557/557 OK — includes all named regression tests,2026-11-23 17:51Z run (Asia/Dhaka 2026-11-23 23:51)
+evidence-raw/integration_stdout.log,3921a40040877933,gtest: 2/2 OK,2026-11-23 17:51Z run (Asia/Dhaka 2026-11-23 23:51)
+evidence-raw/rerun.log,3435542dbf2b069c,harness rebuild + run log (verify_main pass=353 fail=0; corpus_ext 401/402),2026-11-23 17:51Z run (Asia/Dhaka 2026-11-23 23:51)

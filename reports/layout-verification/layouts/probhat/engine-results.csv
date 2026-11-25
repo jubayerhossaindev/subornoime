@@ -1,0 +1,63 @@
+test_id,layout,suite,input,expected,actual,verdict,detail
+ENG-CORP-001,probhat,corpus,আমি,আমি,আমি,PASS,cps=U+0986 U+09AE U+09BF; dict_top=
+ENG-CORP-002,probhat,corpus,তুমি,তুমি,তুমি,PASS,cps=U+09A4 U+09C1 U+09AE U+09BF; dict_top=
+ENG-CORP-003,probhat,corpus,বাংলা,বাংলা,বাংলা,PASS,cps=U+09AC U+09BE U+0982 U+09B2 U+09BE; dict_top=
+ENG-CORP-004,probhat,corpus,বাংলাদেশ,বাংলাদেশ,বাংলাদেশ,PASS,cps=U+09AC U+09BE U+0982 U+09B2 U+09BE U+09A6 U+09C7 U+09B6; dict_top=
+ENG-CORP-005,probhat,corpus,সুবর্ণ,সুবর্ণ,সুবর্ণ,PASS,cps=U+09B8 U+09C1 U+09AC U+09B0 U+09CD U+09A3; dict_top=
+ENG-CORP-006,probhat,corpus,কম্পিউটার,কম্পিউটার,কম্পিউটার,PASS,cps=U+0995 U+09AE U+09CD U+09AA U+09BF U+0989 U+099F U+09BE U+09B0; dict_top=
+ENG-CORP-007,probhat,corpus,প্রযুক্তি,প্রযুক্তি,প্রযুক্তি,PASS,cps=U+09AA U+09CD U+09B0 U+09AF U+09C1 U+0995 U+09CD U+09A4 U+09BF; dict_top=
+ENG-CORP-008,probhat,corpus,কীবোর্ড,কীবোর্ড,কীবোর্ড,PASS,cps=U+0995 U+09C0 U+09AC U+09CB U+09B0 U+09CD U+09A1; dict_top=
+ENG-CORP-009,probhat,corpus,অভ্র,অভ্র,অভ্র,PASS,cps=U+0985 U+09AD U+09CD U+09B0; dict_top=
+ENG-CORP-010,probhat,corpus,বর্ণ,বর্ণ,বর্ণ,PASS,cps=U+09AC U+09B0 U+09CD U+09A3; dict_top=
+ENG-CORP-011,probhat,corpus,স্বাধীনতা,স্বাধীনতা,স্বাধীনতা,PASS,cps=U+09B8 U+09CD U+09AC U+09BE U+09A7 U+09C0 U+09A8 U+09A4 U+09BE; dict_top=
+ENG-CORP-012,probhat,corpus,বিদ্যালয়,বিদ্যালয়,বিদ্যালয়,PASS,cps=U+09AC U+09BF U+09A6 U+09CD U+09AF U+09BE U+09B2 U+09AF U+09BC; dict_top=
+ENG-CORP-013,probhat,corpus,পৃথিবী,পৃথিবী,পৃথিবী,PASS,cps=U+09AA U+09C3 U+09A5 U+09BF U+09AC U+09C0; dict_top=
+ENG-CORP-014,probhat,corpus,মানুষ,মানুষ,মানুষ,PASS,cps=U+09AE U+09BE U+09A8 U+09C1 U+09B7; dict_top=
+ENG-CORP-015,probhat,corpus,শিক্ষা,শিক্ষা,শিক্ষা,PASS,cps=U+09B6 U+09BF U+0995 U+09CD U+09B7 U+09BE; dict_top=
+ENG-CORP-016,probhat,corpus,ব্যবহারকারী,ব্যবহারকারী,ব্যবহারকারী,PASS,cps=U+09AC U+09CD U+09AF U+09AC U+09B9 U+09BE U+09B0 U+0995 U+09BE U+09B0 U+09C0; dict_top=
+ENG-CORP-017,probhat,corpus,সফটওয়্যার,সফটওয়্যার,সফটওয়্যার,PASS,cps=U+09B8 U+09AB U+099F U+0993 U+09AF U+09BC U+09CD U+09AF U+09BE U+09B0; dict_top=
+ENG-CORP-018,probhat,corpus,দেশ,দেশ,দেশ,PASS,cps=U+09A6 U+09C7 U+09B6; dict_top=
+ENG-CORP-019,probhat,corpus,মই,মই,মই,PASS,cps=U+09AE U+0987; dict_top=
+ENG-CORP-020,probhat,corpus,দোল,দোল,দোল,PASS,cps=U+09A6 U+09CB U+09B2; dict_top=
+ENG-CORP-021,probhat,corpus,নৌকা,নৌকা,নৌকা,PASS,cps=U+09A8 U+09CC U+0995 U+09BE; dict_top=
+ENG-CORP-022,probhat,corpus,বর্ণ,বর্ণ,বর্ণ,PASS,cps=U+09AC U+09B0 U+09CD U+09A3; dict_top=
+ENG-CORP-023,probhat,corpus,মানুষ,মানুষ,মানুষ,PASS,cps=U+09AE U+09BE U+09A8 U+09C1 U+09B7; dict_top=
+ENG-CORP-024,probhat,corpus,কার্য,কার্য,কার্য,PASS,cps=U+0995 U+09BE U+09B0 U+09CD U+09AF; dict_top=
+ENG-CORP-025,probhat,corpus,ক্ষ,ক্ষ,ক্ষ,PASS,cps=U+0995 U+09CD U+09B7; dict_top=
+ENG-CORP-026,probhat,corpus,জ্ঞ,জ্ঞ,জ্ঞ,PASS,cps=U+099C U+09CD U+099E; dict_top=
+ENG-CORP-027,probhat,corpus,ত্র,ত্র,ত্র,PASS,cps=U+09A4 U+09CD U+09B0; dict_top=
+ENG-CORP-028,probhat,corpus,শ্র,শ্র,শ্র,PASS,cps=U+09B6 U+09CD U+09B0; dict_top=
+ENG-CORP-029,probhat,corpus,ক্র,ক্র,ক্র,PASS,cps=U+0995 U+09CD U+09B0; dict_top=
+ENG-CORP-030,probhat,corpus,গ্র,গ্র,গ্র,PASS,cps=U+0997 U+09CD U+09B0; dict_top=
+ENG-CORP-031,probhat,corpus,প্র,প্র,প্র,PASS,cps=U+09AA U+09CD U+09B0; dict_top=
+ENG-CORP-032,probhat,corpus,ব্র,ব্র,ব্র,PASS,cps=U+09AC U+09CD U+09B0; dict_top=
+ENG-CORP-033,probhat,corpus,ন্দ,ন্দ,ন্দ,PASS,cps=U+09A8 U+09CD U+09A6; dict_top=
+ENG-CORP-034,probhat,corpus,ন্ত্র,ন্ত্র,ন্ত্র,PASS,cps=U+09A8 U+09CD U+09A4 U+09CD U+09B0; dict_top=
+ENG-CORP-035,probhat,corpus,ষ্ট,ষ্ট,ষ্ট,PASS,cps=U+09B7 U+09CD U+099F; dict_top=
+ENG-CORP-036,probhat,corpus,ঙ্ক,ঙ্ক,ঙ্ক,PASS,cps=U+0999 U+09CD U+0995; dict_top=
+ENG-CORP-037,probhat,corpus,ঙ্গ,ঙ্গ,ঙ্গ,PASS,cps=U+0999 U+09CD U+0997; dict_top=
+ENG-CORP-038,probhat,corpus,ঞ্চ,ঞ্চ,ঞ্চ,PASS,cps=U+099E U+09CD U+099A; dict_top=
+ENG-CORP-039,probhat,corpus,ম্প,ম্প,ম্প,PASS,cps=U+09AE U+09CD U+09AA; dict_top=
+ENG-CORP-040,probhat,corpus,হ্ম,হ্ম,হ্ম,PASS,cps=U+09B9 U+09CD U+09AE; dict_top=
+ENG-CORP-041,probhat,corpus,কার্যক্রম,কার্যক্রম,কার্যক্রম,PASS,cps=U+0995 U+09BE U+09B0 U+09CD U+09AF U+0995 U+09CD U+09B0 U+09AE; dict_top=
+ENG-CORP-042,probhat,corpus,রাষ্ট্র,রাষ্ট্র,রাষ্ট্র,PASS,cps=U+09B0 U+09BE U+09B7 U+09CD U+099F U+09CD U+09B0; dict_top=
+ENG-CORP-043,probhat,corpus,শ্রদ্ধা,শ্রদ্ধা,শ্রদ্ধা,PASS,cps=U+09B6 U+09CD U+09B0 U+09A6 U+09CD U+09A7 U+09BE; dict_top=
+ENG-CORP-044,probhat,corpus,বিজ্ঞান,বিজ্ঞান,বিজ্ঞান,PASS,cps=U+09AC U+09BF U+099C U+09CD U+099E U+09BE U+09A8; dict_top=
+ENG-CORP-045,probhat,corpus,বিশ্ববিদ্যালয়,বিশ্ববিদ্যালয়,বিশ্ববিদ্যালয়,PASS,cps=U+09AC U+09BF U+09B6 U+09CD U+09AC U+09AC U+09BF U+09A6 U+09CD U+09AF U+09BE U+09B2 U+09AF U+09BC; dict_top=
+ENG-CORP-046,probhat,corpus,স্বাধীনতা,স্বাধীনতা,স্বাধীনতা,PASS,cps=U+09B8 U+09CD U+09AC U+09BE U+09A7 U+09C0 U+09A8 U+09A4 U+09BE; dict_top=
+ENG-CORP-047,probhat,corpus,প্রযুক্তি,প্রযুক্তি,প্রযুক্তি,PASS,cps=U+09AA U+09CD U+09B0 U+09AF U+09C1 U+0995 U+09CD U+09A4 U+09BF; dict_top=
+ENG-CORP-048,probhat,corpus,জনপ্রিয়,জনপ্রিয়,জনপ্রিয়,PASS,cps=U+099C U+09A8 U+09AA U+09CD U+09B0 U+09BF U+09AF U+09BC; dict_top=
+ENG-CORP-049,probhat,corpus,গুরুত্বপূর্ণ,গুরুত্বপূর্ণ,গুরুত্বপূর্ণ,PASS,cps=U+0997 U+09C1 U+09B0 U+09C1 U+09A4 U+09CD U+09AC U+09AA U+09C2 U+09B0 U+09CD U+09A3; dict_top=
+ENG-PARA-1,probhat,paragraph,(phrase),আমি বাংলা লিখতে ভালোবাসি। SubornoIME একটি বাংলা ইনপুট মেথড। আমি প্রতিদিন কম্পিউটারে বাংলা টাইপ করি।,আমি বাংলা লিখতে ভালোবাসি। SubornoIME একটি বাংলা ইনপুট মেথড। আমি প্রতিদিন কম্পিউটারে বাংলা টাইপ করি।,PASS,
+ENG-PARA-2,probhat,paragraph,(phrase),"বাংলাদেশ আমার প্রিয় দেশ। আমাদের মাতৃভাষা বাংলা। বাংলা ভাষার রয়েছে সমৃদ্ধ ইতিহাস, সাহিত্য ও সংস্কৃতি।","বাংলাদেশ আমার প্রিয় দেশ। আমাদের মাতৃভাষা বাংলা। বাংলা ভাষার রয়েছে সমৃদ্ধ ইতিহাস, সাহিত্য ও সংস্কৃতি।",PASS,
+ENG-PARA-3,probhat,paragraph,(phrase),"SubornoIME-এর মাধ্যমে আমি বাংলা, English এবং বিভিন্ন ধরনের যুক্তবর্ণ টাইপ করতে পারি। প্রযুক্তি, শিক্ষা, বিজ্ঞান ও গবেষণার ক্ষেত্রে বাংলা ভাষার ব্যবহার অত্যন্ত গুরুত্বপূর্ণ।","SubornoIME-এর মাধ্যমে আমি বাংলা, English এবং বিভিন্ন ধরনের যুক্তবর্ণ টাইপ করতে পারি। প্রযুক্তি, শিক্ষা, বিজ্ঞান ও গবেষণার ক্ষেত্রে বাংলা ভাষার ব্যবহার অত্যন্ত গুরুত্বপূর্ণ।",PASS,
+ENG-EDIT-01,probhat,editing,backspace_removes_one_unit,কম্পিউটার,কম্পিউটা,PASS,"fixed layout: removes one Bangla grapheme; [""commit_after_2_backspaces='কম্পিউ'""]"
+ENG-EDIT-02,probhat,editing,backspace_inside_conjunct,নক্ষত্র,নক্ষ,PASS,"no stray Unicode left after deleting a conjunct block; [""commit_after_2_backspaces='কম্পিউ'""]"
+ENG-EDIT-03,probhat,editing,backspace_on_empty_is_noop,empty,empty,PASS,"no crash, composition stays empty"
+ENG-COMP-01,probhat,composition,candidate_system,N/A,,NOT_APPLICABLE,fixed layout: snapshot().candidates.empty()=true; ProbhatInputSession returns candidate_out_of_range for commit_candidate()
+ENG-STR-01,probhat,stress,fast_typing_repeat_count,ককককক,ককককক,PASS,single key event with repeat_count=5
+ENG-STR-02,probhat,stress,numbers_in_bangla_text,২০২৬,২০২৬,PASS,top-row digit keys are Bengali numerals in Probhat
+ENG-SW-01,all-6,switching,layout_cycle_no_contamination,,,PASS,"[""suborno-phonetic->আমি ok"",""probhat->বাংলা ok"",""national->তুমি ok"",""khipro->আমি ok"",""avro-phonetic->তুমি ok"",""borno-phonetic->বাংলা ok""]"
+ENG-SW-02,engine,switching,engine_set_active_layout,"probhat,national","probhat,national",PASS,unknown id rejected: true
+ENG-SW-03,engine,switching,restart_layout_persistence,probhat,probhat,PASS,settings.ini saved with active_layout_id=probhat; a NEW Engine instance (simulated restart) restores it
+ENG-SW-04,suborno+probhat,switching,per_window_session_independence,আমি,আমি | আমি,PASS,switching_mode=per_application_window mirror

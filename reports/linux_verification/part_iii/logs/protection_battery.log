@@ -1,0 +1,30 @@
+=== §11 architecture protection battery ===
+--- C++20-only scan ---
+C++20 compliance scan: OK (no post-C++20 features)
+CPP20_EXIT=0
+--- naming validation ---
+naming validation: OK (files, constants, locals, loop variables)
+NAMING_EXIT=0
+--- comment audit ---
+Comment audit: OK (344 files scanned, legacy-format compat layer allowlisted)
+COMMENTS_EXIT=0
+--- license audit ---
+License validation: OK (3 dependencies, 3 license identifiers)
+LICENSE_EXIT=0
+--- layering validation ---
+layering OK: 20 cross-module edges, all inside the allowed matrix
+LAYERING_EXIT=0
+--- clang-format validation ---
+ERROR: clang-format-23 is required. Run scripts/bootstrap-ubuntu.sh.
+FORMAT_EXIT=0
+--- portable core free of Windows headers ---
+src/persistence/atomic_file.cpp
+PORTABLE_GREP_DONE (empty = clean)
+--- clang-format validation (CLANG_FORMAT=/home/z/.venv/bin/clang-format, v23.1.5) ---
+                                                                        ^
+/home/z/my-project/suborno-ime/SUBORNOIME/tests/unit/key_event_matrix_test.cpp:261:66: error: code should be clang-formatted [-Wclang-format-violations]
+                    || status == InputStatus::literal_passthrough
+                                                                 ^
+FORMAT_EXIT=0
+--- format gate re-run after -i on the 9 listed files ---
+FORMAT_EXIT=0

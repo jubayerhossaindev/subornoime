@@ -1,0 +1,10 @@
+test_id,bug_or_fix,gtest_id,layout,verdict,run
+REG-01,F-5,LayoutTypingRegressionTest.KhiproNgaIsTypeableAndJoinsConjuncts,khipro,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-02,F-5,LayoutTypingRegressionTest.KhiproNuktaKeepsTheConsonantRunAlive,khipro,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-03,F-5,LayoutTypingRegressionTest.KhiproDigitsAndHeadlines,khipro,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-04,—,KhiproLayoutTest.AutomaticallyJoinsAdjacentConsonants,khipro,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-05,—,KhiproLayoutTest.SupportsForcedVowelForms,khipro,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-06,—,KhiproLayoutTest.SupportsSlicerAndChandrabindu,khipro,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-07,—,KhiproLayoutTest.SupportsSpecialCharactersAndLiteralSeparator,khipro,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-08,—,KhiproLayoutTest.BasicConsonantAndVowelComposition,khipro,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-09,—,KhiproLayoutTest.CreatesCompositionSessionsAndCommitsTheSelectedOutput,khipro,PASS,unit run 2026-11-23 (build/ubuntu-dev)

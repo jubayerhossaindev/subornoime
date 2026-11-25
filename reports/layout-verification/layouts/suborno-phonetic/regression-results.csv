@@ -1,0 +1,7 @@
+test_id,bug_or_fix,gtest_id,layout,verdict,run
+REG-01,BUG-06,LayoutTypingRegressionTest.SubornoChandrabinduIsTyped,suborno-phonetic,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-02,F-3,LayoutTypingRegressionTest.SubornoRiNoLongerShadowsRaPlusIKar,suborno-phonetic,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-03,F-4,LayoutTypingRegressionTest.SubornoNgaBeforeVelarFinalAndStandalone,suborno-phonetic,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-04,—,LayoutTypingRegressionTest.SubornoKhandaControl,suborno-phonetic,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-05,—,EngineTest.HandlesCoreBanglaTransliterationExamples,suborno-phonetic,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-06,—,EngineTest.LayoutDisplayNamesAreCorrectAndScriptClean,suborno-phonetic,PASS,unit run 2026-11-23 (build/ubuntu-dev)

@@ -1,0 +1,13 @@
+=== ASan+UBSan: rebuild (D-003 fixed fences) + Part III run ===
+Wed Nov 25 20:12:49 UTC 2026
+[67/69] Linking CXX executable suborno_integration_tests
+[68/69] Linking CXX executable suborno_fuzz_smoke
+[       OK ] PerformanceBudget.EngineSessionPipelineStaysWithinCeiling (63 ms)
+[ RUN      ] PerformanceBudget.AutoRepeatLoopStaysWithinCeiling
+[       OK ] PerformanceBudget.AutoRepeatLoopStaysWithinCeiling (71 ms)
+[----------] 6 tests from PerformanceBudget (2275 ms total)
+
+[----------] Global test environment tear-down
+[==========] 34 tests from 5 test suites ran. (1886241 ms total)
+[  PASSED  ] 34 tests.
+EXIT_CODE=0

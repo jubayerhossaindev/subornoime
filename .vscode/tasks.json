@@ -1,0 +1,85 @@
+{
+    // Suborno IME — common developer tasks.
+    // Linux tasks use the repository CMake presets; Windows tasks run the
+    // MSVC presets documented in docs/development/windows.md.
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Configure (ubuntu-dev preset)",
+            "type": "shell",
+            "command": "cmake --preset ubuntu-dev",
+            "problemMatcher": [],
+            "presentation": {"reveal": "always"},
+            "group": "build"
+        },
+        {
+            "label": "Build (ubuntu-dev)",
+            "type": "shell",
+            "command": "cmake --build --preset ubuntu-dev",
+            "problemMatcher": ["$gcc"],
+            "presentation": {"reveal": "always"},
+            "group": {"kind": "build", "isDefault": true}
+        },
+        {
+            "label": "Build & run unit + integration tests",
+            "type": "shell",
+            "command": "cmake --build --preset ubuntu-dev --target suborno_unit_tests suborno_integration_tests && ctest --preset ubuntu-dev --output-on-failure",
+            "problemMatcher": ["$gcc"],
+            "presentation": {"reveal": "always"},
+            "group": "test"
+        },
+        {
+            "label": "Format check (clang-format dry-run)",
+            "type": "shell",
+            "command": "find src include tests benchmarks scripts examples cmake -name '*.cpp' -o -name '*.hpp' -o -name '*.h' -o -name '*.c' -o -name '*.inc' | grep -v build | xargs clang-format --style=file --dry-run -Werror",
+            "problemMatcher": [],
+            "presentation": {"reveal": "always"},
+            "group": "test"
+        },
+        {
+            "label": "Format all C++ sources",
+            "type": "shell",
+            "command": "find src include tests benchmarks scripts examples cmake -name '*.cpp' -o -name '*.hpp' -o -name '*.h' -o -name '*.c' -o -name '*.inc' | grep -v build | xargs clang-format --style=file -i",
+            "problemMatcher": [],
+            "presentation": {"reveal": "always"}
+        },
+        {
+            "label": "Naming validation (scripts/validate_naming.py)",
+            "type": "shell",
+            "command": "python3 scripts/validate_naming.py",
+            "problemMatcher": [],
+            "presentation": {"reveal": "always"},
+            "group": "test"
+        },
+        {
+            "label": "Layering check (core must stay platform-independent)",
+            "type": "shell",
+            "command": "python3 scripts/check-layering.py",
+            "problemMatcher": [],
+            "presentation": {"reveal": "always"},
+            "group": "test"
+        },
+        {
+            "label": "Generate API documentation (Doxygen)",
+            "type": "shell",
+            "command": "cmake --build --preset ubuntu-dev --target docs",
+            "problemMatcher": [],
+            "presentation": {"reveal": "always"}
+        },
+        {
+            "label": "clang-tidy (changed files via build dir)",
+            "type": "shell",
+            "command": "scripts/check-tidy-ubuntu.sh build/ubuntu-dev",
+            "problemMatcher": ["$gcc"],
+            "presentation": {"reveal": "always"}
+        },
+        {
+            "label": "MSVC build (Windows host)",
+            "type": "shell",
+            "command": "cmake --build --preset windows-msvc-release",
+            "problemMatcher": ["$msCompile"],
+            "presentation": {"reveal": "always"},
+            "windows": {"command": "cmake"}
+        }
+    ]
+}
