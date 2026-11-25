@@ -1,11 +1,11 @@
 name: Windows Verification
 
-# Dedicated Part III / Windows verification pipeline. Extends (does not
-# duplicate) the CI `windows-msvc` job: same pinned vcpkg baseline, same
-# presets, same installer scripts — plus the evidence collection the CI job
-# does not produce: toolchain identity assertions, MSVC /analyze execution
-# proof, GoogleTest count reconciliation, PE export/ABI evidence, Windows
-# fuzz-smoke execution, and the UIA functional audit harness run.
+# Dedicated, self-contained Windows verification pipeline.
+# It intentionally runs independently of the deferred Linux, static-analysis,
+# CodeQL, benchmark, fuzz-campaign, and release workflows.
+# Verify the native Windows/MSVC product path: toolchain identity, v143 build,
+# MSVC /analyze, GoogleTest/CTest, PE exports, installer lifecycle, Windows
+# fuzz-smoke, and UI Automation evidence.
 
 on:
   push:
