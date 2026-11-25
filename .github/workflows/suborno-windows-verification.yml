@@ -65,7 +65,7 @@ jobs:
           $env_report.vs_catalog_version = "$catalog"
           $cl = Get-ChildItem (Join-Path $vs 'VC\Tools\MSVC') -Directory | Sort-Object Name -Descending | Select-Object -First 1
           $env_report.msvc_toolset = $cl.Name
-          if ($cl.Name -notmatch '^14\\.(3[0-9]|4[0-9])\\.') { throw "Toolset is $($cl.Name); MSVC v143 requires toolset 14.30 through 14.49." }
+          if ($cl.Name -notmatch '^14\.(3[0-9]|4[0-9])\.') { throw "Toolset is $($cl.Name); MSVC v143 requires toolset 14.30 through 14.49." }
           $env_report.msvc_toolset_family = 'v143'
           $env_report.cmake = (cmake --version | Select-Object -First 1)
           $msbuild = Join-Path $vs 'MSBuild\Current\Bin\amd64\MSBuild.exe'
@@ -76,7 +76,7 @@ jobs:
           $banner = cmd /c "`"$(Join-Path $vs 'VC\Auxiliary\Build\vcvars64.bat')`" && cl 2>&1" | Out-String
           $env_report.cl_banner = ($banner -split "`r?`n" | Where-Object { $_ -match 'Version' }) -join ' | '
           if ($banner -notmatch 'Optimizing Compiler') { throw "cl.exe did not identify as the Microsoft C/C++ Optimizing Compiler." }
-          if ($env_report.msvc_toolset -notmatch '^14\\.(3[0-9]|4[0-9])\\.') { throw "cl.exe toolset is not v143." }
+          if ($env_report.msvc_toolset -notmatch '^14\.(3[0-9]|4[0-9])\.') { throw "cl.exe toolset is not v143." }
           # Preset assertions: generator/arch/toolset/standard pinned to the mission contract.
           $presets = Get-Content CMakePresets.json -Raw | ConvertFrom-Json
           $cfg = $presets.configurePresets | Where-Object { $_.name -eq 'windows-msvc' }
