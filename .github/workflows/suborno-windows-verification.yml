@@ -43,6 +43,14 @@ jobs:
           restore-keys: |
             vcpkg-${{ runner.os }}-msvc-v143-x64-windows-static-
 
+      # The vcpkg source checkout and its bootstrapped executable are pinned
+      # to an immutable commit, so they can be safely reused between runs.
+      - name: Cache pinned vcpkg tool
+        uses: actions/cache@v6.1.0
+        with:
+          path: .vcpkg
+          key: vcpkg-tool-${{ runner.os }}-0df93a05b9de080129e653ec4776d7e14a1b2e4f
+
       # Reuse the exact same third-party installer on subsequent workflow runs.
       # The cached binary is still SHA-256 verified before it is executed.
       - name: Cache downloaded Windows tools
@@ -101,15 +109,35 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
+          $pinnedVcpkgCommit = '0df93a05b9de080129e653ec4776d7e14a1b2e4f'
           New-Item -ItemType Directory -Force -Path $env:VCPKG_DEFAULT_BINARY_CACHE | Out-Null
-          git clone --filter=blob:none --no-checkout https://github.com/microsoft/vcpkg.git "$env:VCPKG_ROOT"
-          if ($LASTEXITCODE -ne 0) { throw "Unable to clone vcpkg." }
-          git -C "$env:VCPKG_ROOT" fetch --depth 1 origin 0df93a05b9de080129e653ec4776d7e14a1b2e4f
-          if ($LASTEXITCODE -ne 0) { throw "Unable to fetch the pinned vcpkg baseline." }
-          git -C "$env:VCPKG_ROOT" checkout --detach 0df93a05b9de080129e653ec4776d7e14a1b2e4f
-          if ($LASTEXITCODE -ne 0) { throw "Unable to check out the pinned vcpkg baseline." }
-          & "$env:VCPKG_ROOT\bootstrap-vcpkg.bat" -disableMetrics
-          if ($LASTEXITCODE -ne 0) { throw "vcpkg bootstrap failed." }
+          $vcpkgGitDirectory = Join-Path $env:VCPKG_ROOT '.git'
+          $vcpkgExecutable = Join-Path $env:VCPKG_ROOT 'vcpkg.exe'
+
+          if (-not (Test-Path -LiteralPath $vcpkgGitDirectory -PathType Container)) {
+            if (Test-Path -LiteralPath $env:VCPKG_ROOT) {
+              Remove-Item -LiteralPath $env:VCPKG_ROOT -Recurse -Force
+            }
+            git clone --filter=blob:none --no-checkout https://github.com/microsoft/vcpkg.git "$env:VCPKG_ROOT"
+            if ($LASTEXITCODE -ne 0) { throw "Unable to clone vcpkg." }
+          }
+
+          $currentVcpkgCommit = (git -C "$env:VCPKG_ROOT" rev-parse HEAD 2>$null | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0 -or $currentVcpkgCommit -ne $pinnedVcpkgCommit) {
+            git -C "$env:VCPKG_ROOT" fetch --depth 1 origin $pinnedVcpkgCommit
+            if ($LASTEXITCODE -ne 0) { throw "Unable to fetch the pinned vcpkg baseline." }
+            git -C "$env:VCPKG_ROOT" checkout --detach $pinnedVcpkgCommit
+            if ($LASTEXITCODE -ne 0) { throw "Unable to check out the pinned vcpkg baseline." }
+          } else {
+            Write-Host "Using cached vcpkg source at pinned commit $pinnedVcpkgCommit."
+          }
+
+          if (-not (Test-Path -LiteralPath $vcpkgExecutable -PathType Leaf)) {
+            & "$env:VCPKG_ROOT\bootstrap-vcpkg.bat" -disableMetrics
+            if ($LASTEXITCODE -ne 0) { throw "vcpkg bootstrap failed." }
+          } else {
+            Write-Host "Using cached vcpkg.exe; bootstrap download/build skipped."
+          }
 
       - name: Configure (windows-msvc preset)
         run: cmake --preset windows-msvc
