@@ -35,13 +35,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            build-essential clang ninja-build libicu-dev libsqlite3-dev
+            build-essential clang ninja-build libicu-dev libsqlite3-dev libgtest-dev
 
       - name: Configure (libFuzzer on)
         run: |
           cmake -S . -B build/nightly-fuzz -G Ninja \
             -DCMAKE_CXX_COMPILER=clang++ \
             -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_TESTING=ON \
             -DSUBORNO_BUILD_FUZZING=ON
 
       - name: Build fuzz target
@@ -68,7 +69,7 @@ jobs:
 
       - name: Upload crash artifacts
         if: failure()
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: fuzz-crashes-${{ github.run_number }}
           path: |
