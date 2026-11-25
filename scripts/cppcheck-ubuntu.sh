@@ -17,6 +17,10 @@ cd "$PROJECT_ROOT"
 
 # --inline-suppr honors documented inline suppressions; every suppression in
 # the tree carries a justification comment per the engineering standard.
+#
+# Cppcheck on Ubuntu lacks the Windows SDK COM macro definitions. Restrict this
+# parser-only suppression to Windows platform sources; native MSVC /analyze and
+# the Windows build remain responsible for those files.
 cppcheck \
     --inline-suppr \
     --enable=warning,style,performance,portability \
@@ -28,10 +32,7 @@ cppcheck \
     --suppress='*:build/*' \
     --suppress=unusedFunction \
     --suppress='missingIncludeSystem' \
-    # Cppcheck on Ubuntu has no Windows SDK/COM macro environment; Windows
-    # sources are still scanned, while compiler/analyzer validation runs on
-    # the native MSVC Windows verification job.
-    --suppress=unknownMacro \
+    --suppress='unknownMacro:src/platform/windows/*' \
     src include tests/fuzz 2>&1 | tee /tmp/cppcheck-report.txt
 
 printf 'cppcheck: clean (report saved to /tmp/cppcheck-report.txt)\n'
