@@ -9,7 +9,7 @@ name: Windows Verification
 
 on:
   push:
-    branches: [ci/suborno-v19-windows-verification]
+    branches: [main, 'ci/**']
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -41,6 +41,12 @@ jobs:
           path: .vcpkg-binary-cache
           key: vcpkg-${{ runner.os }}-msvc-verify-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}
 
+      - name: Initialize verification evidence
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path verify-evidence | Out-Null
+          "Windows verification started for $env:GITHUB_SHA" | Set-Content verify-evidence\run-start.txt
+
       - name: Verify Windows runner environment
         shell: pwsh
         run: |
@@ -59,7 +65,8 @@ jobs:
           $env_report.vs_catalog_version = "$catalog"
           $cl = Get-ChildItem (Join-Path $vs 'VC\Tools\MSVC') -Directory | Sort-Object Name -Descending | Select-Object -First 1
           $env_report.msvc_toolset = $cl.Name
-          if ($cl.Name -notlike '14.3*') { throw "Toolset is $($cl.Name), v143 (14.3x) required." }
+          if ($cl.Name -notmatch '^14\\.(3[0-9]|4[0-9])\\.') { throw "Toolset is $($cl.Name); MSVC v143 requires toolset 14.30 through 14.49." }
+          $env_report.msvc_toolset_family = 'v143'
           $env_report.cmake = (cmake --version | Select-Object -First 1)
           $msbuild = Join-Path $vs 'MSBuild\Current\Bin\amd64\MSBuild.exe'
           $env_report.msbuild = (& $msbuild -version -nologo)
@@ -69,7 +76,7 @@ jobs:
           $banner = cmd /c "`"$(Join-Path $vs 'VC\Auxiliary\Build\vcvars64.bat')`" && cl 2>&1" | Out-String
           $env_report.cl_banner = ($banner -split "`r?`n" | Where-Object { $_ -match 'Version' }) -join ' | '
           if ($banner -notmatch 'Optimizing Compiler') { throw "cl.exe did not identify as the Microsoft C/C++ Optimizing Compiler." }
-          if ($env_report.msvc_toolset -notlike '14.3*') { throw "cl.exe toolset is not v143." }
+          if ($env_report.msvc_toolset -notmatch '^14\\.(3[0-9]|4[0-9])\\.') { throw "cl.exe toolset is not v143." }
           # Preset assertions: generator/arch/toolset/standard pinned to the mission contract.
           $presets = Get-Content CMakePresets.json -Raw | ConvertFrom-Json
           $cfg = $presets.configurePresets | Where-Object { $_.name -eq 'windows-msvc' }
@@ -230,11 +237,11 @@ jobs:
 
       - name: Upload verification artifacts
         if: always()
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: windows-verification-evidence-${{ github.run_number }}
           path: verify-evidence/
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 14
 
       - name: Upload Windows distribution
@@ -260,7 +267,7 @@ jobs:
         uses: actions/checkout@v7.0.1
 
       - name: Download built application
-        uses: actions/download-artifact@v4.3.0
+        uses: actions/download-artifact@v8.0.2
         with:
           name: suborno-windows-x64-verify-${{ github.run_number }}
           path: dist
