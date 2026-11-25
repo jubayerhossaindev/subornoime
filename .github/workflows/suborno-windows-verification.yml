@@ -279,7 +279,7 @@ jobs:
           # checks: settings elements, 16 checkboxes, 10 dropdowns, 2 sliders,
           # Save via UIA Invoke AND real mouse click, About/OSK counts, topbar
           # zones, toast, screenshots). Exit code = failed check count.
-          powershell -ExecutionPolicy Bypass -File scripts\windows-ui-audit\Invoke-SubornoUiAudit.ps1 -ExePath (Resolve-Path 'dist/Suborno.exe') -ResultsJson uia-results.json -EvidenceDir uia-evidence
+          powershell -ExecutionPolicy Bypass -File scripts\windows-ui-audit\Invoke-SubornoUiAudit.ps1 -ExePath (Resolve-Path 'dist/build/windows-msvc/Release/Suborno.exe') -ResultsJson uia-results.json -EvidenceDir uia-evidence
           $code = $LASTEXITCODE
           "audit exit code (failed checks): $code" | Set-Content uia-summary.txt
           if ($code -ne 0) { throw "UIA audit failed with $code failing checks." }
