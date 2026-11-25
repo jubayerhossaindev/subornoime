@@ -1672,19 +1672,19 @@ class Application final : public ui_access::ElementSource {
 
         apply_ui_language(engine_->settings().ui.language);
 
-        WNDCLASSEXW window_class{};
-        window_class.cbSize = sizeof(window_class);
-        window_class.style = CS_DROPSHADOW;  // native elevation under the frameless window
+        WNDCLASSEXW window_class_definition{};
+        window_class_definition.cbSize = sizeof(window_class_definition);
+        window_class_definition.style = CS_DROPSHADOW;  // native elevation under the frameless window
 
-        window_class.hInstance = instance_;
-        window_class.lpfnWndProc = &Application::window_proc;
-        window_class.lpszClassName = window_class;
-        window_class.hIcon = ::LoadIconW(instance_, MAKEINTRESOURCEW(IDI_SUBORNO));
-        window_class.hIconSm = window_class.hIcon;
-        window_class.hCursor = ::LoadCursorW(nullptr, MAKEINTRESOURCEW(32512));
-        window_class.hbrBackground = nullptr;  // fully custom-painted dark window
+        window_class_definition.hInstance = instance_;
+        window_class_definition.lpfnWndProc = &Application::window_proc;
+        window_class_definition.lpszClassName = window_class;
+        window_class_definition.hIcon = ::LoadIconW(instance_, MAKEINTRESOURCEW(IDI_SUBORNO));
+        window_class_definition.hIconSm = window_class_definition.hIcon;
+        window_class_definition.hCursor = ::LoadCursorW(nullptr, MAKEINTRESOURCEW(32512));
+        window_class_definition.hbrBackground = nullptr;  // fully custom-painted dark window
 
-        if (window_class.hIcon == nullptr) {
+        if (window_class_definition.hIcon == nullptr) {
             report_error(nullptr,
                          ui::text("error.icon_load_failed",
                                   L"Suborno's application icon could not be loaded."),
@@ -1692,7 +1692,7 @@ class Application final : public ui_access::ElementSource {
                          !smoke_test_);
             return smoke_test_ ? smoke_test_exit_code(E_FAIL) : 1;
         }
-        if (::RegisterClassExW(&window_class) == 0) {
+        if (::RegisterClassExW(&window_class_definition) == 0) {
             const HRESULT error = HRESULT_FROM_WIN32(::GetLastError());
             report_error(nullptr,
                          ui::text("error.window_class_register_failed",
@@ -1710,20 +1710,22 @@ class Application final : public ui_access::ElementSource {
 
         // resolved at the top of run().
 
-        const int window_width = scaled(window_width);
-        const int window_height = scaled(window_height);
+        const int settings_window_width = scaled(window_width);
+        const int settings_window_height = scaled(window_height);
         const int window_x =
-            work_area.left + std::max(0L, ((work_area.right - work_area.left) - window_width) / 2);
+            work_area.left
+            + std::max(0L, ((work_area.right - work_area.left) - settings_window_width) / 2);
         const int window_y =
-            work_area.top + std::max(0L, ((work_area.bottom - work_area.top) - window_height) / 2);
+            work_area.top
+            + std::max(0L, ((work_area.bottom - work_area.top) - settings_window_height) / 2);
         window_ = ::CreateWindowExW(0,
                                     window_class,
                                     ui::text("settings.window.title", L"Suborno Settings"),
                                     WS_POPUP,
                                     window_x,
                                     window_y,
-                                    window_width,
-                                    window_height,
+                                    settings_window_width,
+                                    settings_window_height,
                                     nullptr,
                                     nullptr,
                                     instance_,
@@ -1738,7 +1740,7 @@ class Application final : public ui_access::ElementSource {
             ::UnregisterClassW(window_class, instance_);
             return smoke_test_ ? smoke_test_exit_code(error) : 1;
         }
-        ui::apply_window_treatment(window_, window_width, window_height, scaled(8));
+        ui::apply_window_treatment(window_, settings_window_width, settings_window_height, scaled(8));
         staged_ = engine_->settings();
         build_pages();
         if (smoke_test_) {
