@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'ci/**']
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -26,20 +26,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7.0.1
 
-      - name: Install clang-format
+      - name: Install LLVM 23 toolchain (pinned formatter and analyzer)
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends clang-format
+          sudo apt-get install -y --no-install-recommends curl zstd tar
+          bash scripts/install-llvm-23-ubuntu.sh
 
       - name: Naming validation (scripts/validate_naming.py)
         run: python3 scripts/validate_naming.py
 
-      - name: clang-format check (all C++ sources)
-        run: |
-          find src include tests benchmarks scripts examples cmake \
-            -name '*.cpp' -o -name '*.hpp' -o -name '*.h' -o -name '*.c' -o -name '*.inc' \
-            | grep -v build \
-            | xargs clang-format --style=file --dry-run -Werror
+      - name: clang-format check (LLVM 23, repository policy)
+        run: bash scripts/check-format-ubuntu.sh
 
       # C++20 compliance stage: no post-C++20 language or library feature may
       # enter the repository (docs/engineering/CPP20_STANDARDS.md).
@@ -100,8 +97,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential git curl zip unzip tar zstd pkg-config
-          scripts/install-llvm-23-ubuntu.sh
-          scripts/install-linux-build-tools.sh
+          bash scripts/install-llvm-23-ubuntu.sh
+          bash scripts/install-linux-build-tools.sh
 
       - name: Install pinned vcpkg
         run: |
@@ -115,13 +112,13 @@ jobs:
         run: cmake --preset ubuntu-ci
 
       - name: Check formatting
-        run: scripts/check-format-ubuntu.sh
+        run: bash scripts/check-format-ubuntu.sh
 
       - name: Check module layering
         run: python3 scripts/check-layering.py
 
       - name: Run clang-tidy
-        run: scripts/check-tidy-ubuntu.sh build/ubuntu-ci
+        run: bash scripts/check-tidy-ubuntu.sh build/ubuntu-ci
 
       - name: Test
         run: |
@@ -262,7 +259,7 @@ jobs:
           }
 
       - name: Upload Windows distribution
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: suborno-windows-x64-${{ github.run_number }}
           path: |
@@ -346,6 +343,7 @@ jobs:
           cmake -S . -B build/system-deps -G Ninja \
             -DCMAKE_CXX_COMPILER=clang++ \
             -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_TESTING=ON \
             -DSUBORNO_BUILD_FUZZING=ON
 
       - name: Build
@@ -391,7 +389,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cppcheck
 
       - name: Run cppcheck (warnings, performance, portability)
-        run: scripts/cppcheck-ubuntu.sh
+        run: bash scripts/cppcheck-ubuntu.sh
 
   doxygen-docs:
     name: Doxygen documentation build / Ubuntu 24.04
@@ -459,7 +457,7 @@ jobs:
             build-essential libicu-dev libsqlite3-dev
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: cpp
           queries: security-extended
@@ -469,11 +467,10 @@ jobs:
           cmake -S . -B build/codeql -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DSUBORNO_ENABLE_MSVC_ANALYSIS=OFF \
-            -DCMAKE_DISABLE_FIND_PACKAGE_ICU=ON
           cmake --build build/codeql --target suborno_core 2>&1 || \
           cmake --build build/codeql 2>&1
 
       - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:cpp"
