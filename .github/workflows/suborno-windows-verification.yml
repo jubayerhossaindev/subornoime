@@ -213,19 +213,241 @@ jobs:
             throw "Release build failed with native exit code $buildExitCode. Full log: verify-evidence\release_build.log"
           }
 
-      - name: Prove /analyze actually executes (verbose compile line)
+      - name: Prove MSVC /analyze executed during Release build
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          # A successful normal compilation is not proof /analyze ran; the
-          # verbose build prints the real cl.exe command lines.
-          $log = cmake --build --preset windows-msvc-release --target suborno_core --verbose 2>&1 | Out-String
-          $log | Set-Content verify-evidence\analyze_compile_line.log
-          $hits = ($log -split "`r?`n") | Where-Object { $_ -match '/analyze' }
-          if (-not $hits) { throw "No /analyze flag found in any compile line — static analysis is NOT executing." }
-          "PROOF — cl.exe invoked with analysis:" | Set-Content verify-evidence\analyze_execution_proof.txt
-          $hits | Select-Object -First 3 | Add-Content verify-evidence\analyze_execution_proof.txt
-          Get-Content verify-evidence\analyze_execution_proof.txt
+          # The full Release build above performs the actual compilation.
+          # Its output reports each MSVC analysis pass. Do not issue a second
+          # incremental build here: up-to-date targets correctly have no CL
+          # command lines, which would produce a false negative.
+          $cmakeCachePath = 'build\windows-msvc\CMakeCache.txt'
+          $releaseBuildLogPath = 'verify-evidence\release_build.log'
+          if (-not (Test-Path -LiteralPath $cmakeCachePath -PathType Leaf)) {
+            throw "CMake cache not found: $cmakeCachePath"
+          }
+          if (-not (Test-Path -LiteralPath $releaseBuildLogPath -PathType Leaf)) {
+            throw "Release build log not found: $releaseBuildLogPath"
+          }
+
+          $analysisOption = Select-String -Path $cmakeCachePath -Pattern '^SUBORNO_ENABLE_MSVC_ANALYSIS:BOOL=ON
+
+      - name: Collect MSVC analysis diagnostics from the full build
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          # Analysis diagnostics use C6xxx codes; count them honestly (no
+          # suppression) and record locations for the report.
+          $matches2 = Select-String -Path verify-evidence\release_build.log -Pattern 'warning C6\d{3}' -AllMatches
+          $lines = $matches2 | ForEach-Object { $_.Line }
+          "analysis diagnostic count: $($lines.Count)" | Set-Content verify-evidence\analysis_diagnostics.txt
+          $lines | Add-Content verify-evidence\analysis_diagnostics.txt
+          Get-Content verify-evidence\analysis_diagnostics.txt -TotalCount 40
+
+      - name: Test Release (ctest)
+        run: |
+          cmake --build --preset windows-msvc-release --target suborno_unit_tests suborno_integration_tests suborno_windows_tests suborno_app suborno_fuzz_smoke
+          ctest --preset windows-msvc-release --output-on-failure 2>&1 | Tee-Object -FilePath verify-evidence\release_ctest.log
+          if ($LASTEXITCODE -ne 0) { throw "Release ctest failed." }
+
+      - name: GoogleTest count reconciliation (34 vs 35)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exe = 'build\windows-msvc\Release\suborno_unit_tests.exe'
+          $listing = & $exe --gtest_list_tests | Out-String
+          $listing | Set-Content verify-evidence\gtest_listing.txt
+          $count = (& $exe --gtest_list_tests | Where-Object { $_ -match '^\s+\w' }).Count
+          $run = & $exe | Out-String
+          $run | Set-Content verify-evidence\gtest_run.log
+          $summary = ($run -split "`r?`n") | Where-Object { $_ -match 'tests? from .* test suites? ran|PASSED|FAILED' }
+          "listed test cases: $count" | Set-Content verify-evidence\test_counts.txt
+          $summary | Add-Content verify-evidence\test_counts.txt
+          foreach ($suite in @('KeyEventMatrix','CandidateNavigation','DiagnosticsTest','StabilitySoak','PerformanceBudget')) {
+            $inListing = $listing -match "(?m)^$suite\."
+            if (-not $inListing) { throw "Part III suite missing from listing: $suite" }
+          }
+          Get-Content verify-evidence\test_counts.txt
+          Add-Content $env:GITHUB_STEP_SUMMARY "## GoogleTest reconciliation`n`n``````$(Get-Content verify-evidence\test_counts.txt | Out-String)``````"
+
+      - name: Part III regression suites (explicit filters)
+        shell: pwsh
+        run: |
+          $exe = 'build\windows-msvc\Release\suborno_unit_tests.exe'
+          & $exe --gtest_filter=KeyEventMatrix.*:*LayoutTypingRegression*:NationalLayoutTest.*:ProbhatLayoutTest.*:KhiproLayoutTest.* 2>&1 | Select-Object -Last 4 | Tee-Object -FilePath verify-evidence\part3_input.log
+          if ($LASTEXITCODE -ne 0) { throw "Part III input reliability suites failed." }
+          & $exe --gtest_filter=CandidateNavigation.*:PhoneticCandidateTest.*:CandidateEngineTest.* 2>&1 | Select-Object -Last 4 | Tee-Object -FilePath verify-evidence\part3_candidates.log
+          if ($LASTEXITCODE -ne 0) { throw "Part III candidate suites failed." }
+          & $exe --gtest_filter=DiagnosticsTest.*:StabilitySoak.*:PerformanceBudget.* 2>&1 | Select-Object -Last 4 | Tee-Object -FilePath verify-evidence\part3_diagnostics_soak_budget.log
+          if ($LASTEXITCODE -ne 0) { throw "Part III diagnostics/soak/budget suites failed." }
+
+      - name: Windows fuzz smoke (portable driver, corpus replay)
+        shell: pwsh
+        run: |
+          $out = & build\windows-msvc\Release\suborno_fuzz_smoke.exe tests/fuzz/corpus 2>&1 | Out-String
+          $out | Set-Content verify-evidence\fuzz_smoke_windows.log
+          if ($LASTEXITCODE -ne 0) { throw "Windows fuzz smoke failed." }
+          $out -split "`r?`n" | Select-Object -Last 6
+
+      - name: PE export evidence (dumpbin vs .def vs public header)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          $dumpbin = Get-ChildItem (Join-Path $vs 'VC\Tools\MSVC') -Directory | Sort-Object Name -Descending | ForEach-Object { Join-Path $_.FullName 'bin\Hostx64\x64\dumpbin.exe' } | Select-Object -First 1
+          & $dumpbin /exports build\windows-msvc\Release\suborno_windows_tsf.dll 2>&1 | Out-String | Set-Content verify-evidence\dumpbin_tsf_dll_exports.txt
+          & $dumpbin /exports build\windows-msvc\Release\Suborno.exe 2>&1 | Out-String | Set-Content verify-evidence\dumpbin_suborno_exe_exports.txt
+          & $dumpbin /dependents build\windows-msvc\Release\suborno_windows_tsf.dll 2>&1 | Out-String | Set-Content verify-evidence\dumpbin_tsf_dll_dependents.txt
+          # Cross-check: every .def EXPORTS name must appear in the dumpbin listing.
+          $def = Get-Content src\platform\windows\tsf\suborno_windows_tsf.def | Where-Object { $_ -match '^\s+\w' -and $_ -notmatch '^\s*;' }
+          $dump = Get-Content verify-evidence\dumpbin_tsf_dll_exports.txt -Raw
+          $missing = @($def | ForEach-Object { ($_.Trim() -split '\s+')[0] } | Where-Object { $dump -notmatch [regex]::Escape($_) })
+          ".def exports: $($def.Count); missing from PE: $($missing.Count)" | Set-Content verify-evidence\def_vs_pe_check.txt
+          if ($missing.Count -gt 0) { $missing | Add-Content verify-evidence\def_vs_pe_check.txt; throw ".def exports missing from the built DLL: $($missing -join ', ')" }
+          Get-Content verify-evidence\def_vs_pe_check.txt
+
+      - name: Build installer (Inno Setup, SHA-pinned)
+        id: build-installer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $innoSetupUrl = "https://github.com/jrsoftware/issrc/releases/download/is-6_3_3/innosetup-6.3.3.exe"
+          $innoSetupSha256 = "0bcb2a409dea17e305a27a6b09555cabe600e984f88570ab72575cd7e93c95e6"
+          $downloadCacheDirectory = Join-Path $env:GITHUB_WORKSPACE '.ci-cache\downloads'
+          $innoSetupInstaller = Join-Path $downloadCacheDirectory 'innosetup-6.3.3.exe'
+          New-Item -ItemType Directory -Force -Path $downloadCacheDirectory | Out-Null
+          if (-not (Test-Path -LiteralPath $innoSetupInstaller -PathType Leaf)) {
+            Write-Host "Inno Setup cache miss — downloading the pinned installer."
+            Invoke-WebRequest -Uri $innoSetupUrl -OutFile $innoSetupInstaller
+          } else {
+            Write-Host "Inno Setup cache hit — reusing the previously downloaded installer."
+          }
+          $actualSha256 = (Get-FileHash -LiteralPath $innoSetupInstaller -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualSha256 -ne $innoSetupSha256) { throw "Inno Setup installer checksum mismatch: expected $innoSetupSha256, got $actualSha256." }
+          $proc = Start-Process -FilePath $innoSetupInstaller -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-' -Wait -PassThru
+          if ($proc.ExitCode -ne 0) { throw "Inno Setup installation failed with exit code $($proc.ExitCode)." }
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe not found." }
+          & $iscc /Q packaging/windows/suborno_installer.iss
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup compilation failed." }
+
+      - name: Save downloaded Windows tools
+        if: steps.build-installer.outcome == 'success'
+        uses: actions/cache/save@v6.1.0
+        with:
+          path: .ci-cache/downloads
+          key: windows-tool-innosetup-6.3.3-0bcb2a409dea17e305a27a6b09555cabe600e984f88570ab72575cd7e93c95e
+
+      - name: Installer lifecycle test (clean install + upgrade + uninstall)
+        shell: pwsh
+        run: ./scripts/test-windows-installer.ps1 2>&1 | Tee-Object -FilePath verify-evidence\installer_test.log
+        continue-on-error: false
+
+      - name: Installer signature status (honest recording)
+        shell: pwsh
+        run: |
+          $installer = 'packaging/windows/Output/Suborno-Setup-x64.exe'
+          $hash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  Suborno-Setup-x64.exe" | Set-Content -Encoding ascii "$installer.sha256"
+          $signature = Get-AuthenticodeSignature -LiteralPath $installer
+          "Authenticode status: $($signature.Status) (no signing certificate exists in CI — unsigned is recorded honestly, never claimed as signed)" | Set-Content verify-evidence\installer_signature.txt
+          if ($signature.Status -notin @('Valid', 'NotSigned')) { throw "Unexpected installer signature status: $($signature.Status)" }
+
+      - name: Build Debug + test
+        run: |
+          cmake --build --preset windows-msvc-debug --target suborno_unit_tests suborno_integration_tests suborno_windows_tests suborno_app
+          ctest --preset windows-msvc-debug --output-on-failure 2>&1 | Tee-Object -FilePath verify-evidence\debug_ctest.log
+          if ($LASTEXITCODE -ne 0) { throw "Debug ctest failed." }
+
+      - name: Upload verification artifacts
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: windows-verification-evidence-${{ github.run_number }}
+          path: verify-evidence/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload Windows distribution
+        if: success()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: suborno-windows-x64-verify-${{ github.run_number }}
+          path: |
+            packaging/windows/Output/Suborno-Setup-x64.exe
+            packaging/windows/Output/Suborno-Setup-x64.exe.sha256
+            build/windows-msvc/Release/Suborno.exe
+            build/windows-msvc/Release/suborno_windows_tsf.dll
+          if-no-files-found: error
+          retention-days: 14
+
+  windows-uia-audit:
+    name: UIA functional audit (84 checks) on real Windows
+    runs-on: windows-2022
+    timeout-minutes: 40
+    needs: windows-build-verify
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Download built application
+        uses: actions/download-artifact@v8.0.2
+        with:
+          name: suborno-windows-x64-verify-${{ github.run_number }}
+          path: dist
+
+      - name: Run UI Automation audit harness
+        shell: pwsh
+        run: |
+          # The repository's own audit harness (84 happy-path + 14 failure-path
+          # checks: settings elements, 16 checkboxes, 10 dropdowns, 2 sliders,
+          # Save via UIA Invoke AND real mouse click, About/OSK counts, topbar
+          # zones, toast, screenshots). Exit code = failed check count.
+          powershell -ExecutionPolicy Bypass -File scripts\windows-ui-audit\Invoke-SubornoUiAudit.ps1 -ExePath (Resolve-Path 'dist/build/windows-msvc/Release/Suborno.exe') -ResultsJson uia-results.json -EvidenceDir uia-evidence
+          $code = $LASTEXITCODE
+          "audit exit code (failed checks): $code" | Set-Content uia-summary.txt
+          if ($code -ne 0) { throw "UIA audit failed with $code failing checks." }
+
+      - name: Upload UIA evidence
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: windows-uia-audit-${{ github.run_number }}
+          path: |
+            uia-results.json
+            uia-summary.txt
+            uia-evidence/
+          if-no-files-found: warn
+          retention-days: 14
+
+          if (-not $analysisOption) {
+            throw "SUBORNO_ENABLE_MSVC_ANALYSIS is not ON in the configured Windows build."
+          }
+
+          $analysisPasses = @(Select-String -Path $releaseBuildLogPath -Pattern 'Running Code Analysis for C/C\+\+\.\.\.')
+          if ($analysisPasses.Count -eq 0) {
+            throw "The Release build log contains no MSVC Code Analysis pass marker."
+          }
+
+          $analysisDiagnostics = @(Select-String -Path $releaseBuildLogPath -Pattern '(warning|error) C6\d{3}:')
+          $proofLines = @(
+            'PROOF — MSVC Code Analysis executed during the full Release build.'
+            "CMake option: $($analysisOption.Line)"
+            "MSVC Code Analysis pass markers: $($analysisPasses.Count)"
+            "MSVC C6xxx diagnostics emitted: $($analysisDiagnostics.Count)"
+            ''
+            'Observed MSVC Code Analysis pass output:'
+          )
+          $proofLines += $analysisPasses | Select-Object -First 5 | ForEach-Object { $_.Line }
+          $proofLines += ''
+          $proofLines += 'Observed C6xxx diagnostics (when present):'
+          if ($analysisDiagnostics.Count -gt 0) {
+            $proofLines += $analysisDiagnostics | Select-Object -First 10 | ForEach-Object { $_.Line }
+          } else {
+            $proofLines += 'No C6xxx diagnostics were emitted; the MSVC analysis pass markers above prove the analyzer ran.'
+          }
+          $proofLines | Set-Content verify-evidence\analyze_execution_proof.txt
+          $proofLines
 
       - name: Collect MSVC analysis diagnostics from the full build
         shell: pwsh
