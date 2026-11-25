@@ -76,7 +76,7 @@ enum MenuId : UINT {
 
 enum class PageId : int {
     general = 0,
-    interface = 1,
+    interface_page = 1,
     topbar = 2,
     input = 3
 };
@@ -2297,7 +2297,7 @@ class Application final : public ui_access::ElementSource {
             general.push_back(std::move(dropdown));
         }
 
-        auto& interface_page = pages_[static_cast<int>(PageId::interface)];
+        auto& interface_page = pages_[static_cast<int>(PageId::interface_page)];
         interface_page.push_back(make_section(
             88,
             ui::text("settings.section.candidate_window", L"Candidate Window"),
@@ -4071,14 +4071,14 @@ class Application final : public ui_access::ElementSource {
         // same builder backs the topbar right-click context menu.
 
         HMENU menu = ::CreatePopupMenu();
-        HMENU layouts = ::CreatePopupMenu();
+        HMENU layouts_menu = ::CreatePopupMenu();
         HMENU fonts = ::CreatePopupMenu();
-        if (menu == nullptr || layouts == nullptr || fonts == nullptr) {
+        if (menu == nullptr || layouts_menu == nullptr || fonts == nullptr) {
             if (menu != nullptr) {
                 ::DestroyMenu(menu);
             }
-            if (layouts != nullptr) {
-                ::DestroyMenu(layouts);
+            if (layouts_menu != nullptr) {
+                ::DestroyMenu(layouts_menu);
             }
             if (fonts != nullptr) {
                 ::DestroyMenu(fonts);
@@ -4098,14 +4098,14 @@ class Application final : public ui_access::ElementSource {
                         topbar_visible_ ? MF_BYCOMMAND | MF_CHECKED : MF_BYCOMMAND | MF_UNCHECKED);
         for (std::size_t index = 0; index < layouts.size(); ++index) {
             const bool selected = engine_->settings().active_layout_id == layouts[index].id;
-            ::AppendMenuW(layouts,
+            ::AppendMenuW(layouts_menu,
                           MF_STRING | (selected ? MF_CHECKED : MF_UNCHECKED),
                           menu_layout_first + static_cast<UINT>(index),
                           layouts[index].name);
         }
         ::AppendMenuW(menu,
                       MF_POPUP,
-                      reinterpret_cast<UINT_PTR>(layouts),
+                      reinterpret_cast<UINT_PTR>(layouts_menu),
                       ui::text("topbar.menu.layout", L"Keyboard Layout"));
 
         // Font submenu: same options as Settings → Interface, applied live.

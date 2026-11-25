@@ -38,7 +38,7 @@ class DisplayAttributeInfo : public ITfDisplayAttributeInfo {
     DisplayAttributeInfo(const GUID* guid,
                          const TF_DISPLAYATTRIBUTE* display_attribute,
                          const wchar_t* description);
-    ~DisplayAttributeInfo() override;
+    virtual ~DisplayAttributeInfo();
 
     // IUnknown
     STDMETHOD(QueryInterface)(REFIID riid, void** object) override;
@@ -85,7 +85,7 @@ class DisplayAttributeInfoConverted final : public DisplayAttributeInfo {
 class EnumDisplayAttributeInfo : public IEnumTfDisplayAttributeInfo {
   public:
     EnumDisplayAttributeInfo();
-    ~EnumDisplayAttributeInfo() override;
+    virtual ~EnumDisplayAttributeInfo();
 
     // IUnknown
     STDMETHOD(QueryInterface)(REFIID riid, void** object) override;

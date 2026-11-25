@@ -46,6 +46,7 @@
 #include <shellapi.h>
 #include <string>
 
+#include "font_loader.hpp"
 #include "keyboard_hook.hpp"
 #include "preview_window.hpp"
 #include "standalone_tray.hpp"
@@ -68,7 +69,7 @@ suborno::platform::windows::standalone::TypingController* g_controller = nullptr
 suborno::platform::windows::standalone::PreviewWindow* g_preview = nullptr;
 suborno::core::Engine* g_engine = nullptr;
 std::unique_ptr<suborno::layout::InputSession>* g_session_slot = nullptr;
-std::unique_ptr<std::wstring> g_active_layout_id;
+std::unique_ptr<std::string> g_active_layout_id;
 
 std::filesystem::path ini_path_from(const std::filesystem::path& settings_path) {
     return settings_path.parent_path() / ini_file_name;
@@ -288,7 +289,7 @@ int WINAPI wWinMain(_In_ HINSTANCE instance,
     g_controller = &controller;
     g_engine = engine.get();
     g_session_slot = &session;
-    g_active_layout_id = std::make_unique<std::wstring>(engine->active_layout_id());
+    g_active_layout_id = std::make_unique<std::string>(engine->active_layout_id());
 
     const std::filesystem::path ini_path = ini_path_from(settings_path);
     const bool preview_enabled = read_ini_bool(ini_path, L"preview", true);
@@ -298,9 +299,17 @@ int WINAPI wWinMain(_In_ HINSTANCE instance,
         parse_hotkey(hotkey_spec);
     controller.set_enabled(enabled_on_start);
 
+    suborno::platform::windows::standalone::BundledFonts bundled_fonts;
+    static_cast<void>(bundled_fonts.load());
+    const suborno::platform::windows::standalone::PreviewFontChoice preview_font =
+        suborno::platform::windows::standalone::resolve_preview_font_from_settings(
+            bundled_fonts.state(),
+            engine->settings().ui.use_os_default_bangla_font,
+            engine->settings().ui.font_family);
+
     suborno::platform::windows::standalone::PreviewWindow preview;
     g_preview = &preview;
-    if (!preview.create(instance)) {
+    if (!preview.create(instance, preview_font)) {
         ::CloseHandle(mutex);
         return 1;
     }

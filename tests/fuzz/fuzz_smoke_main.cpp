@@ -6,9 +6,12 @@
 // timeout) and input-limit regressions fail the build. The deep campaigns
 // keep running under libFuzzer in tests/fuzz/*_fuzz.cpp via fuzz.yml.
 #include <cstddef>
+#include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
+#include <fstream>
+#include <system_error>
 #include <string>
 #include <vector>
 
@@ -36,16 +39,30 @@ std::vector<std::vector<std::uint8_t>> load_seed_corpus(const std::filesystem::p
         if (!entry.is_regular_file()) {
             continue;
         }
-        FILE* seed_file = std::fopen(entry.path().string().c_str(), "rb");
-        if (seed_file == nullptr) {
+        std::ifstream seed_file(entry.path(), std::ios::binary);
+        if (!seed_file) {
             continue;
         }
-        std::vector<std::uint8_t> bytes(
-            static_cast<std::size_t>(std::filesystem::file_size(entry.path())));
-        const std::size_t read_count =
-            bytes.empty() ? 0 : std::fread(bytes.data(), 1, bytes.size(), seed_file);
-        std::fclose(seed_file);
-        bytes.resize(read_count);
+
+        std::error_code file_size_error;
+        const std::uintmax_t file_size = std::filesystem::file_size(entry.path(), file_size_error);
+        if (file_size_error) {
+            continue;
+        }
+
+        const std::size_t bytes_to_read = static_cast<std::size_t>(
+            std::min<std::uintmax_t>(
+                file_size, static_cast<std::uintmax_t>(suborno::fuzz::maximum_fuzz_input_size)));
+        std::vector<std::uint8_t> bytes(bytes_to_read);
+        if (!bytes.empty()) {
+            seed_file.read(reinterpret_cast<char*>(bytes.data()),
+                           static_cast<std::streamsize>(bytes.size()));
+            const std::streamsize read_count = seed_file.gcount();
+            if (read_count < 0) {
+                continue;
+            }
+            bytes.resize(static_cast<std::size_t>(read_count));
+        }
         seeds.push_back(std::move(bytes));
     }
     return seeds;

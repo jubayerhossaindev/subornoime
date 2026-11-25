@@ -27,3 +27,7 @@ HRESULT run_inside_com_boundary(Operation&& operation) noexcept {
 }
 
 }  // namespace suborno::platform::windows::com
+
+namespace suborno::platform::windows {
+using com::run_inside_com_boundary;
+}  // namespace suborno::platform::windows

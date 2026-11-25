@@ -1588,7 +1588,7 @@ BOOL SubornoTextService::_InitTextEditSink(ITfContext* context, ContextState& st
 
     // _pTextEditSinkContext with its own reference too).
 
-    state.text_edit_sink_context.copy_from(context);
+    state.text_edit_sink_context = context;
     if (state.text_edit_sink_context == nullptr) {
         return TRUE;
     }

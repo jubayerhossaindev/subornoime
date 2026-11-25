@@ -27,7 +27,7 @@ std::wstring utf8_to_utf16(std::string_view text_utf8) {
     return wide;
 }
 
-void flush_inputs(const std::vector<INPUT>& inputs) {
+void flush_inputs(std::vector<INPUT>& inputs) {
     if (inputs.empty()) {
         return;
     }
@@ -93,7 +93,7 @@ void send_virtual_key(std::uint16_t virtual_key) {
     up.ki.wVk = static_cast<WORD>(virtual_key);
     up.ki.dwFlags = KEYEVENTF_KEYUP;
 
-    const INPUT pair[2] = {down, up};
+    INPUT pair[2] = {down, up};
     const UINT sent = ::SendInput(2, pair, sizeof(INPUT));
     if (sent != 2) {
         ::OutputDebugStringW(L"Suborno standalone: SendInput delivered fewer events than built\n");

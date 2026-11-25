@@ -86,7 +86,7 @@ class TextCompositionEditSession final : public ITfEditSession {
                                bool clear_display_attribute);
     ~TextCompositionEditSession() = default;
 
-    HRESULT Request(TfClientId client_id, wil::com_ptr<ITfComposition>* composition);
+    HRESULT request_edit_session(TfClientId client_id, wil::com_ptr<ITfComposition>* composition);
 
     volatile LONG reference_count_ = 1;
     wil::com_ptr<ITfContext> context_;
