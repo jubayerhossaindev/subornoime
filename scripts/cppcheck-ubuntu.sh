@@ -28,6 +28,10 @@ cppcheck \
     --suppress='*:build/*' \
     --suppress=unusedFunction \
     --suppress='missingIncludeSystem' \
+    # Cppcheck on Ubuntu has no Windows SDK/COM macro environment; Windows
+    # sources are still scanned, while compiler/analyzer validation runs on
+    # the native MSVC Windows verification job.
+    --suppress=unknownMacro \
     src include tests/fuzz 2>&1 | tee /tmp/cppcheck-report.txt
 
 printf 'cppcheck: clean (report saved to /tmp/cppcheck-report.txt)\n'
