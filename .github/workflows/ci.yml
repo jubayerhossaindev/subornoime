@@ -151,7 +151,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential git curl zip unzip tar zstd pkg-config
-          scripts/install-linux-build-tools.sh
+          bash scripts/install-linux-build-tools.sh
           g++-13 -dumpfullversion | grep -Fx '13.3.0'
 
       - name: Install pinned vcpkg
@@ -302,8 +302,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             build-essential git curl zip unzip tar zstd pkg-config
-          scripts/install-llvm-23-ubuntu.sh
-          scripts/install-linux-build-tools.sh
+          bash scripts/install-llvm-23-ubuntu.sh
+          bash scripts/install-linux-build-tools.sh
 
       - name: Install pinned vcpkg
         run: |
