@@ -39,7 +39,17 @@ jobs:
         uses: actions/cache@v6.1.0
         with:
           path: .vcpkg-binary-cache
-          key: vcpkg-${{ runner.os }}-msvc-verify-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}
+          key: vcpkg-${{ runner.os }}-msvc-v143-x64-windows-static-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}
+          restore-keys: |
+            vcpkg-${{ runner.os }}-msvc-v143-x64-windows-static-
+
+      # Reuse the exact same third-party installer on subsequent workflow runs.
+      # The cached binary is still SHA-256 verified before it is executed.
+      - name: Cache downloaded Windows tools
+        uses: actions/cache@v6.1.0
+        with:
+          path: .ci-cache/downloads
+          key: windows-tool-innosetup-6.3.3-0bcb2a409dea17e305a27a6b09555cabe600e984f88570ab72575cd7e93c95e
 
       - name: Initialize verification evidence
         shell: pwsh
@@ -203,10 +213,17 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $innoSetupUrl = "https://github.com/jrsoftware/issrc/releases/download/is-6_3_3/innosetup-6.3.3.exe"
           $innoSetupSha256 = "0bcb2a409dea17e305a27a6b09555cabe600e984f88570ab72575cd7e93c95e6"
-          $innoSetupInstaller = Join-Path $env:TEMP 'inno-setup.exe'
-          Invoke-WebRequest -Uri $innoSetupUrl -OutFile $innoSetupInstaller
+          $downloadCacheDirectory = Join-Path $env:GITHUB_WORKSPACE '.ci-cache\downloads'
+          $innoSetupInstaller = Join-Path $downloadCacheDirectory 'innosetup-6.3.3.exe'
+          New-Item -ItemType Directory -Force -Path $downloadCacheDirectory | Out-Null
+          if (-not (Test-Path -LiteralPath $innoSetupInstaller -PathType Leaf)) {
+            Write-Host "Inno Setup cache miss — downloading the pinned installer."
+            Invoke-WebRequest -Uri $innoSetupUrl -OutFile $innoSetupInstaller
+          } else {
+            Write-Host "Inno Setup cache hit — reusing the previously downloaded installer."
+          }
           $actualSha256 = (Get-FileHash -LiteralPath $innoSetupInstaller -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($actualSha256 -ne $innoSetupSha256) { throw "Inno Setup installer checksum mismatch." }
+          if ($actualSha256 -ne $innoSetupSha256) { throw "Inno Setup installer checksum mismatch: expected $innoSetupSha256, got $actualSha256." }
           $proc = Start-Process -FilePath $innoSetupInstaller -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-' -Wait -PassThru
           if ($proc.ExitCode -ne 0) { throw "Inno Setup installation failed with exit code $($proc.ExitCode)." }
           $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
