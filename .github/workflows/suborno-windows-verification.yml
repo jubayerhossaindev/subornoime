@@ -198,9 +198,20 @@ jobs:
           key: vcpkg-downloads-${{ runner.os }}-0df93a05b9de080129e653ec4776d7e14a1b2e4f-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}-${{ github.sha }}
 
       - name: Build Release (full, log captured)
+        shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           cmake --build --preset windows-msvc-release 2>&1 | Tee-Object -FilePath verify-evidence\release_build.log
-          if ($LASTEXITCODE -ne 0) { throw "Release build failed." }
+          $buildExitCode = $LASTEXITCODE
+          if ($buildExitCode -ne 0) {
+            Write-Host "MSVC Release build exited with native code $buildExitCode."
+            $compilerErrors = Select-String -Path verify-evidence\release_build.log -Pattern 'error C\d{4}:|fatal error C\d{4}:'
+            if ($compilerErrors) {
+              Write-Host "Compiler diagnostics:"
+              $compilerErrors | ForEach-Object { Write-Host $_.Line }
+            }
+            throw "Release build failed with native exit code $buildExitCode. Full log: verify-evidence\release_build.log"
+          }
 
       - name: Prove /analyze actually executes (verbose compile line)
         shell: pwsh
