@@ -186,7 +186,7 @@ TEST(SettingsTest, UiLanguageKeyRoundTripsAndValidates) {
         suborno::settings::EngineSettings legacy;
         legacy.ui.language = "bn";
         ASSERT_EQ(store.save(legacy), suborno::settings::SettingsStatus::ok);
-        std::ifstream stream(path, std::ios::binary)
+        std::ifstream stream(path, std::ios::binary);
         std::string line;
         std::string rewritten;
         while (std::getline(stream, line)) {
