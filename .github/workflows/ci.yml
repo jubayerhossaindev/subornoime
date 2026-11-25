@@ -336,7 +336,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            build-essential clang ninja-build libicu-dev libsqlite3-dev
+            build-essential clang ninja-build libicu-dev libsqlite3-dev \
+            libgtest-dev libclang-rt-18-dev
 
       - name: Configure
         run: |
@@ -466,9 +467,8 @@ jobs:
         run: |
           cmake -S . -B build/codeql -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DSUBORNO_ENABLE_MSVC_ANALYSIS=OFF \
-          cmake --build build/codeql --target suborno_core 2>&1 || \
-          cmake --build build/codeql 2>&1
+            -DSUBORNO_ENABLE_MSVC_ANALYSIS=OFF
+          cmake --build build/codeql --target suborno_core --parallel 2
 
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v4.39.5
