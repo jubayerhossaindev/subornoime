@@ -545,11 +545,12 @@ class ElementProvider final : public IRawElementProviderSimple,
             AddRef();
             return S_OK;
         }
+        // Transfer the newly created provider's initial COM reference to
+        // the caller. Do not let unique_ptr delete it after returning the
+        // interface pointer: UI Automation owns that reference and will
+        // release it when the fragment-root pointer is no longer needed.
         std::unique_ptr<ElementProvider> parent = make_root_provider();
-        if (FAILED(parent->QueryInterface(__uuidof(IRawElementProviderFragmentRoot),
-                                          reinterpret_cast<void**>(root)))) {
-            return E_FAIL;
-        }
+        *root = static_cast<IRawElementProviderFragmentRoot*>(parent.release());
         return S_OK;
     }
 
