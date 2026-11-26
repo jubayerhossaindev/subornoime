@@ -5,7 +5,7 @@ name: Windows Verification
 # CodeQL, benchmark, fuzz-campaign, and release workflows.
 # Verify the native Windows/MSVC product path: toolchain identity, v143 build,
 # MSVC /analyze, GoogleTest/CTest, PE exports, installer lifecycle, Windows
-# fuzz-smoke, and UI Automation evidence.
+# fuzz-smoke; UI Automation runs independently in windows-uia-audit.yml.
 
 on:
   push:
@@ -547,43 +547,4 @@ jobs:
             build/windows-msvc/Release/Suborno.exe
             build/windows-msvc/Release/suborno_windows_tsf.dll
           if-no-files-found: error
-          retention-days: 14
-
-  windows-uia-audit:
-    name: UIA functional audit (84 checks) on real Windows
-    runs-on: windows-2022
-    timeout-minutes: 40
-    needs: windows-build-verify
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
-
-      - name: Download built application
-        uses: actions/download-artifact@v8.0.2
-        with:
-          name: suborno-windows-x64-verify-${{ github.run_number }}
-          path: dist
-
-      - name: Run UI Automation audit harness
-        shell: pwsh
-        run: |
-          # The repository's own audit harness (84 happy-path + 14 failure-path
-          # checks: settings elements, 16 checkboxes, 10 dropdowns, 2 sliders,
-          # Save via UIA Invoke AND real mouse click, About/OSK counts, topbar
-          # zones, toast, screenshots). Exit code = failed check count.
-          powershell -ExecutionPolicy Bypass -File scripts\windows-ui-audit\Invoke-SubornoUiAudit.ps1 -ExePath (Resolve-Path 'dist/build/windows-msvc/Release/Suborno.exe') -ResultsJson uia-results.json -EvidenceDir uia-evidence
-          $code = $LASTEXITCODE
-          "audit exit code (failed checks): $code" | Set-Content uia-summary.txt
-          if ($code -ne 0) { throw "UIA audit failed with $code failing checks." }
-
-      - name: Upload UIA evidence
-        if: always()
-        uses: actions/upload-artifact@v7.0.2
-        with:
-          name: windows-uia-audit-${{ github.run_number }}
-          path: |
-            uia-results.json
-            uia-summary.txt
-            uia-evidence/
-          if-no-files-found: warn
           retention-days: 14
