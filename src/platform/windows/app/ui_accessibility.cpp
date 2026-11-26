@@ -882,7 +882,13 @@ LRESULT handle_get_object(HWND window,
                           const std::shared_ptr<int>& alive_token,
                           bool& handled) {
     handled = false;
-    if (l_param != static_cast<LPARAM>(OBJID_CLIENT) || !uia_available()) {
+
+    // UI Automation identifies its provider request with UiaRootObjectId.
+    // OBJID_CLIENT is the separate Microsoft Active Accessibility request;
+    // passing it to UiaReturnRawElementProvider makes that API return zero.
+    // Compare as DWORD so LPARAM sign extension on x64 cannot affect the ID.
+    const DWORD object_id = static_cast<DWORD>(l_param);
+    if (object_id != static_cast<DWORD>(UiaRootObjectId) || !uia_available()) {
         return 0;
     }
     try {
