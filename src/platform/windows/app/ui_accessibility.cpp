@@ -200,19 +200,21 @@ class ElementProvider final : public IRawElementProviderSimple,
         if (!source_->element_info(index_, info)) {
             return UIA_E_ELEMENTNOTAVAILABLE;
         }
-        IUnknown* matched = nullptr;
-        if (pattern_id == UIA_InvokePatternId && info.supports_invoke) {
-            matched = static_cast<IInvokeProvider*>(this);
-        } else if (pattern_id == UIA_TogglePatternId && info.supports_toggle) {
-            matched = static_cast<IToggleProvider*>(this);
-        } else if (pattern_id == UIA_ExpandCollapsePatternId && info.supports_expand_collapse) {
-            matched = static_cast<IExpandCollapseProvider*>(this);
-        } else if (pattern_id == UIA_RangeValuePatternId && info.supports_range) {
-            matched = static_cast<IRangeValueProvider*>(this);
-        }
-        if (matched != nullptr) {
-            matched->AddRef();
-            *pattern = matched;
+        const bool supported =
+            (pattern_id == UIA_InvokePatternId && info.supports_invoke)
+            || (pattern_id == UIA_TogglePatternId && info.supports_toggle)
+            || (pattern_id == UIA_ExpandCollapsePatternId && info.supports_expand_collapse)
+            || (pattern_id == UIA_RangeValuePatternId && info.supports_range);
+        if (supported) {
+            // GetPatternProvider returns IUnknown*. Return the provider's
+            // canonical IUnknown identity (the IRawElementProviderSimple
+            // subobject), not an IUnknown subobject reached through one of
+            // the pattern interfaces. UI Automation queries this object for
+            // IInvokeProvider / IToggleProvider / etc. The distinction is
+            // required by COM identity when a provider uses multiple
+            // inheritance from independent IUnknown-based UIA interfaces.
+            *pattern = static_cast<IRawElementProviderSimple*>(this);
+            AddRef();
         }
         return S_OK;
     }
