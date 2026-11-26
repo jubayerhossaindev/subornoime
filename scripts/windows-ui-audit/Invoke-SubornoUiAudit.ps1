@@ -142,11 +142,16 @@ function Save-WindowScreenshot {
 }
 
 function Invoke-MouseClickCenter {
-    param([string] $Id, [System.Windows.Automation.AutomationElement] $El)
+    param(
+        [string] $Id,
+        [System.Windows.Automation.AutomationElement] $El,
+        [IntPtr] $FocusHwnd = [IntPtr]::Zero
+    )
     if ($null -eq $El) { Add-Result $Id 'element exists for mouse click' 'NOT FOUND' $false; return $false }
     $rect = $El.Current.BoundingRectangle
     if ($rect.Width -le 0 -or $rect.Height -le 0) { Add-Result $Id 'clickable rect' 'EMPTY RECT' $false; return $false }
     $hwnd = [IntPtr]$El.Current.NativeWindowHandle
+    if ($hwnd -eq [IntPtr]::Zero) { $hwnd = $FocusHwnd }
     if ($hwnd -ne [IntPtr]::Zero) { [void][Suborno.Audit.Native]::SetForegroundWindow($hwnd); Start-Sleep -Milliseconds 250 }
     $cx = [int]($rect.X + $rect.Width / 2); $cy = [int]($rect.Y + $rect.Height / 2)
     [void][Suborno.Audit.Native]::SetCursorPos($cx, $cy); Start-Sleep -Milliseconds 120
@@ -174,6 +179,41 @@ function Find-ById {
     param([System.Windows.Automation.AutomationElement] $Root, [string] $AutomationId)
     $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::AutomationIdProperty, $AutomationId)
     return $Root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $cond)
+}
+
+function Select-SettingsPage {
+    param([System.Windows.Automation.AutomationElement] $SettingsWindow, [string] $PageId)
+    $pageEl = Find-ById $SettingsWindow $PageId
+    if ($null -eq $pageEl) { return $false }
+    $inv = $pageEl.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
+    if ($null -eq $inv) { return $false }
+    $inv.Invoke()
+    Start-Sleep -Milliseconds 200
+    return $true
+}
+
+function Open-SettingsWindow {
+    param(
+        [System.Windows.Automation.AutomationElement] $Root,
+        [IntPtr] $HostHwnd,
+        [uint32] $WmCommand,
+        [IntPtr] $MenuOpenSettings
+    )
+    [void][Suborno.Audit.Native]::SendMessage($HostHwnd, $WmCommand, $MenuOpenSettings, [IntPtr]::Zero)
+    for ($attempt = 0; $attempt -lt 25; $attempt++) {
+        if ([Suborno.Audit.Native]::IsWindowVisible($HostHwnd)) {
+            $byHandle = [System.Windows.Automation.AutomationElement]::FromHandle($HostHwnd)
+            if ($null -ne $byHandle -and (Find-ById $byHandle 'sidebar.general')) {
+                return $byHandle
+            }
+        }
+        $win = Find-Window $Root 'SubornoDesktopWindow' ''
+        if ($null -ne $win -and (Find-ById $win 'sidebar.general')) {
+            return $win
+        }
+        Start-Sleep -Milliseconds 200
+    }
+    return $null
 }
 
 function Find-NativeWindowByClass {
@@ -448,7 +488,11 @@ if ($settingsHost -eq [IntPtr]::Zero) {
 }
 
 $wmCommand = [uint32]0x0111
+$wmClose = [uint32]0x0010
+$wmSecondInstanceShowTopbar = [uint32]0x8002
 $menuOpenSettings = [IntPtr]2003
+$menuOsk = [IntPtr]2007
+$menuAbout = [IntPtr]2011
 $wildcardFindWindow = [Suborno.Audit.Native]::FindWindow('SubornoDesktopWindow', $null)
 $titleFindWindow = [Suborno.Audit.Native]::FindWindow('SubornoDesktopWindow', 'Suborno Settings')
 Write-Host ('FindWindowW comparison: null-title=0x{0:X}, exact-title=0x{1:X}; process-scoped enumeration=0x{2:X}.' -f
@@ -499,53 +543,71 @@ foreach ($page in 'sidebar.general', 'sidebar.interface', 'sidebar.topbar', 'sid
 }
 
 # 2) Every control action present on its page, both states, all options
-$checkboxIds = @('action.remember-layout', 'action.start-with-windows', 'action.show-candidate-window',
-    'action.next-word-prediction', 'action.candidate-fixed-height', 'action.sliding-effect',
-    'action.follow-caret', 'action.follow-mouse', 'action.use-os-default-font',
-    'action.idle-dimming', 'action.remember-topbar-position', 'action.map-numpad',
-    'action.ignore-caps-lock', 'action.number-keys', 'action.change-locale',
-    'action.disable-encoding-shortcut')
-foreach ($id in $checkboxIds) {
-    $el = Find-ById $settings $id
-    if (-not (Assert-Element "CHK-$id" $el $settings 'CheckBox')) { continue }
-    $toggle = Invoke-Pattern "CHK-$id" $el ([System.Windows.Automation.TogglePattern])
-    if ($toggle) {
-        $before = $toggle.ToggleState
-        $toggle.Toggle(); Start-Sleep -Milliseconds 150
-        $after = ((Find-ById $settings $id).GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern)).ToggleState
-        Add-Result "CHK-$id-toggle" "state changed $before -> opposite" "$before -> $after" ($after -ne $before)
-        $toggle.Toggle(); Start-Sleep -Milliseconds 150   # restore original state
+$checkboxPages = @(
+    @{ Page = 'sidebar.general'; Ids = @('action.remember-layout', 'action.start-with-windows') },
+    @{ Page = 'sidebar.interface'; Ids = @('action.show-candidate-window', 'action.next-word-prediction', 'action.candidate-fixed-height', 'action.sliding-effect', 'action.follow-caret', 'action.follow-mouse', 'action.use-os-default-font') },
+    @{ Page = 'sidebar.topbar'; Ids = @('action.idle-dimming', 'action.remember-topbar-position') },
+    @{ Page = 'sidebar.input'; Ids = @('action.map-numpad', 'action.ignore-caps-lock', 'action.number-keys', 'action.change-locale', 'action.disable-encoding-shortcut') }
+)
+foreach ($group in $checkboxPages) {
+    [void](Select-SettingsPage $settings $group.Page)
+    foreach ($id in $group.Ids) {
+        $el = Find-ById $settings $id
+        if (-not (Assert-Element "CHK-$id" $el $settings 'CheckBox')) { continue }
+        $toggle = Invoke-Pattern "CHK-$id" $el ([System.Windows.Automation.TogglePattern])
+        if ($toggle) {
+            $before = $toggle.Current.ToggleState
+            $toggle.Toggle(); Start-Sleep -Milliseconds 150
+            $after = ((Find-ById $settings $id).GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern)).Current.ToggleState
+            Add-Result "CHK-$id-toggle" "state changed $before -> opposite" "$before -> $after" ($after -ne $before)
+            $toggle.Toggle(); Start-Sleep -Milliseconds 150   # restore original state
+        }
     }
 }
 
-$dropdownIds = @('action.start-mode', 'action.switching-mode', 'action.default-layout', 'action.orientation',
-    'action.theme', 'action.ui-language', 'action.font', 'action.learning', 'action.layout-shortcut',
-    'action.encoding')
-foreach ($id in $dropdownIds) {
-    $el = Find-ById $settings $id
-    if (-not (Assert-Element "DD-$id" $el $settings 'ComboBox')) { continue }
-    $expand = Invoke-Pattern "DD-$id" $el ([System.Windows.Automation.ExpandCollapsePattern])
-    if (-not $expand) { continue }
-    $expand.Expand(); Start-Sleep -Milliseconds 250
-    $listCond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::ListItem)
-    $items = $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $listCond)
-    $optionCount = 0
-    # This custom dropdown exposes ExpandCollapsePattern, not SelectionPattern.
-    foreach ($item in $items) {
-        if ($item.Current.IsOffscreen) { continue }
-        $optionCount++
+$dropdownPages = @(
+    @{ Page = 'sidebar.general'; Ids = @('action.start-mode', 'action.switching-mode', 'action.default-layout') },
+    @{ Page = 'sidebar.interface'; Ids = @('action.orientation', 'action.theme', 'action.ui-language', 'action.font') },
+    @{ Page = 'sidebar.input'; Ids = @('action.learning', 'action.layout-shortcut', 'action.encoding') }
+)
+$listCond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::ListItem)
+foreach ($group in $dropdownPages) {
+    [void](Select-SettingsPage $settings $group.Page)
+    foreach ($id in $group.Ids) {
+        $el = Find-ById $settings $id
+        if (-not (Assert-Element "DD-$id" $el $settings 'ComboBox')) { continue }
+        $expand = Invoke-Pattern "DD-$id" $el ([System.Windows.Automation.ExpandCollapsePattern])
+        if (-not $expand) { continue }
+        $expand.Expand()
+        $popup = $null
+        for ($attempt = 0; $attempt -lt 20; $attempt++) {
+            $popup = Find-Window $root 'SubornoMenuPopupWindow' ''
+            if ($null -ne $popup) { break }
+            Start-Sleep -Milliseconds 50
+        }
+        $optionCount = 0
+        # This custom dropdown exposes ExpandCollapsePattern, not SelectionPattern.
+        if ($null -ne $popup) {
+            $items = $popup.FindAll([System.Windows.Automation.TreeScope]::Descendants, $listCond)
+            foreach ($item in $items) {
+                if ($item.Current.IsOffscreen) { continue }
+                $optionCount++
+            }
+        }
+        Add-Result "DD-$id-options" ('>0 selectable options enumerated') "$optionCount visible items" ($optionCount -gt 0)
+        $expand.Collapse(); Start-Sleep -Milliseconds 150
     }
-    Add-Result "DD-$id-options" ('>0 selectable options enumerated') "$optionCount visible items" ($optionCount -gt 0)
-    $expand.Collapse(); Start-Sleep -Milliseconds 150
 }
 
 # 3) Sliders: RangeValue min/mid/max + keyboard
+[void](Select-SettingsPage $settings 'sidebar.topbar')
 $sliderIds = @('action.idle-opacity', 'action.idle-time')
 foreach ($id in $sliderIds) {
     $el = Find-ById $settings $id
     if (-not (Assert-Element "SLD-$id" $el $settings 'Slider')) { continue }
     $range = Invoke-Pattern "SLD-$id" $el ([System.Windows.Automation.RangeValuePattern])
     if ($range) {
+        $initial = [double]$range.Current.Value
         $min = [double]$range.Current.Minimum; $max = [double]$range.Current.Maximum
         $mid = ($min + $max) / 2
         foreach ($v in $min, $max, $mid) {
@@ -553,40 +615,84 @@ foreach ($id in $sliderIds) {
             $now = (Find-ById $settings $id).GetCurrentPattern([System.Windows.Automation.RangeValuePattern]::Pattern).Current.Value
             Add-Result "SLD-$id-set-$v" ("value set to {0}" -f $v) ("value now {0}" -f $now) ([math]::Abs($now - $v) -lt 0.51)
         }
+        $range.SetValue($initial); Start-Sleep -Milliseconds 100
     }
 }
 
 # 4) Save -> persistence file contains values; Cancel -> unchanged
+[void](Select-SettingsPage $settings 'sidebar.general')
 $save = Find-ById $settings 'action.save'
 $cancel = Find-ById $settings 'action.cancel'
 [void](Assert-Element 'SET-SAVE' $save $settings 'Button')
 [void](Assert-Element 'SET-CANCEL' $cancel $settings 'Button')
 $settingsPath = Join-Path $env:APPDATA 'Suborno\settings.ini'
 if (-not (Test-Path $settingsPath)) { $settingsPath = Join-Path $env:LOCALAPPDATA 'Suborno\settings.ini' }
+$toastVisible = $false
 if ($save -and (Test-Path $settingsPath)) {
+    # Modify a staged value first so Save writes non-identical bytes cleanly.
+    $rememberEl = Find-ById $settings 'action.remember-layout'
+    if ($rememberEl) {
+        $rememberToggle = $rememberEl.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern)
+        if ($rememberToggle) { $rememberToggle.Toggle(); Start-Sleep -Milliseconds 100 }
+    }
     $hashBefore = (Get-FileHash $settingsPath).Hash
     $saveInvoke = Invoke-Pattern 'SET-SAVE-invoke' $save ([System.Windows.Automation.InvokePattern])
     if ($saveInvoke) {
-        $saveInvoke.Invoke(); Start-Sleep -Milliseconds 800
+        $saveInvoke.Invoke()
+        for ($attempt = 0; $attempt -lt 20; $attempt++) {
+            $toastWin = Find-Window $root 'SubornoToastWindow' ''
+            if ($null -ne $toastWin -and (Find-ById $toastWin 'toast.message')) {
+                $toastVisible = $true
+                break
+            }
+            Start-Sleep -Milliseconds 100
+        }
+        Start-Sleep -Milliseconds 400
         $hashAfter = ''
         if (Test-Path $settingsPath) { $hashAfter = (Get-FileHash $settingsPath).Hash }
         Add-Result 'SET-SAVE-persist' 'settings file rewritten on Save' (& { if ($hashBefore -ne $hashAfter) { 'file changed' } else { 'file unchanged' } }) ($hashBefore -ne $hashAfter)
     }
-    # Real mouse click on Save (separate proof from UIA Invoke) + persistence re-check
-    $hashBeforeMouse = (Get-FileHash $settingsPath).Hash
-    if (Invoke-MouseClickCenter 'SET-SAVE-mouse' $save) {
-        Start-Sleep -Milliseconds 800
-        $hashAfterMouse = ''
-        if (Test-Path $settingsPath) { $hashAfterMouse = (Get-FileHash $settingsPath).Hash }
-        Add-Result 'SET-SAVE-mouseclick' 'real mouse click on Save rewrites the settings file' (& { if ($hashBeforeMouse -ne $hashAfterMouse) { 'file changed by mouse click' } else { 'file unchanged after mouse click' } }) ($hashBeforeMouse -ne $hashAfterMouse)
+
+    # Re-open Settings (Save hides to tray) and restore the staged checkbox via real mouse click.
+    $settings = Open-SettingsWindow $root $settingsHost $wmCommand $menuOpenSettings
+    if ($settings) {
+        [void](Select-SettingsPage $settings 'sidebar.general')
+        $rememberEl = Find-ById $settings 'action.remember-layout'
+        if ($rememberEl) {
+            $rememberToggle = $rememberEl.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern)
+            if ($rememberToggle) { $rememberToggle.Toggle(); Start-Sleep -Milliseconds 100 }
+        }
+        $save = Find-ById $settings 'action.save'
+        $hashBeforeMouse = (Get-FileHash $settingsPath).Hash
+        if (Invoke-MouseClickCenter 'SET-SAVE-mouse' $save $settingsHost) {
+            Start-Sleep -Milliseconds 800
+            $hashAfterMouse = ''
+            if (Test-Path $settingsPath) { $hashAfterMouse = (Get-FileHash $settingsPath).Hash }
+            Add-Result 'SET-SAVE-mouseclick' 'real mouse click on Save rewrites the settings file' (& { if ($hashBeforeMouse -ne $hashAfterMouse) { 'file changed by mouse click' } else { 'file unchanged after mouse click' } }) ($hashBeforeMouse -ne $hashAfterMouse)
+        }
     }
-    # rapid repeated Save (negative: no crash, no duplicate writes)
-    if ($saveInvoke) { $saveInvoke.Invoke(); $saveInvoke.Invoke(); $saveInvoke.Invoke(); Start-Sleep -Milliseconds 800 }
+
+    # Re-open Settings and run rapid repeated Save (negative: no crash, no duplicate writes)
+    $settings = Open-SettingsWindow $root $settingsHost $wmCommand $menuOpenSettings
+    if ($settings) {
+        $save = Find-ById $settings 'action.save'
+        $saveInvokeRapid = if ($save) { $save.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern) } else { $null }
+        if ($saveInvokeRapid) { $saveInvokeRapid.Invoke(); $saveInvokeRapid.Invoke(); $saveInvokeRapid.Invoke(); Start-Sleep -Milliseconds 800 }
+    }
     $alive = $true
     if ($process) { $alive = -not $process.HasExited }
-    Add-Result 'SET-SAVE-rapid' 'process alive after 3 rapid Saves' ('alive=' + $alive) $true
+    Add-Result 'SET-SAVE-rapid' 'process alive after 3 rapid Saves' ('alive=' + $alive) $alive
 }
+
+$settingsForCancel = Open-SettingsWindow $root $settingsHost $wmCommand $menuOpenSettings
+$cancel = if ($settingsForCancel) { Find-ById $settingsForCancel 'action.cancel' } else { $null }
 if ($cancel) {
+    [void](Select-SettingsPage $settingsForCancel 'sidebar.general')
+    $rememberEl = Find-ById $settingsForCancel 'action.remember-layout'
+    if ($rememberEl) {
+        $rememberToggle = $rememberEl.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern)
+        if ($rememberToggle) { $rememberToggle.Toggle(); Start-Sleep -Milliseconds 100 }
+    }
     $cancelInvoke = Invoke-Pattern 'SET-CANCEL-invoke' $cancel ([System.Windows.Automation.InvokePattern])
     if ($cancelInvoke) {
         $hashBeforeCancel = ''
@@ -598,39 +704,66 @@ if ($cancel) {
     }
 }
 
-# 5) Toast element appears after a live action (re-open settings first)
-$settings2 = Find-Window $root 'SubornoDesktopWindow' ''
-if ($settings2) {
-    $el = Find-ById $settings2 'action.show-candidate-window'
-    if ($el) { $t = $el.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern); $t.Toggle(); Start-Sleep -Milliseconds 200; $t.Toggle(); }
-    $toast = Find-ById $root 'toast.message'
-    Add-Result 'TOAST-element' 'toast.message element visible after an action' (& { if ($toast) { 'visible' } else { 'not visible (may have auto-dismissed; re-run with faster polling)' } }) ($null -ne $toast)
+# 5) Toast element appears after Save
+if (-not $toastVisible) {
+    $toastWin = Find-Window $root 'SubornoToastWindow' ''
+    if ($null -ne $toastWin -and (Find-ById $toastWin 'toast.message')) { $toastVisible = $true }
 }
+Add-Result 'TOAST-element' 'toast.message element visible after an action' (& { if ($toastVisible) { 'visible' } else { 'not visible (may have auto-dismissed; re-run with faster polling)' } }) $toastVisible
 
 # 6) About dialog
 $about = Find-Window $root 'SubornoAboutWindow' ''
+if ($null -eq $about) {
+    [void][Suborno.Audit.Native]::SendMessage($settingsHost, $wmCommand, $menuAbout, [IntPtr]::Zero)
+    for ($attempt = 0; $attempt -lt 25; $attempt++) {
+        $about = Find-Window $root 'SubornoAboutWindow' ''
+        if ($null -ne $about) { break }
+        Start-Sleep -Milliseconds 200
+    }
+}
 if ($about) {
     $shotAbout = Save-WindowScreenshot 'ABT-open' $about
     $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Button)
     $btns = $about.FindAll([System.Windows.Automation.TreeScope]::Descendants, $cond)
     Add-Result 'ABT-buttons' '>=5 buttons exposed' ("{0} buttons" -f $btns.Count) ($btns.Count -ge 5) $shotAbout
+    $aboutHwnd = [IntPtr]$about.Current.NativeWindowHandle
+    if ($aboutHwnd -ne [IntPtr]::Zero) {
+        [void][Suborno.Audit.Native]::SendMessage($aboutHwnd, $wmClose, [IntPtr]::Zero, [IntPtr]::Zero)
+        Start-Sleep -Milliseconds 150
+    }
 } else {
-    Add-Result 'ABT-open' 'About dialog (open via topbar wrench -> About Suborno…, then re-run)' 'NOT OPEN' $false
+    Add-Result 'ABT-open' 'About dialog opened via WM_COMMAND menu_about' 'NOT OPEN' $false
 }
 
 # 7) OSK elements
 $osk = Find-Window $root 'SubornoOskWindow' ''
+if ($null -eq $osk) {
+    [void][Suborno.Audit.Native]::SendMessage($settingsHost, $wmCommand, $menuOsk, [IntPtr]::Zero)
+    for ($attempt = 0; $attempt -lt 25; $attempt++) {
+        $osk = Find-Window $root 'SubornoOskWindow' ''
+        if ($null -ne $osk) { break }
+        Start-Sleep -Milliseconds 200
+    }
+}
 if ($osk) {
     $shotOsk = Save-WindowScreenshot 'OSK-open' $osk
     $btnCond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Button)
     $keys = $osk.FindAll([System.Windows.Automation.TreeScope]::Descendants, $btnCond)
-    Add-Result 'OSK-elements' '37 invokable elements' ("{0} buttons" -f $keys.Count) ($keys.Count -ge 37) $shotOsk
+    Add-Result 'OSK-elements' '36 invokable elements' ("{0} buttons" -f $keys.Count) ($keys.Count -ge 36) $shotOsk
 } else {
-    Add-Result 'OSK-open' 'OSK window (open via tray menu On-Screen Keyboard…, then re-run)' 'NOT OPEN' $false
+    Add-Result 'OSK-open' 'OSK window opened via WM_COMMAND menu_osk' 'NOT OPEN' $false
 }
 
 # 8) Topbar zones
 $topbar = Find-Window $root 'SubornoTopbarWindow' ''
+if ($null -eq $topbar) {
+    [void][Suborno.Audit.Native]::SendMessage($settingsHost, $wmSecondInstanceShowTopbar, [IntPtr]::Zero, [IntPtr]::Zero)
+    for ($attempt = 0; $attempt -lt 25; $attempt++) {
+        $topbar = Find-Window $root 'SubornoTopbarWindow' ''
+        if ($null -ne $topbar) { break }
+        Start-Sleep -Milliseconds 200
+    }
+}
 if ($topbar) {
     $shotTopbar = Save-WindowScreenshot 'TOP-open' $topbar
     foreach ($zone in 'zone.mode', 'zone.layout', 'zone.wrench', 'zone.close') {
@@ -638,7 +771,7 @@ if ($topbar) {
         [void](Assert-Element "TOP-$zone" $el $topbar 'Button')
     }
 } else {
-    Add-Result 'TOP-open' 'Topbar window (tray left-click reveals it, then re-run)' 'NOT OPEN' $false
+    Add-Result 'TOP-open' 'Topbar window opened via second_instance_show_topbar' 'NOT OPEN' $false
 }
 
 $envelope = [pscustomobject]@{

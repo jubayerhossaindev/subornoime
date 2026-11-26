@@ -7,6 +7,7 @@
 // dark mode, so the shell draws its own menus to match the reference.
 
 #include <Windows.h>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -24,5 +25,18 @@ struct MenuItem {
 // index of the chosen item, or -1 when dismissed. `selected` marks the
 // pre-selected/highlighted row (-1 for none). Blocks until dismissed.
 int show_menu_popup(HWND owner, const std::vector<MenuItem>& items, POINT anchor, int selected);
+
+// Opens a modeless popup list anchored near `anchor` and returns its window
+// handle (or nullptr on failure). `on_close` is called once with the chosen
+// item index (or -1 if dismissed) when the popup closes.
+HWND open_menu_popup(HWND owner,
+                     const std::vector<MenuItem>& items,
+                     POINT anchor,
+                     int selected,
+                     std::function<void(int)> on_close,
+                     bool focus_popup = true);
+
+// Programmatically dismisses a modeless popup opened by open_menu_popup().
+void close_menu_popup(HWND popup);
 
 }  // namespace suborno::platform::windows::app

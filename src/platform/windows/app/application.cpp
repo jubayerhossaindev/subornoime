@@ -65,6 +65,7 @@ enum MenuId : UINT {
     menu_updates = 2008,
     menu_documentation = 2009,
     menu_clear_learnt = 2010,
+    menu_about = 2011,
     menu_layout_first = 2100,
     menu_font_default = 2200,
     menu_font_first = 2201,
@@ -1451,7 +1452,9 @@ class Application final : public ui_access::ElementSource {
                 out.role = ui_access::ElementRole::dropdown;
                 out.name = dropdown_name(control_index);
                 out.supports_expand_collapse = true;
-                out.expanded = false;  // the popup is transient
+                out.expanded = active_dropdown_control_ == control_index
+                               && active_dropdown_popup_ != nullptr
+                               && ::IsWindow(active_dropdown_popup_) != FALSE;
 
                 return true;
             case CtrlKind::slider:
@@ -1516,6 +1519,7 @@ class Application final : public ui_access::ElementSource {
 
     bool focus_element(int index) override {
         if (index >= 0 && index < a11y_sidebar_count) {
+            close_active_dropdown();
             page_ = static_cast<PageId>(index);
             focus_index_ = -1;
             focus_footer_ = 0;
@@ -1547,6 +1551,7 @@ class Application final : public ui_access::ElementSource {
 
     bool invoke_element(int index) override {
         if (index >= 0 && index < a11y_sidebar_count) {
+            close_active_dropdown();
             page_ = static_cast<PageId>(index);
             focus_index_ = -1;
             ::InvalidateRect(window_, nullptr, TRUE);
@@ -1562,7 +1567,7 @@ class Application final : public ui_access::ElementSource {
                 toggle_staged_checkbox(control);
                 return true;
             case CtrlKind::dropdown:
-                open_dropdown(control);
+                open_dropdown(control, control_index, ::GetForegroundWindow() == window_);
                 return true;
             case CtrlKind::button:
                 run_button_action(control.action);
@@ -1598,9 +1603,6 @@ class Application final : public ui_access::ElementSource {
     }
 
     bool expand_element(int index, bool expand) override {
-        if (!expand) {
-            return false;  // the transient popup menu owns the collapse
-        }
         const int control_index = index - a11y_sidebar_count;
         std::vector<UiControl>& controls = page_controls();
         if (control_index < 0 || control_index >= static_cast<int>(controls.size())) {
@@ -1610,9 +1612,16 @@ class Application final : public ui_access::ElementSource {
         if (control.kind != CtrlKind::dropdown) {
             return false;
         }
+        if (!expand) {
+            if (active_dropdown_control_ == control_index || active_dropdown_popup_ != nullptr) {
+                close_active_dropdown();
+                ::InvalidateRect(window_, nullptr, FALSE);
+            }
+            return true;
+        }
         focus_index_ = control_index;
-        open_dropdown(control);
-        return true;
+        open_dropdown(control, control_index, false);
+        return active_dropdown_popup_ != nullptr;
     }
 
     bool set_element_value(int index, double value) override {
@@ -1964,6 +1973,7 @@ class Application final : public ui_access::ElementSource {
             return 0;
         case WM_CLOSE:
             // Cancel semantics: discard staged changes and hide to the tray.
+            close_active_dropdown();
 
             if (!smoke_test_ && tray_added_) {
                 ::ShowWindow(window_, SW_HIDE);
@@ -2029,6 +2039,7 @@ class Application final : public ui_access::ElementSource {
             ::InvalidateRect(window_, nullptr, TRUE);
             return 0;
         case WM_DESTROY:
+            close_active_dropdown();
             a11y_alive_.reset();
             toast_.shutdown();
             remove_tray_icon();
@@ -2682,7 +2693,83 @@ class Application final : public ui_access::ElementSource {
         ::InvalidateRect(window_, nullptr, FALSE);
     }
 
-    void open_dropdown(UiControl& control) {
+    void close_active_dropdown() {
+        HWND popup = active_dropdown_popup_;
+        active_dropdown_popup_ = nullptr;
+        active_dropdown_control_ = -1;
+        if (popup != nullptr && ::IsWindow(popup) != FALSE) {
+            close_menu_popup(popup);
+        }
+    }
+
+    void apply_dropdown_choice(UiControl& control, int chosen) {
+        if (chosen < 0 || chosen >= static_cast<int>(control.dropdown_items.size())) {
+            return;
+        }
+        control.dropdown_index = chosen;
+        bool rebuild = false;
+        switch (control.action) {
+        case action_layout_dropdown:
+            if (chosen < static_cast<int>(layouts.size())) {
+                staged_.active_layout_id = layouts[static_cast<std::size_t>(chosen)].id;
+            }
+            break;
+        case action_start_mode:
+            if (chosen <= static_cast<int>(suborno::settings::StartMode::main_window)) {
+                staged_.general.start_mode = static_cast<suborno::settings::StartMode>(chosen);
+            }
+            break;
+        case action_layout_shortcut:
+            staged_.input.layout_switch_shortcut =
+                wide_to_utf8(control.dropdown_items[static_cast<std::size_t>(chosen)]);
+            rebuild = true;
+            break;
+        case action_font_dropdown:
+            apply_font_choice(chosen);
+            rebuild = true;
+            break;
+        case action_theme_dropdown:
+            staged_.ui.theme_id = chosen == 1   ? "suborno-light"
+                                  : chosen == 2 ? "system"
+                                                : "suborno-dark";
+            break;
+        case action_ui_language:
+            staged_.ui.language = chosen == 1 ? "en" : chosen == 2 ? "bn" : "system";
+            break;
+        case action_orientation:
+            staged_.ui.candidate_orientation =
+                chosen == 1 ? suborno::settings::CandidateOrientation::horizontal
+                            : suborno::settings::CandidateOrientation::vertical;
+            break;
+        case action_switching_mode:
+            staged_.general.switching_mode =
+                chosen == 1 ? suborno::settings::SwitchingMode::global
+                            : suborno::settings::SwitchingMode::per_application_window;
+            break;
+        case action_encoding:
+            staged_.input.preferred_encoding = chosen == 1
+                                                   ? suborno::settings::TextEncoding::ansi
+                                                   : suborno::settings::TextEncoding::unicode;
+            break;
+        case action_learning:
+            staged_.learning_enabled = chosen == 0;
+            break;
+        default:
+            break;
+        }
+        if (rebuild) {
+            // Keep the paired controls (font checkbox, shortcut display)
+
+            // consistent with the staged settings.
+
+            focus_index_ = -1;
+            build_pages();
+        }
+        ::InvalidateRect(window_, nullptr, FALSE);
+    }
+
+    void open_dropdown(UiControl& control, int control_index, bool focus_popup) {
+        close_active_dropdown();
         RECT window_rect{};
         ::GetWindowRect(window_, &window_rect);
         // Anchor below the field: design rect -> client pixels -> screen.
@@ -2694,68 +2781,38 @@ class Application final : public ui_access::ElementSource {
         for (const std::wstring& label : control.dropdown_items) {
             items.push_back(MenuItem{label});
         }
-        const int chosen = show_menu_popup(window_, items, anchor, control.dropdown_index);
-        if (chosen >= 0 && chosen < static_cast<int>(control.dropdown_items.size())) {
-            control.dropdown_index = chosen;
-            bool rebuild = false;
-            switch (control.action) {
-            case action_layout_dropdown:
-                if (chosen < static_cast<int>(layouts.size())) {
-                    staged_.active_layout_id = layouts[static_cast<std::size_t>(chosen)].id;
+        const PageId opened_page = page_;
+        const int opened_action = control.action;
+        const std::weak_ptr<int> weak_alive = a11y_alive_;
+        active_dropdown_control_ = control_index;
+        active_dropdown_popup_ = open_menu_popup(
+            window_,
+            items,
+            anchor,
+            control.dropdown_index,
+            [this, weak_alive, opened_page, control_index, opened_action](int chosen) {
+                if (weak_alive.expired()) {
+                    return;
                 }
-                break;
-            case action_start_mode:
-                if (chosen <= static_cast<int>(suborno::settings::StartMode::main_window)) {
-                    staged_.general.start_mode = static_cast<suborno::settings::StartMode>(chosen);
+                if (active_dropdown_control_ == control_index) {
+                    active_dropdown_popup_ = nullptr;
+                    active_dropdown_control_ = -1;
                 }
-                break;
-            case action_layout_shortcut:
-                staged_.input.layout_switch_shortcut =
-                    wide_to_utf8(control.dropdown_items[static_cast<std::size_t>(chosen)]);
-                rebuild = true;
-                break;
-            case action_font_dropdown:
-                apply_font_choice(chosen);
-                rebuild = true;
-                break;
-            case action_theme_dropdown:
-                staged_.ui.theme_id = chosen == 1   ? "suborno-light"
-                                      : chosen == 2 ? "system"
-                                                    : "suborno-dark";
-                break;
-            case action_ui_language:
-                staged_.ui.language = chosen == 1 ? "en" : chosen == 2 ? "bn" : "system";
-                break;
-            case action_orientation:
-                staged_.ui.candidate_orientation =
-                    chosen == 1 ? suborno::settings::CandidateOrientation::horizontal
-                                : suborno::settings::CandidateOrientation::vertical;
-                break;
-            case action_switching_mode:
-                staged_.general.switching_mode =
-                    chosen == 1 ? suborno::settings::SwitchingMode::global
-                                : suborno::settings::SwitchingMode::per_application_window;
-                break;
-            case action_encoding:
-                staged_.input.preferred_encoding = chosen == 1
-                                                       ? suborno::settings::TextEncoding::ansi
-                                                       : suborno::settings::TextEncoding::unicode;
-                break;
-            case action_learning:
-                staged_.learning_enabled = chosen == 0;
-                break;
-            default:
-                break;
-            }
-            if (rebuild) {
-                // Keep the paired controls (font checkbox, shortcut display)
-
-                // consistent with the staged settings.
-
-                focus_index_ = -1;
-                build_pages();
-            }
-            ::InvalidateRect(window_, nullptr, FALSE);
+                if (chosen >= 0 && page_ == opened_page) {
+                    std::vector<UiControl>& controls = page_controls();
+                    if (control_index >= 0
+                        && control_index < static_cast<int>(controls.size())) {
+                        UiControl& target = controls[static_cast<std::size_t>(control_index)];
+                        if (target.kind == CtrlKind::dropdown && target.action == opened_action) {
+                            apply_dropdown_choice(target, chosen);
+                        }
+                    }
+                }
+            },
+            focus_popup);
+        if (active_dropdown_popup_ == nullptr || ::IsWindow(active_dropdown_popup_) == FALSE) {
+            active_dropdown_popup_ = nullptr;
+            active_dropdown_control_ = -1;
         }
     }
 
@@ -2915,6 +2972,18 @@ class Application final : public ui_access::ElementSource {
 
     void handle_settings_mouse_down(int x, int y) {
         const POINT design_point = to_design(x, y);
+        const int hit = (design_point.y >= title_height && !close_hit(design_point)
+                         && !save_button_hit(design_point) && !cancel_button_hit(design_point)
+                         && sidebar_hit(design_point) < 0)
+                            ? control_hit(design_point)
+                            : -1;
+        if (active_dropdown_popup_ != nullptr) {
+            const int was_open_control = active_dropdown_control_;
+            close_active_dropdown();
+            if (hit >= 0 && hit == was_open_control) {
+                return;
+            }
+        }
         if (close_hit(design_point)) {
             cancel_settings();
             return;
@@ -2955,7 +3024,6 @@ class Application final : public ui_access::ElementSource {
             return;
         }
         std::vector<UiControl>& controls = page_controls();
-        const int hit = control_hit(design_point);
         if (hit < 0) {
             return;
         }
@@ -2966,7 +3034,7 @@ class Application final : public ui_access::ElementSource {
             toggle_staged_checkbox(control);
             break;
         case CtrlKind::dropdown:
-            open_dropdown(control);
+            open_dropdown(control, hit, true);
             break;
         case CtrlKind::slider:
             slider_drag_ = hit;
@@ -3062,6 +3130,7 @@ class Application final : public ui_access::ElementSource {
         // Ctrl+Tab / Ctrl+Shift+Tab cycle pages (standard dialog navigation).
 
         if (virtual_key == VK_TAB && (::GetKeyState(VK_CONTROL) & 0x8000) != 0) {
+            close_active_dropdown();
             const bool backwards = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
             int page = static_cast<int>(page_) + (backwards ? -1 : 1);
             if (page < 0) {
@@ -3126,7 +3195,7 @@ class Application final : public ui_access::ElementSource {
                     return;
                 }
                 if (control.kind == CtrlKind::dropdown) {
-                    open_dropdown(control);
+                    open_dropdown(control, focus_index_, true);
                     return;
                 }
                 if (control.kind == CtrlKind::button) {
@@ -3172,12 +3241,17 @@ class Application final : public ui_access::ElementSource {
             return;
         }
         if (virtual_key == VK_ESCAPE) {
+            if (active_dropdown_popup_ != nullptr) {
+                close_active_dropdown();
+                return;
+            }
             cancel_settings();
             return;
         }
     }
 
     void cancel_settings() {
+        close_active_dropdown();
         staged_ = engine_->settings();
         build_pages();
         focus_index_ = -1;
@@ -3192,6 +3266,7 @@ class Application final : public ui_access::ElementSource {
     }
 
     void save_settings_from_ui() {
+        close_active_dropdown();
         const std::string previous_language = engine_->settings().ui.language;
         auto settings = staged_;
         const bool startup_now = settings.general.start_with_windows;
@@ -4205,6 +4280,9 @@ class Application final : public ui_access::ElementSource {
         case menu_clear_learnt:
             clear_learnt_words_from_ui();
             break;
+        case menu_about:
+            open_about();
+            break;
         case menu_toggle_input:
             toggle_profile();
             break;
@@ -4403,6 +4481,7 @@ class Application final : public ui_access::ElementSource {
     }
 
     void show_window() {
+        close_active_dropdown();
         staged_ = engine_->settings();
         build_pages();
         focus_index_ = -1;
@@ -4463,6 +4542,8 @@ class Application final : public ui_access::ElementSource {
     std::unique_ptr<suborno::core::Engine> engine_;
     std::unique_ptr<OskWindow> osk_;
     bool encoding_hotkey_registered_ = false;
+    HWND active_dropdown_popup_ = nullptr;
+    int active_dropdown_control_ = -1;
 };
 
 }  // namespace

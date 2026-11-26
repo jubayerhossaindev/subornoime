@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <memory>
 #include <string>
+#include <utility>
 #include <windowsx.h>
 
 #include "suborno/platform/windows/app/ui_accessibility.hpp"
@@ -44,6 +45,7 @@ struct MenuPopupState;
 int sh(const MenuPopupState& state, int pixels) noexcept;
 int item_top(const MenuPopupState& state, int index) noexcept;
 void set_highlight(HWND window, MenuPopupState& state, int row);
+void finish_modeless(HWND window, MenuPopupState& state);
 
 struct MenuPopupState : ui_access::ElementSource {
     std::vector<MenuItem> items;
@@ -54,9 +56,19 @@ struct MenuPopupState : ui_access::ElementSource {
     UINT dpi = 96;
     HFONT font = nullptr;
     bool dismissed = false;
+    bool modeless = false;
+    bool closed_notified = false;
     bool mouse_tracked = false;
     HWND window_handle = nullptr;
+    std::function<void(int)> on_close;
     std::shared_ptr<int> a11y_alive = std::make_shared<int>(0);
+
+    ~MenuPopupState() override {
+        if (font != nullptr) {
+            ::DeleteObject(font);
+            font = nullptr;
+        }
+    }
 
     int element_for_item(int item_index) const noexcept {
         for (std::size_t index = 0; index < item_map.size(); ++index) {
@@ -129,6 +141,9 @@ struct MenuPopupState : ui_access::ElementSource {
         }
         result = item_index;
         dismissed = true;
+        if (modeless) {
+            finish_modeless(window_handle, *this);
+        }
         return true;
     }
 
@@ -289,6 +304,22 @@ void move_highlight(HWND window, MenuPopupState& state, int direction) {
     set_highlight(window, state, row);
 }
 
+void finish_modeless(HWND window, MenuPopupState& state) {
+    if (!state.modeless || state.closed_notified) {
+        return;
+    }
+    state.closed_notified = true;
+    state.dismissed = true;
+    const int chosen = state.result;
+    std::function<void(int)> callback = std::move(state.on_close);
+    if (window != nullptr && ::IsWindow(window) != FALSE) {
+        ::DestroyWindow(window);
+    }
+    if (callback) {
+        callback(chosen);
+    }
+}
+
 LRESULT CALLBACK menu_popup_proc(HWND window, UINT message, WPARAM w_param, LPARAM l_param) {
     auto* state = reinterpret_cast<MenuPopupState*>(::GetWindowLongPtrW(window, GWLP_USERDATA));
     if (message == WM_NCCREATE) {
@@ -310,9 +341,28 @@ LRESULT CALLBACK menu_popup_proc(HWND window, UINT message, WPARAM w_param, LPAR
         }
         return ::DefWindowProcW(window, message, w_param, l_param);
     }
+    case WM_DESTROY:
+        if (state->font != nullptr) {
+            ::DeleteObject(state->font);
+            state->font = nullptr;
+        }
+        if (state->modeless && !state->closed_notified) {
+            state->closed_notified = true;
+            state->dismissed = true;
+            const int chosen = state->result;
+            std::function<void(int)> callback = std::move(state->on_close);
+            if (callback) {
+                callback(chosen);
+            }
+        }
+        return ::DefWindowProcW(window, message, w_param, l_param);
     case WM_NCDESTROY:
         state->a11y_alive.reset();
         state->window_handle = nullptr;
+        ::SetWindowLongPtrW(window, GWLP_USERDATA, 0);
+        if (state->modeless) {
+            delete state;
+        }
         return ::DefWindowProcW(window, message, w_param, l_param);
     case WM_PAINT:
         paint(window, *state);
@@ -342,11 +392,17 @@ LRESULT CALLBACK menu_popup_proc(HWND window, UINT message, WPARAM w_param, LPAR
             state->result = row;
         }
         state->dismissed = true;
+        if (state->modeless) {
+            finish_modeless(window, *state);
+        }
         return 0;
     }
     case WM_KEYDOWN:
         if (w_param == VK_ESCAPE) {
             state->dismissed = true;
+            if (state->modeless) {
+                finish_modeless(window, *state);
+            }
         } else if (w_param == VK_UP) {
             move_highlight(window, *state, -1);
         } else if (w_param == VK_DOWN) {
@@ -356,10 +412,16 @@ LRESULT CALLBACK menu_popup_proc(HWND window, UINT message, WPARAM w_param, LPAR
                 state->result = state->highlighted;
             }
             state->dismissed = true;
+            if (state->modeless) {
+                finish_modeless(window, *state);
+            }
         }
         return 0;
     case WM_KILLFOCUS:
         state->dismissed = true;
+        if (state->modeless) {
+            finish_modeless(window, *state);
+        }
         return 0;
     default:
         return ::DefWindowProcW(window, message, w_param, l_param);
@@ -379,25 +441,28 @@ ATOM register_class(HINSTANCE instance) {
     return registered;
 }
 
-}  // namespace
-
-int show_menu_popup(HWND owner, const std::vector<MenuItem>& items, POINT anchor, int selected) {
-    HINSTANCE instance = ::GetModuleHandleW(nullptr);
-    if (register_class(instance) == 0) {
-        return -1;
-    }
-    const auto state = std::make_unique<MenuPopupState>();
+std::unique_ptr<MenuPopupState> create_popup_state(HWND owner,
+                                                     const std::vector<MenuItem>& items,
+                                                     int selected,
+                                                     bool modeless,
+                                                     std::function<void(int)> on_close) {
+    auto state = std::make_unique<MenuPopupState>();
     state->items = items;
     state->highlighted = selected;
     state->dpi = ui::system_dpi_for(owner);
     state->font = ui::create_message_font();
+    state->modeless = modeless;
+    state->on_close = std::move(on_close);
     for (std::size_t index = 0; index < state->items.size(); ++index) {
         if (!state->items[index].separator) {
             state->item_map.push_back(static_cast<int>(index));
         }
     }
+    return state;
+}
 
-    const SIZE size = measure(*state);
+HWND create_popup_window(HINSTANCE instance, HWND owner, MenuPopupState& state, POINT anchor) {
+    const SIZE size = measure(state);
     const HMONITOR monitor = ::MonitorFromPoint(anchor, MONITOR_DEFAULTTONEAREST);
     MONITORINFO monitor_info{};
     monitor_info.cbSize = sizeof(monitor_info);
@@ -411,7 +476,7 @@ int show_menu_popup(HWND owner, const std::vector<MenuItem>& items, POINT anchor
 
     const HWND window = ::CreateWindowExW(WS_EX_TOPMOST | WS_EX_TOOLWINDOW,
                                           menu_popup_class,
-                                          state->window_name().c_str(),
+                                          state.window_name().c_str(),
                                           WS_POPUP,
                                           anchor.x,
                                           anchor.y,
@@ -420,11 +485,26 @@ int show_menu_popup(HWND owner, const std::vector<MenuItem>& items, POINT anchor
                                           owner,
                                           nullptr,
                                           instance,
-                                          state.get());
+                                          &state);
+    if (window == nullptr) {
+        return nullptr;
+    }
+    ui::apply_rounded_region(window, size.cx, size.cy, sh(state, design_radius));
+    return window;
+}
+
+}  // namespace
+
+int show_menu_popup(HWND owner, const std::vector<MenuItem>& items, POINT anchor, int selected) {
+    HINSTANCE instance = ::GetModuleHandleW(nullptr);
+    if (register_class(instance) == 0) {
+        return -1;
+    }
+    const auto state = create_popup_state(owner, items, selected, false, nullptr);
+    const HWND window = create_popup_window(instance, owner, *state, anchor);
     if (window == nullptr) {
         return -1;
     }
-    ui::apply_rounded_region(window, size.cx, size.cy, sh(*state, design_radius));
     ::ShowWindow(window, SW_SHOWNOACTIVATE);
     ::SetFocus(window);  // receives keyboard directly (no WS_EX_NOACTIVATE)
 
@@ -446,6 +526,36 @@ int show_menu_popup(HWND owner, const std::vector<MenuItem>& items, POINT anchor
         state->font = nullptr;
     }
     return state->result;
+}
+
+HWND open_menu_popup(HWND owner,
+                     const std::vector<MenuItem>& items,
+                     POINT anchor,
+                     int selected,
+                     std::function<void(int)> on_close,
+                     bool focus_popup) {
+    HINSTANCE instance = ::GetModuleHandleW(nullptr);
+    if (register_class(instance) == 0) {
+        return nullptr;
+    }
+    auto state = create_popup_state(owner, items, selected, true, std::move(on_close));
+    const HWND window = create_popup_window(instance, owner, *state, anchor);
+    if (window == nullptr) {
+        return nullptr;
+    }
+    // Ownership transfers to menu_popup_proc, which deletes the state on WM_NCDESTROY.
+    (void)state.release();
+    ::ShowWindow(window, SW_SHOWNOACTIVATE);
+    if (focus_popup && (owner == nullptr || ::GetForegroundWindow() == owner)) {
+        ::SetFocus(window);
+    }
+    return window;
+}
+
+void close_menu_popup(HWND popup) {
+    if (popup != nullptr && ::IsWindow(popup) != FALSE) {
+        ::DestroyWindow(popup);
+    }
 }
 
 }  // namespace suborno::platform::windows::app
