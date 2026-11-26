@@ -140,6 +140,38 @@ function Find-ById {
     return $Root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $cond)
 }
 
+function Find-NativeWindowByClass {
+    param(
+        [Parameter(Mandatory = $true)] [string] $ClassName,
+        [Parameter(Mandatory = $true)] [int] $ProcessId
+    )
+
+    # FindWindowW is retained as a diagnostic comparison, but enumerate the
+    # desktop's top-level windows to bind the target HWND to this exact process.
+    # This also finds hidden top-level windows; visibility is not a filter.
+    $handle = [Suborno.Audit.Native]::GetTopWindow([IntPtr]::Zero)
+    $windowIndex = 0
+    while ($handle -ne [IntPtr]::Zero -and $windowIndex -lt 512) {
+        $next = [Suborno.Audit.Native]::GetWindow($handle, 2) # GW_HWNDNEXT
+        [uint32]$windowProcessId = 0
+        [void][Suborno.Audit.Native]::GetWindowThreadProcessId($handle, [ref]$windowProcessId)
+
+        if ($windowProcessId -eq $ProcessId) {
+            $classNameBuffer = New-Object System.Text.StringBuilder 256
+            [void][Suborno.Audit.Native]::GetClassName($handle, $classNameBuffer, $classNameBuffer.Capacity)
+            if ($classNameBuffer.ToString() -ceq $ClassName) {
+                return $handle
+            }
+        }
+
+        $handle = $next
+        $windowIndex++
+    }
+
+    return [IntPtr]::Zero
+}
+
+
 function Get-StartupDiagnostics {
     param(
         [System.Diagnostics.Process] $Process,
@@ -285,7 +317,11 @@ if ($null -eq $existing) {
 # all subsequent checks still use UI Automation and real mouse input.
 $settingsHost = [IntPtr]::Zero
 for ($attempt = 0; $attempt -lt 100; $attempt++) {
-    $settingsHost = [Suborno.Audit.Native]::FindWindow('SubornoDesktopWindow', $null)
+    if ($process) {
+        $settingsHost = Find-NativeWindowByClass -ClassName 'SubornoDesktopWindow' -ProcessId $process.Id
+    } else {
+        $settingsHost = [Suborno.Audit.Native]::FindWindow('SubornoDesktopWindow', 'Suborno Settings')
+    }
     if ($settingsHost -ne [IntPtr]::Zero) { break }
     if ($process) {
         $process.Refresh()
@@ -303,6 +339,10 @@ if ($settingsHost -eq [IntPtr]::Zero) {
 
 $wmCommand = [uint32]0x0111
 $menuOpenSettings = [IntPtr]2003
+$wildcardFindWindow = [Suborno.Audit.Native]::FindWindow('SubornoDesktopWindow', $null)
+$titleFindWindow = [Suborno.Audit.Native]::FindWindow('SubornoDesktopWindow', 'Suborno Settings')
+Write-Host ('FindWindowW comparison: null-title=0x{0:X}, exact-title=0x{1:X}; process-scoped enumeration=0x{2:X}.' -f
+    $wildcardFindWindow.ToInt64(), $titleFindWindow.ToInt64(), $settingsHost.ToInt64())
 Write-Host ('Opening Settings through the app WM_COMMAND handler; host HWND=0x{0:X}.' -f $settingsHost.ToInt64())
 [void][Suborno.Audit.Native]::SendMessage($settingsHost, $wmCommand, $menuOpenSettings, [IntPtr]::Zero)
 
