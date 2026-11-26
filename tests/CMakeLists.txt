@@ -204,3 +204,5 @@ suborno_apply_build_options(suborno_fuzz_smoke)
 add_test(NAME suborno.fuzz_smoke
     COMMAND suborno_fuzz_smoke "${PROJECT_SOURCE_DIR}/tests/fuzz/corpus")
 set_tests_properties(suborno.fuzz_smoke PROPERTIES TIMEOUT 180)
+# Keep the registered smoke test executable available to the umbrella runner.
+add_dependencies(suborno_run_tests suborno_fuzz_smoke)

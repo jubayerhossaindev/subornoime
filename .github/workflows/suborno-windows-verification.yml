@@ -383,7 +383,7 @@ jobs:
 
       - name: Build Debug + test
         run: |
-          cmake --build --preset windows-msvc-debug --target suborno_unit_tests suborno_integration_tests suborno_windows_tests suborno_app
+          cmake --build --preset windows-msvc-debug --target suborno_unit_tests suborno_integration_tests suborno_windows_tests suborno_app suborno_fuzz_smoke
           ctest --preset windows-msvc-debug --output-on-failure 2>&1 | Tee-Object -FilePath verify-evidence\debug_ctest.log
           if ($LASTEXITCODE -ne 0) { throw "Debug ctest failed." }
 
