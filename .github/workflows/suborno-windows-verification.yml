@@ -150,9 +150,10 @@ jobs:
         uses: actions/cache/restore@v6.1.0
         with:
           path: ${{ runner.temp }}\ccache-store
-          key: ccache-${{ steps.windows-env.outputs.runner_image_os }}-${{ steps.windows-env.outputs.runner_image_version }}-${{ runner.arch }}-cl-${{ steps.windows-env.outputs.msvc_compiler_sha256 }}-msbuild-${{ steps.windows-env.outputs.msbuild_version }}-v143-4.14.3-${{ github.sha }}
+          key: ccache-${{ runner.arch }}-cl-${{ steps.windows-env.outputs.msvc_compiler_sha256 }}-msbuild-${{ steps.windows-env.outputs.msbuild_version }}-v143-4.14.3-${{ github.sha }}
           restore-keys: |
-            ccache-${{ steps.windows-env.outputs.runner_image_os }}-${{ steps.windows-env.outputs.runner_image_version }}-${{ runner.arch }}-cl-${{ steps.windows-env.outputs.msvc_compiler_sha256 }}-msbuild-${{ steps.windows-env.outputs.msbuild_version }}-v143-4.14.3-
+            ccache-${{ runner.arch }}-cl-${{ steps.windows-env.outputs.msvc_compiler_sha256 }}-msbuild-${{ steps.windows-env.outputs.msbuild_version }}-v143-4.14.3-
+            ccache-${{ steps.windows-env.outputs.runner_image_os }}-
 
       - name: Report cache restore results
         shell: pwsh
@@ -505,7 +506,7 @@ jobs:
         uses: actions/cache/save@v6.1.0
         with:
           path: ${{ runner.temp }}\ccache-store
-          key: ccache-${{ steps.windows-env.outputs.runner_image_os }}-${{ steps.windows-env.outputs.runner_image_version }}-${{ runner.arch }}-cl-${{ steps.windows-env.outputs.msvc_compiler_sha256 }}-msbuild-${{ steps.windows-env.outputs.msbuild_version }}-v143-4.14.3-${{ github.sha }}
+          key: ccache-${{ runner.arch }}-cl-${{ steps.windows-env.outputs.msvc_compiler_sha256 }}-msbuild-${{ steps.windows-env.outputs.msbuild_version }}-v143-4.14.3-${{ github.sha }}
 
       - name: Upload verification artifacts
         if: always()
