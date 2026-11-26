@@ -90,6 +90,15 @@ jobs:
           "Verified executable: $exePath`nSHA-256: $hash" | Tee-Object -FilePath uia-binary-evidence.txt
           Add-Content $env:GITHUB_STEP_SUMMARY ("## UIA target binary`n`n- SHA-256: ``$hash```n")
 
+      - name: Validate HRESULT handling under Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($PSVersionTable.PSVersion.Major -ne 5 -or $PSVersionTable.PSVersion.Minor -ne 1) {
+            throw "Expected Windows PowerShell 5.1, actual=$($PSVersionTable.PSVersion)."
+          }
+          & .\scripts\windows-ui-audit\tests\Test-UiaHResult.ps1
+
       - name: Run UI Automation audit harness
         shell: pwsh
         run: |
@@ -103,6 +112,26 @@ jobs:
           $code = $LASTEXITCODE
           "audit exit code (failed checks): $code" | Add-Content uia-summary.txt
           if ($code -ne 0) { throw "UIA audit failed with $code failing checks." }
+
+      - name: Validate unique UIA check results
+        if: always()
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $resultsPath = 'uia-results.json'
+          if (-not (Test-Path -LiteralPath $resultsPath -PathType Leaf)) {
+            Write-Host 'UIA results JSON was not produced; the audit did not reach result serialization.'
+            exit 0
+          }
+          $report = Get-Content -LiteralPath $resultsPath -Raw | ConvertFrom-Json
+          $results = @($report.results)
+          $duplicates = @($results | Group-Object -Property check_id | Where-Object { $_.Count -ne 1 })
+          if ($duplicates.Count -gt 0) {
+            $duplicateSummary = ($duplicates | ForEach-Object { "$($_.Name) x$($_.Count)" }) -join ', '
+            throw "Duplicate UIA check IDs detected: $duplicateSummary"
+          }
+          Write-Host "UIA result inventory: $($results.Count) results; all check IDs unique."
+          "UIA result inventory: $($results.Count) results; all check IDs unique." | Add-Content $env:GITHUB_STEP_SUMMARY
 
       - name: Upload UIA evidence
         if: always()

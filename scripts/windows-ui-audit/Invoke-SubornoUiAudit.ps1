@@ -223,6 +223,8 @@ namespace Suborno.Audit
 }
 '@
 
+. (Join-Path $PSScriptRoot 'UiaExceptionHelpers.ps1')
+
 [void][Suborno.Audit.Native]::SetProcessDPIAware()
 
 $script:results = New-Object System.Collections.Generic.List[object]
@@ -312,100 +314,6 @@ function Get-RuntimeIdString {
     return ''
 }
 
-function Unwrap-UiaException {
-    param([System.Exception] $Exception)
-    $chain = New-Object 'System.Collections.Generic.List[System.Exception]'
-    if ($null -eq $Exception) {
-        return [pscustomobject]@{
-            Outer = $null
-            Inner = $null
-            Chain = $chain
-        }
-    }
-    $visited = New-Object 'System.Collections.Generic.HashSet[int]'
-    $queue = New-Object 'System.Collections.Generic.Queue[System.Exception]'
-    $queue.Enqueue($Exception)
-    while ($queue.Count -gt 0) {
-        $cur = $queue.Dequeue()
-        if ($null -eq $cur) { continue }
-        $identity = [System.Runtime.CompilerServices.RuntimeHelpers]::GetHashCode($cur)
-        if (-not $visited.Add($identity)) { continue }
-        $chain.Add($cur) | Out-Null
-        if ($cur -is [System.AggregateException]) {
-            foreach ($aggInner in $cur.InnerExceptions) {
-                if ($null -ne $aggInner) { $queue.Enqueue($aggInner) }
-            }
-        } elseif ($null -ne $cur.InnerException) {
-            $queue.Enqueue($cur.InnerException)
-        }
-    }
-
-    $chosen = $chain[$chain.Count - 1]
-    for ($i = $chain.Count - 1; $i -ge 0; $i--) {
-        $cand = $chain[$i]
-        if ($cand -is [System.Windows.Automation.ElementNotAvailableException] -or
-            $cand -is [System.Runtime.InteropServices.COMException] -or
-            $cand -is [System.TimeoutException] -or
-            $cand -is [System.InvalidOperationException]) {
-            $chosen = $cand
-            break
-        }
-    }
-
-    return [pscustomobject]@{
-        Outer = $Exception
-        Inner = $chosen
-        Chain = $chain
-    }
-}
-
-function Classify-UiaException {
-    param(
-        [System.Exception] $Exception,
-        [string] $Operation = ''
-    )
-    if ($null -eq $Exception) { return 'UnexpectedError' }
-    $unwrapped = Unwrap-UiaException -Exception $Exception
-    $hrElemNotAvail = [int][uint32]::Parse('80040201', [System.Globalization.NumberStyles]::HexNumber)
-    $hrPatternNotSupported = [int][uint32]::Parse('80040202', [System.Globalization.NumberStyles]::HexNumber)
-    $hrInvalidOp = [int][uint32]::Parse('80131509', [System.Globalization.NumberStyles]::HexNumber)
-
-    foreach ($ex in $unwrapped.Chain) {
-        if ($ex -is [System.Windows.Automation.ElementNotAvailableException]) {
-            return 'ElementUnavailable'
-        }
-        if ($ex -is [System.Runtime.InteropServices.COMException] -and $ex.HResult -eq $hrElemNotAvail) {
-            return 'ElementUnavailable'
-        }
-    }
-    foreach ($ex in $unwrapped.Chain) {
-        if ($ex -is [System.TimeoutException]) {
-            return 'Timeout'
-        }
-    }
-
-    $isPatternAcquireOp = ($Operation -eq 'GetCurrentPattern' -or $Operation -like 'GetCurrentPattern*' -or $Operation -eq 'QueryPattern')
-    foreach ($ex in $unwrapped.Chain) {
-        if ($ex -is [System.Runtime.InteropServices.COMException] -and $ex.HResult -eq $hrPatternNotSupported) {
-            return 'PatternUnsupported'
-        }
-        if ($isPatternAcquireOp -and $ex -is [System.InvalidOperationException] -and ($ex.HResult -eq $hrInvalidOp -or $ex.Message -like '*Pattern*' -or $ex.Message -like '*Unsupported*')) {
-            return 'PatternUnsupported'
-        }
-    }
-    foreach ($ex in $unwrapped.Chain) {
-        if ($ex -is [System.InvalidOperationException]) {
-            return 'InvalidOperation'
-        }
-    }
-    foreach ($ex in $unwrapped.Chain) {
-        if ($ex -is [System.Runtime.InteropServices.COMException]) {
-            return 'ComFailure'
-        }
-    }
-    return 'UnexpectedError'
-}
-
 function Format-UiaDiagnostic {
     param(
         [string] $Category,
@@ -435,15 +343,18 @@ function Format-UiaDiagnostic {
         $unwrapped = Unwrap-UiaException -Exception $Exception
         $outer = $unwrapped.Outer
         $inner = $unwrapped.Inner
-        $parts.Add(('outer={0}(0x{1:X8}): {2}' -f $outer.GetType().Name, $outer.HResult, $outer.Message))
+        $outerHResult = Format-UiaHResult -Value $outer.HResult
+        $parts.Add(('outer={0}({1}): {2}' -f $outer.GetType().Name, $outerHResult, $outer.Message))
         if ($null -ne $inner -and -not [object]::ReferenceEquals($outer, $inner)) {
-            $parts.Add(('inner={0}(0x{1:X8}): {2}' -f $inner.GetType().FullName, $inner.HResult, $inner.Message))
+            $innerHResult = Format-UiaHResult -Value $inner.HResult
+            $parts.Add(('inner={0}({1}): {2}' -f $inner.GetType().FullName, $innerHResult, $inner.Message))
         }
         if ($unwrapped.Chain.Count -gt 1) {
             $chainText = New-Object 'System.Collections.Generic.List[string]'
             for ($idx = 0; $idx -lt $unwrapped.Chain.Count; $idx++) {
                 $item = $unwrapped.Chain[$idx]
-                $chainText.Add(('{0}:{1}(0x{2:X8})' -f $idx, $item.GetType().Name, $item.HResult))
+                $chainHResult = Format-UiaHResult -Value $item.HResult
+                $chainText.Add(('{0}:{1}({2})' -f $idx, $item.GetType().Name, $chainHResult))
             }
             $parts.Add(('chain=[{0}]' -f ($chainText -join ' -> ')))
         }
@@ -704,7 +615,8 @@ function Try-InvokePattern {
         return [pscustomobject]@{ Success = $true; Category = ''; HResult = 0; Error = '' }
     } catch {
         $unwrapped = Unwrap-UiaException -Exception $_.Exception
-        $innerHr = if ($null -ne $unwrapped.Inner) { $unwrapped.Inner.HResult } else { $_.Exception.HResult }
+        $rawInnerHr = if ($null -ne $unwrapped.Inner) { $unwrapped.Inner.HResult } else { $_.Exception.HResult }
+        $innerHr = ConvertTo-UiaHResult -Value $rawInnerHr
         $cat = Classify-UiaException -Exception $_.Exception -Operation 'InvokePattern.Invoke'
         return [pscustomobject]@{
             Success  = $false
@@ -728,7 +640,8 @@ function Try-TogglePattern {
         return [pscustomobject]@{ Success = $true; Category = ''; HResult = 0; Error = '' }
     } catch {
         $unwrapped = Unwrap-UiaException -Exception $_.Exception
-        $innerHr = if ($null -ne $unwrapped.Inner) { $unwrapped.Inner.HResult } else { $_.Exception.HResult }
+        $rawInnerHr = if ($null -ne $unwrapped.Inner) { $unwrapped.Inner.HResult } else { $_.Exception.HResult }
+        $innerHr = ConvertTo-UiaHResult -Value $rawInnerHr
         $cat = Classify-UiaException -Exception $_.Exception -Operation 'TogglePattern.Toggle'
         return [pscustomobject]@{
             Success  = $false
@@ -782,7 +695,8 @@ function Try-ExpandCollapseOp {
         return [pscustomobject]@{ Success = $true; Category = ''; HResult = 0; Error = '' }
     } catch {
         $unwrapped = Unwrap-UiaException -Exception $_.Exception
-        $innerHr = if ($null -ne $unwrapped.Inner) { $unwrapped.Inner.HResult } else { $_.Exception.HResult }
+        $rawInnerHr = if ($null -ne $unwrapped.Inner) { $unwrapped.Inner.HResult } else { $_.Exception.HResult }
+        $innerHr = ConvertTo-UiaHResult -Value $rawInnerHr
         $op = "ExpandCollapsePattern.$Action"
         $cat = Classify-UiaException -Exception $_.Exception -Operation $op
         return [pscustomobject]@{
@@ -1326,7 +1240,8 @@ function Get-UiaPattern {
             $unwAvail = Unwrap-UiaException -Exception $_.Exception
             $availEx = if ($null -ne $unwAvail.Inner) { $unwAvail.Inner } else { $_.Exception }
             if ($null -ne $availEx) {
-                $availability = ('property error {0}(0x{1:X8}): {2}' -f $availEx.GetType().Name, $availEx.HResult, $availEx.Message)
+                $availabilityHResult = Format-UiaHResult -Value $availEx.HResult
+                $availability = ('property error {0}({1}): {2}' -f $availEx.GetType().Name, $availabilityHResult, $availEx.Message)
             } else {
                 $availability = 'property error (unknown)'
             }
@@ -1340,7 +1255,8 @@ function Get-UiaPattern {
         $pattern = $El.GetCurrentPattern($patternObject)
     } catch {
         $unwrapped = Unwrap-UiaException -Exception $_.Exception
-        $hr = if ($null -ne $unwrapped.Inner) { $unwrapped.Inner.HResult } else { $_.Exception.HResult }
+        $rawHr = if ($null -ne $unwrapped.Inner) { $unwrapped.Inner.HResult } else { $_.Exception.HResult }
+        $hr = ConvertTo-UiaHResult -Value $rawHr
         $cat = Classify-UiaException -Exception $_.Exception -Operation 'GetCurrentPattern'
         $patternError = Format-UiaDiagnostic -Category $cat -Operation 'GetCurrentPattern' -AutomationId $AutomationId -PatternName $PatternType.Name -RuntimeId $rid -CurrentPage $CurrentPage -Exception $_.Exception
     }
@@ -1918,7 +1834,7 @@ if ($okSaveEl -and (Test-Path $settingsPath)) {
     $settingsRapid = Open-SettingsWindow -Root $root -HostHwnd $settingsHost -ProcessId $process.Id -WmCommand $wmCommand -MenuOpenSettings $menuOpenSettings
     $rapidUnexpectedError = ''
     $rapidSummary = ''
-    $hrElemNotAvail = [int][uint32]::Parse('80040201', [System.Globalization.NumberStyles]::HexNumber)
+    $hrElemNotAvail = ConvertTo-UiaHResult -Value '0x80040201'
     if ($null -ne $settingsRapid) {
         [void](Select-SettingsPage $settingsRapid 'sidebar.general')
         $rapidRememberEl = Try-FindById $settingsRapid 'action.remember-layout'
