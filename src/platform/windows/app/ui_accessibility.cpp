@@ -156,7 +156,12 @@ class ElementProvider final : public IRawElementProviderSimple,
                 return E_POINTER;
             });
         }
-        *options = ProviderOptions_ServerSideProvider;
+        // Application::run initializes COM as STA on the window-owning thread.
+        // Tell UI Automation to marshal provider callbacks back to that STA;
+        // otherwise provider methods may read the window's live UI model from
+        // a different thread without synchronization.
+        *options = static_cast<ProviderOptions>(
+            ProviderOptions_ServerSideProvider | ProviderOptions_UseComThreading);
         return S_OK;
     }
 
