@@ -1,6 +1,7 @@
 # Requires -Version 5.1
 # SubornoIME UI Automation audit harness.
 # Uses the .NET Framework UIA client that ships with Windows (no external deps).
+# WinApp CLI is optional; the audit never requires it.
 # Exit code = number of failed checks.
 #
 # Section 15 duties covered here: environment detection, application launch,
@@ -33,6 +34,10 @@ Add-Type -Namespace Suborno.Audit -Name Native -MemberDefinition @'
 [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
 [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
 [DllImport("user32.dll")] public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, System.UIntPtr dwExtraInfo);
+[DllImport("user32.dll", EntryPoint = "FindWindowW", CharSet = CharSet.Unicode, SetLastError = true)]
+public static extern IntPtr FindWindow(string className, string windowName);
+[DllImport("user32.dll", EntryPoint = "SendMessageW", SetLastError = true)]
+public static extern IntPtr SendMessage(IntPtr hWnd, uint message, IntPtr wParam, IntPtr lParam);
 '@
 [void][Suborno.Audit.Native]::SetProcessDPIAware()
 
@@ -51,7 +56,7 @@ function Get-AuditEnvironment {
     $osCaption = ''
     try { $osCaption = (Get-CimInstance Win32_OperatingSystem).Caption + ' build ' + (Get-CimInstance Win32_OperatingSystem).BuildNumber } catch { $osCaption = 'unknown' }
     $winapp = Get-Command winapp.exe -ErrorAction SilentlyContinue
-    $winappVersion = 'NOT INSTALLED'
+    $winappVersion = 'NOT INSTALLED (optional; in-box UIAutomationClient is used)'
     if ($winapp) { try { $winappVersion = (& winapp -V 2>&1 | Out-String).Trim() } catch { $winappVersion = 'present; version probe failed: ' + $_.Exception.Message } }
     $exeVersion = 'unknown'
     try { $exeVersion = (Get-Item $ExePath).VersionInfo.ProductVersion } catch { }
@@ -143,7 +148,7 @@ function Invoke-Pattern {
 
 Write-Host '== Suborno UI audit ==' -ForegroundColor Cyan
 $script:environment = Get-AuditEnvironment
-Write-Host ('environment: {0} | PS {1} | winapp: {2}' -f $script:environment.os, $script:environment.powershell_version, $script:environment.winapp_cli)
+Write-Host ('environment: {0} | PS {1} | winapp-cli: {2}' -f $script:environment.os, $script:environment.powershell_version, $script:environment.winapp_cli)
 New-Item -ItemType Directory -Force -Path $EvidenceDir | Out-Null
 
 # 0) Build/attach
@@ -151,15 +156,44 @@ $process = $null
 $existing = Get-Process -Name 'Suborno' -ErrorAction SilentlyContinue
 if ($null -eq $existing) {
     $process = Start-Process -FilePath $ExePath -PassThru
-    Start-Sleep -Seconds 3
+    Write-Host ("Started Suborno PID {0}." -f $process.Id)
 } else {
-    Write-Host 'Attaching to running Suborno instance.'
+    Write-Host ('Attaching to running Suborno instance (PID {0}).' -f (($existing | Select-Object -First 1).Id))
 }
 
+# The application intentionally starts in its configured topbar/tray surface;
+# Settings is not guaranteed to be visible on launch. Find the real native
+# application window and dispatch the same WM_COMMAND used by the tray and
+# topbar "Settings…" entries (menu_open_settings = 2003). This opens the
+# production Settings window through the application's own command handler;
+# all subsequent checks still use UI Automation and real mouse input.
+$settingsHost = [IntPtr]::Zero
+for ($attempt = 0; $attempt -lt 100; $attempt++) {
+    $settingsHost = [Suborno.Audit.Native]::FindWindow('SubornoDesktopWindow', $null)
+    if ($settingsHost -ne [IntPtr]::Zero) { break }
+    if ($process -and $process.HasExited) {
+        throw ("Suborno exited before creating its native window (exit code {0})." -f $process.ExitCode)
+    }
+    Start-Sleep -Milliseconds 200
+}
+if ($settingsHost -eq [IntPtr]::Zero) {
+    throw 'Suborno did not create the SubornoDesktopWindow host within 20 seconds.'
+}
+
+$wmCommand = [uint32]0x0111
+$menuOpenSettings = [IntPtr]2003
+Write-Host ('Opening Settings through the app WM_COMMAND handler; host HWND=0x{0:X}.' -f $settingsHost.ToInt64())
+[void][Suborno.Audit.Native]::SendMessage($settingsHost, $wmCommand, $menuOpenSettings, [IntPtr]::Zero)
+
 $root = Get-RootElement
-$settings = Find-Window $root 'SubornoDesktopWindow' ''
+$settings = $null
+for ($attempt = 0; $attempt -lt 50; $attempt++) {
+    $settings = Find-Window $root 'SubornoDesktopWindow' ''
+    if ($null -ne $settings) { break }
+    Start-Sleep -Milliseconds 200
+}
 if ($null -eq $settings) {
-    Add-Result 'SET-OPEN' 'Settings window found by class SubornoDesktopWindow' 'NOT FOUND (open it via the tray menu, then re-run)' $false
+    Add-Result 'SET-OPEN' 'Settings window found by class SubornoDesktopWindow after app menu command' 'NOT FOUND after WM_COMMAND 2003' $false
     $script:results | ConvertTo-Json -Depth 3 | Set-Content -Path $ResultsJson -Encoding UTF8
     $failed = @($script:results | Where-Object { $_.status -eq 'FAIL' }).Count
     exit $failed
