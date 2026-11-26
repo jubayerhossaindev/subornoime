@@ -48,7 +48,7 @@
 "ddh"
 # Structural stressors
 " "
-"\n"
+"\x0A"
 "-"
 "."
 "0"
