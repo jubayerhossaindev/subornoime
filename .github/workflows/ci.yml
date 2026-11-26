@@ -69,7 +69,7 @@ jobs:
           test -n "$(find "$output_dir" -type f -print -quit)"
 
       - name: Upload formatted source files
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: clang-format-files-${{ github.run_number }}
           path: ${{ runner.temp }}/clang-format-sources/
@@ -224,7 +224,7 @@ jobs:
           }
 
       - name: Upload Windows distribution
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: suborno-windows-x64-${{ github.run_number }}
           path: |
