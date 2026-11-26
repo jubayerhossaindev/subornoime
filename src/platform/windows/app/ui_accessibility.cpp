@@ -473,7 +473,7 @@ class ElementProvider final : public IRawElementProviderSimple,
 
         // Child IDs are unique within this fragment. UI Automation scopes
         // UiaAppendRuntimeId across provider instances.
-        const LONG values[] = {UiaAppendRuntimeId, static_cast<LONG>(index_ + 1)};
+        LONG values[] = {UiaAppendRuntimeId, static_cast<LONG>(index_ + 1)};
         SAFEARRAY* array =
             ::SafeArrayCreateVector(VT_I4, 0, static_cast<ULONG>(_countof(values)));
         if (array == nullptr) {
