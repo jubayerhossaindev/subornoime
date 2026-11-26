@@ -246,9 +246,19 @@ TEST(WindowsTsfContractTest, CreatesTheTextServiceAndTracksServerLocks) {
     ASSERT_NE(looked_up_converted.get(), nullptr);
 
     display_attribute_provider.reset();
-
     service.reset();
     factory.reset();
+
+    // The enumerator and returned attribute objects own independent module
+    // references; the DLL must remain loaded until every client reference is
+    // released, even after the text service and class factory are gone.
+    EXPECT_EQ(DllCanUnloadNow(), S_FALSE);
+
+    looked_up_converted.reset();
+    looked_up_input.reset();
+    enumerated_converted.reset();
+    enumerated_input.reset();
+    attribute_enumerator.reset();
     EXPECT_EQ(DllCanUnloadNow(), S_OK);
 }
 
