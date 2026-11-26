@@ -7,9 +7,12 @@ if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) {
 }
 
 $setupVersion = (Get-Item -LiteralPath $installer).VersionInfo
-if ($setupVersion.ProductName -ne 'Suborno') {
-    throw "Unexpected installer ProductName: $($setupVersion.ProductName)"
+$rawProductName = [string]$setupVersion.ProductName
+$productName = $rawProductName.Trim()
+if ($productName -cne 'Suborno') {
+    throw "Unexpected installer ProductName: '$rawProductName' (trimmed: '$productName'; raw length: $($rawProductName.Length))."
 }
+Write-Host "Verified installer ProductName: '$productName' (raw length: $($rawProductName.Length))."
 $signature = Get-AuthenticodeSignature -LiteralPath $installer
 Write-Host "Installer signature status: $($signature.Status)"
 if ($signature.Status -notin @('Valid', 'NotSigned')) {
