@@ -95,11 +95,16 @@ add_test(NAME suborno.unit COMMAND suborno_unit_tests
 # Full functional and soak coverage runs in both configurations. Timing
 # budgets are meaningful only in optimized Release builds: MSVC Debug uses
 # /Od, so PerformanceBudget runs once in Release. Expensive soak snapshots
-# are checkpointed in the test itself. A hard timeout prevents multi-minute
-# regressions from consuming the complete Windows verification job.
-# The Windows workflow supplies a 120s Release / 60s Debug CTest deadline.
-# Keep the timeout at the invocation level because the full Release suite
-# has a measured ~76s baseline on the hosted runner.
+# are checkpointed in the test itself.
+#
+# This is one CTest entry containing the entire GoogleTest executable (672
+# cases across 74 suites). Its deterministic StabilitySoak cases are
+# intentionally more expensive under MSVC /Od than in Release. Give this
+# aggregate unit-test process its own bounded deadline; the workflow's
+# --timeout value remains the shorter default for every other test.
+#
+# CMake's TIMEOUT test property takes precedence over CTest's default timeout.
+set_tests_properties(suborno.unit PROPERTIES TIMEOUT 300)
 
 add_executable(suborno_integration_tests integration/target_graph_smoke_test.cpp)
 target_link_libraries(suborno_integration_tests PRIVATE suborno_core GTest::gtest_main)
