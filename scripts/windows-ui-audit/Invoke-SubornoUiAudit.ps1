@@ -1383,7 +1383,9 @@ $shellSidebarProbe = Try-FindById $settings 'sidebar.general'
 $shellSaveProbe = Try-FindById $settings 'action.save'
 $shellSidebarRidBefore = Get-RuntimeIdString $shellSidebarProbe
 $shellSaveRidBefore = Get-RuntimeIdString $shellSaveProbe
-$generalControlProbe = Try-FindById $settings 'action.remember-layout'
+$generalControlProbe = $null
+$generalControlProbeReady = $false
+$generalControlProbeRid = ''
 
 foreach ($page in 'sidebar.general', 'sidebar.interface', 'sidebar.topbar', 'sidebar.input') {
     $el = Try-FindById $settings $page
@@ -1414,6 +1416,20 @@ foreach ($page in 'sidebar.general', 'sidebar.interface', 'sidebar.topbar', 'sid
     $lifecycleNote = ''
     $lifecycleOk = $true
     if ($invRes.Success -and $switched) {
+        if ($page -eq 'sidebar.general') {
+            # Capture the page probe AFTER invoking General. Invoking the already-active
+            # tab still advances the page generation, so a pre-loop proxy would already
+            # be stale before the General -> Interface transition under test.
+            $generalControlProbe = Try-FindById $settings 'action.remember-layout'
+            $generalProbeSnap = Try-GetElementSnapshot $generalControlProbe
+            $generalControlProbeReady = ($null -ne $generalControlProbe) -and $generalProbeSnap.Success
+            if ($generalControlProbeReady) {
+                $generalControlProbeRid = Get-RuntimeIdString $generalControlProbe
+            } else {
+                $lifecycleOk = $false
+                $lifecycleNote += "; fresh General page probe unavailable after General navigation (success=$($generalProbeSnap.Success) cat=$($generalProbeSnap.Category) error=$($generalProbeSnap.Error))"
+            }
+        }
         $sbSnap = Try-GetElementSnapshot $shellSidebarProbe
         $svSnap = Try-GetElementSnapshot $shellSaveProbe
         $sbRidNow = Get-RuntimeIdString $shellSidebarProbe
@@ -1426,13 +1442,18 @@ foreach ($page in 'sidebar.general', 'sidebar.interface', 'sidebar.topbar', 'sid
             $lifecycleOk = $false
             $lifecycleNote += "; action.save proxy broke after switch (ok=$($svSnap.Success) rid=$shellSaveRidBefore->$svRidNow)"
         }
-        if ($page -eq 'sidebar.interface' -and $null -ne $generalControlProbe) {
-            $oldSnap = Try-GetElementSnapshot $generalControlProbe
-            if ($oldSnap.Success -or $oldSnap.Category -ne 'ElementUnavailable') {
+        if ($page -eq 'sidebar.interface') {
+            if (-not $generalControlProbeReady -or $null -eq $generalControlProbe) {
                 $lifecycleOk = $false
-                $lifecycleNote += "; old general control did not become ElementUnavailable (success=$($oldSnap.Success) cat=$($oldSnap.Category))"
+                $lifecycleNote += '; old General page probe was not captured from the active General page'
             } else {
-                $lifecycleNote += '; oldTab=ElementUnavailable; shellRidStable=True'
+                $oldSnap = Try-GetElementSnapshot $generalControlProbe
+                if ($oldSnap.Success -or $oldSnap.Category -ne 'ElementUnavailable') {
+                    $lifecycleOk = $false
+                    $lifecycleNote += "; old general control did not become ElementUnavailable (rid=$generalControlProbeRid success=$($oldSnap.Success) cat=$($oldSnap.Category) diagnostic=[$($oldSnap.Error)])"
+                } else {
+                    $lifecycleNote += "; oldTab=ElementUnavailable(rid=$generalControlProbeRid); shellRidStable=True"
+                }
             }
         }
     }
