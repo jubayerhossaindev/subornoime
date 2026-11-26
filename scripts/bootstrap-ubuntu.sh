@@ -51,8 +51,8 @@ else
     printf 'All required Ubuntu packages are already installed.\n'
 fi
 
-scripts/install-llvm-23-ubuntu.sh
-scripts/install-linux-build-tools.sh
+bash scripts/install-llvm-23-ubuntu.sh
+bash scripts/install-linux-build-tools.sh
 export PATH="${HOME}/.local/bin:${PATH}"
 
 for package in "${!package_commands[@]}"; do
