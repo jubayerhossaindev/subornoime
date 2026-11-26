@@ -13,6 +13,12 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      clean_cache:
+        description: "Run the complete Windows verification without restoring or saving any Actions caches"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -37,6 +43,7 @@ jobs:
         uses: actions/checkout@v7.0.1
 
       - name: Restore vcpkg compiled package cache
+        if: ${{ inputs.clean_cache != true }}
         id: vcpkg-binary-cache
         uses: actions/cache/restore@v6.1.0
         with:
@@ -49,6 +56,7 @@ jobs:
       # The vcpkg source checkout and its bootstrapped executable are pinned
       # to an immutable commit, so they can be safely reused between runs.
       - name: Restore pinned vcpkg tool
+        if: ${{ inputs.clean_cache != true }}
         id: vcpkg-tool-cache
         uses: actions/cache/restore@v6.1.0
         with:
@@ -58,6 +66,7 @@ jobs:
       # Keep vcpkg's source archives and downloaded host tools outside its
       # checkout so they can be cached independently from build intermediates.
       - name: Restore vcpkg downloaded assets
+        if: ${{ inputs.clean_cache != true }}
         id: vcpkg-download-cache
         uses: actions/cache/restore@v6.1.0
         with:
@@ -70,6 +79,7 @@ jobs:
       # Reuse the exact same third-party installer on subsequent workflow runs.
       # The cached binary is still SHA-256 verified before it is executed.
       - name: Restore downloaded Windows tools
+        if: ${{ inputs.clean_cache != true }}
         id: windows-tool-cache
         uses: actions/cache/restore@v6.1.0
         with:
@@ -77,6 +87,7 @@ jobs:
           key: windows-tool-innosetup-6.3.3-0bcb2a409dea17e305a27a6b09555cabe600e984f88570ab72575cd7e93c95e
 
       - name: Restore MSVC compilation cache
+        if: ${{ inputs.clean_cache != true }}
         id: msvc-ccache
         uses: actions/cache/restore@v6.1.0
         with:
@@ -96,6 +107,7 @@ jobs:
             "pinned vcpkg tool cache exact hit: ${{ steps.vcpkg-tool-cache.outputs.cache-hit }}"
             "Inno Setup download cache exact hit: ${{ steps.windows-tool-cache.outputs.cache-hit }}"
             "MSVC compilation cache exact hit: ${{ steps.msvc-ccache.outputs.cache-hit }}"
+            "Cache-free clean run requested: ${{ inputs.clean_cache }}"
           ) | Tee-Object -FilePath verify-cache-status.txt
           Get-Content verify-cache-status.txt | Add-Content $env:GITHUB_STEP_SUMMARY
 
@@ -186,7 +198,7 @@ jobs:
           }
 
       - name: Save pinned vcpkg tool
-        if: success()
+        if: success() && inputs.clean_cache != true
         uses: actions/cache/save@v6.1.0
         with:
           path: .vcpkg
@@ -251,14 +263,14 @@ jobs:
       # when configuration fails, so later compile/test failures cannot discard
       # already downloaded archives or successfully built dependency packages.
       - name: Save vcpkg compiled package cache
-        if: always()
+        if: always() && inputs.clean_cache != true
         uses: actions/cache/save@v6.1.0
         with:
           path: .vcpkg-binary-cache
           key: vcpkg-${{ runner.os }}-msvc-v143-x64-windows-static-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}-${{ github.sha }}
 
       - name: Save vcpkg downloaded assets
-        if: always()
+        if: always() && inputs.clean_cache != true
         uses: actions/cache/save@v6.1.0
         with:
           path: .vcpkg-downloads
@@ -274,61 +286,70 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          cmake --build --preset windows-msvc-release 2>&1 | Tee-Object -FilePath verify-evidence\release_build.log
+          # Detailed MSBuild output exposes the actual CL task command lines.
+          # The binary log is retained in the always-uploaded evidence artifact.
+          cmake --build --preset windows-msvc-release -- /verbosity:detailed /clp:ShowCommandLine /bl:verify-evidence\release_build.binlog 2>&1 | Tee-Object -FilePath verify-evidence\release_build.log
           $buildExitCode = $LASTEXITCODE
           if ($buildExitCode -ne 0) {
             Write-Host "MSVC Release build exited with native code $buildExitCode."
-            $compilerErrors = Select-String -Path verify-evidence\release_build.log -Pattern 'error C\d{4}:|fatal error C\d{4}:'
-            if ($compilerErrors) {
-              Write-Host "Compiler diagnostics:"
-              $compilerErrors | ForEach-Object { Write-Host $_.Line }
+            $diagnosticPattern = '(?i)(fatal error|error\s+C\d{4}|error\s+LNK\d+|error\s+MSB\d+|\bC1\d{3}\b|warning[^\r\n]*treated as error|out of heap space|cannot open program database|not enough space|no space left on device)'
+            $diagnostics = @(Select-String -LiteralPath verify-evidence\release_build.log -Pattern $diagnosticPattern)
+            if ($diagnostics.Count -gt 0) {
+              Write-Host "Compiler/linker/MSBuild diagnostics:"
+              foreach ($diagnostic in $diagnostics) {
+                $annotation = $diagnostic.Line.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+                Write-Output "::error::$annotation"
+              }
+            } else {
+              Write-Host "No known compiler/linker/MSBuild diagnostic pattern matched; inspect the full logs."
             }
-            throw "Release build failed with native exit code $buildExitCode. Full log: verify-evidence\release_build.log"
+            Write-Host "========== Release build log tail (last 120 lines) =========="
+            Get-Content -LiteralPath verify-evidence\release_build.log -Tail 120 | ForEach-Object { Write-Host $_ }
+            throw "Release build failed with native exit code $buildExitCode. Full text and binary logs: verify-evidence\"
           }
 
       - name: Prove MSVC /analyze executed during Release build
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          # The full Release build above performs the actual compilation.
-          # Its output reports each MSVC analysis pass. Do not issue a second
-          # incremental build here: up-to-date targets correctly have no CL
-          # command lines, which would produce a false negative.
+          # A CMake option alone is configuration intent, not execution proof.
+          # Require /analyze on at least one actual MSBuild CL task command line.
           $cmakeCachePath = 'build\windows-msvc\CMakeCache.txt'
           $releaseBuildLogPath = 'verify-evidence\release_build.log'
-          if (-not (Test-Path -LiteralPath $cmakeCachePath -PathType Leaf)) {
-            throw "CMake cache not found: $cmakeCachePath"
-          }
-          if (-not (Test-Path -LiteralPath $releaseBuildLogPath -PathType Leaf)) {
-            throw "Release build log not found: $releaseBuildLogPath"
+          $binaryLogPath = 'verify-evidence\release_build.binlog'
+          foreach ($requiredPath in @($cmakeCachePath, $releaseBuildLogPath, $binaryLogPath)) {
+            if (-not (Test-Path -LiteralPath $requiredPath -PathType Leaf)) {
+              throw "Required MSVC analysis evidence file not found: $requiredPath"
+            }
           }
 
-          $analysisOption = Select-String -Path $cmakeCachePath -Pattern '^SUBORNO_ENABLE_MSVC_ANALYSIS:BOOL=ON$'
+          $analysisOption = Select-String -LiteralPath $cmakeCachePath -Pattern '^SUBORNO_ENABLE_MSVC_ANALYSIS:BOOL=ON$'
           if (-not $analysisOption) {
             throw "SUBORNO_ENABLE_MSVC_ANALYSIS is not ON in the configured Windows build."
           }
 
-          $analysisPasses = @(Select-String -Path $releaseBuildLogPath -Pattern 'Running Code Analysis for C/C\+\+\.\.\.')
-          if ($analysisPasses.Count -eq 0) {
-            throw "The Release build log contains no MSVC Code Analysis pass marker."
+          $analysisCommands = @(Select-String -LiteralPath $releaseBuildLogPath -Pattern '(?i)\bcl\.exe\b[^\r\n]*\s/analyze(?:\s|$)')
+          if ($analysisCommands.Count -eq 0) {
+            throw "Detailed MSBuild output contains no actual cl.exe command line with /analyze; inspect release_build.binlog."
           }
 
-          $analysisDiagnostics = @(Select-String -Path $releaseBuildLogPath -Pattern '(warning|error) C6\d{3}:')
+          $analysisDiagnostics = @(Select-String -LiteralPath $releaseBuildLogPath -Pattern '(?i)(warning|error) C6\d{3}:')
           $proofLines = @(
-            'PROOF — MSVC Code Analysis executed during the full Release build.'
+            'PROOF — MSVC /analyze was present on actual Release CL task command lines.'
             "CMake option: $($analysisOption.Line)"
-            "MSVC Code Analysis pass markers: $($analysisPasses.Count)"
+            "MSVC CL invocations containing /analyze: $($analysisCommands.Count)"
             "MSVC C6xxx diagnostics emitted: $($analysisDiagnostics.Count)"
+            "Binary MSBuild log: $binaryLogPath"
             ''
-            'Observed MSVC Code Analysis pass output:'
+            'Observed CL command lines containing /analyze:'
           )
-          $proofLines += $analysisPasses | Select-Object -First 5 | ForEach-Object { $_.Line }
+          $proofLines += $analysisCommands | Select-Object -First 10 | ForEach-Object { $_.Line }
           $proofLines += ''
           $proofLines += 'Observed C6xxx diagnostics (when present):'
           if ($analysisDiagnostics.Count -gt 0) {
             $proofLines += $analysisDiagnostics | Select-Object -First 10 | ForEach-Object { $_.Line }
           } else {
-            $proofLines += 'No C6xxx diagnostics were emitted; the MSVC analysis pass markers above prove the analyzer ran.'
+            $proofLines += 'No C6xxx diagnostics were emitted; the captured CL command lines prove /analyze was supplied.'
           }
           $proofLines | Set-Content verify-evidence\analyze_execution_proof.txt
           $proofLines
@@ -441,7 +462,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Inno Setup compilation failed." }
 
       - name: Save downloaded Windows tools
-        if: steps.build-installer.outcome == 'success'
+        if: steps.build-installer.outcome == 'success' && inputs.clean_cache != true
         uses: actions/cache/save@v6.1.0
         with:
           path: .ci-cache/downloads
@@ -480,7 +501,7 @@ jobs:
           }
 
       - name: Save MSVC compilation cache
-        if: always()
+        if: always() && inputs.clean_cache != true
         uses: actions/cache/save@v6.1.0
         with:
           path: ${{ runner.temp }}\ccache-store
