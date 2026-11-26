@@ -463,36 +463,27 @@ class ElementProvider final : public IRawElementProviderSimple,
         if (!available()) {
             return UIA_E_ELEMENTNOTAVAILABLE;
         }
-        // The UI Automation fragment contract requires the runtime id to
-        // begin with UiaAppendRuntimeId: the core then scopes the remaining
-        // integers to this provider instance. Without that first element the
-        // core cannot build a stable identity for fragment children, which
-        // breaks property-condition search (FindFirst/FindAll on AutomationId)
-        // even though raw tree navigation still works.
-        //
-        // Remaining elements are deterministic per (window, element): the
-        // HWND value is stable for the window's lifetime and 0 is reserved
-        // for the root.
-        LONG first = UiaAppendRuntimeId;
-        LONG second = static_cast<LONG>(reinterpret_cast<INT_PTR>(window_) & 0x7FFFFFFF);
-        LONG third = is_root_ ? 0 : static_cast<LONG>(index_ + 1);
-        SAFEARRAY* array = ::SafeArrayCreateVector(VT_I4, 0, 3);
+        // This provider fragment is rooted directly in an HWND. Per the
+        // UIA contract, a top-level element hosted by a window must return a
+        // null runtime ID; the host provider supplies the HWND identity.
+        // Only fragment children append a provider-defined ID.
+        if (is_root_) {
+            return S_OK;
+        }
+
+        // Child IDs are unique within this fragment. UI Automation scopes
+        // UiaAppendRuntimeId across provider instances.
+        const LONG values[] = {UiaAppendRuntimeId, static_cast<LONG>(index_ + 1)};
+        SAFEARRAY* array =
+            ::SafeArrayCreateVector(VT_I4, 0, static_cast<ULONG>(_countof(values)));
         if (array == nullptr) {
             return E_OUTOFMEMORY;
         }
-        long index = 0;
-        HRESULT put = ::SafeArrayPutElement(array, &index, &first);
-        if (SUCCEEDED(put)) {
-            index = 1;
-            put = ::SafeArrayPutElement(array, &index, &second);
-        }
-        if (SUCCEEDED(put)) {
-            index = 2;
-            put = ::SafeArrayPutElement(array, &index, &third);
-        }
-        if (FAILED(put)) {
-            ::SafeArrayDestroy(array);
-            return E_FAIL;
+        for (LONG index = 0; index < static_cast<LONG>(_countof(values)); ++index) {
+            if (FAILED(::SafeArrayPutElement(array, &index, &values[index]))) {
+                ::SafeArrayDestroy(array);
+                return E_FAIL;
+            }
         }
         *runtime_id = array;
         return S_OK;
@@ -516,9 +507,10 @@ class ElementProvider final : public IRawElementProviderSimple,
                 return E_POINTER;
             });
         }
-        // This tree has no embedded fragment roots (flat element list).
-        *roots = ::SafeArrayCreateVector(VT_UNKNOWN, 0, 0);
-        return *roots != nullptr ? S_OK : E_OUTOFMEMORY;
+        // This flat custom-drawn surface does not host another UIA
+        // framework. The documented result for that case is a null array.
+        *roots = nullptr;
+        return available() ? S_OK : UIA_E_ELEMENTNOTAVAILABLE;
     }
 
     IFACEMETHODIMP SetFocus() override {
