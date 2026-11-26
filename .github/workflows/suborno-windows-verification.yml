@@ -42,16 +42,104 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7.0.1
 
+      - name: Initialize verification evidence
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path verify-evidence | Out-Null
+          "Windows verification started for $env:GITHUB_SHA" | Set-Content verify-evidence\run-start.txt
+
+      - name: Verify Windows runner environment
+        id: windows-env
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path verify-evidence | Out-Null
+          $env_report = [ordered]@{}
+          $os = Get-CimInstance Win32_OperatingSystem
+          $env_report.os = "$($os.Caption) build $($os.BuildNumber)"
+          $env_report.arch = $env:PROCESSOR_ARCHITECTURE
+          $env_report.memory_gb = [math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB, 1)
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vs = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (-not $vs) { throw "Visual Studio 2022 with v143 toolset not found by vswhere." }
+          $env_report.vs_path = $vs
+          $catalog = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property catalog_productLineVersion
+          $env_report.vs_catalog_version = "$catalog"
+          $cl = Get-ChildItem (Join-Path $vs 'VC\Tools\MSVC') -Directory | Sort-Object Name -Descending | Select-Object -First 1
+          $env_report.msvc_toolset = $cl.Name
+          if ($cl.Name -notmatch '^14\.(3[0-9]|4[0-9])\.') { throw "Toolset is $($cl.Name); MSVC v143 requires toolset 14.30 through 14.49." }
+          $env_report.msvc_toolset_family = 'v143'
+          $compilerExecutable = Join-Path $cl.FullName 'bin\Hostx64\x64\cl.exe'
+          if (-not (Test-Path -LiteralPath $compilerExecutable -PathType Leaf)) { throw "Host-x64 cl.exe not found: $compilerExecutable" }
+          $compilerFingerprint = (Get-FileHash -LiteralPath $compilerExecutable -Algorithm SHA256).Hash.ToLowerInvariant()
+          $env_report.msvc_compiler_sha256 = $compilerFingerprint
+          Add-Content $env:GITHUB_ENV "SUBORNO_MSVC_COMPILER_FINGERPRINT=$compilerFingerprint"
+          $env_report.cmake = (cmake --version | Select-Object -First 1)
+          $msbuild = Join-Path $vs 'MSBuild\Current\Bin\amd64\MSBuild.exe'
+          $msbuildOutput = (& $msbuild -version -nologo 2>&1 | Out-String)
+          if ($LASTEXITCODE -ne 0 -or $msbuildOutput -notmatch '(?m)^\s*(\d+\.\d+\.\d+\.\d+)\s*
+          $env_report.dumpbin = Test-Path (Join-Path $cl.FullName 'bin\Hostx64\x64\dumpbin.exe')
+          if (-not $env_report.dumpbin) { throw "dumpbin.exe not found." }
+          # Compiler identity: must be the Microsoft optimizing compiler on x64.
+          $banner = cmd /c "`"$(Join-Path $vs 'VC\Auxiliary\Build\vcvars64.bat')`" && cl 2>&1" | Out-String
+          $env_report.cl_banner = ($banner -split "`r?`n" | Where-Object { $_ -match 'Version' }) -join ' | '
+          if ($banner -notmatch 'Optimizing Compiler') { throw "cl.exe did not identify as the Microsoft C/C++ Optimizing Compiler." }
+          if ($env_report.msvc_toolset -notmatch '^14\.(3[0-9]|4[0-9])\.') { throw "cl.exe toolset is not v143." }
+          # Preset assertions: generator/arch/toolset/standard pinned to the mission contract.
+          $presets = Get-Content CMakePresets.json -Raw | ConvertFrom-Json
+          $cfg = $presets.configurePresets | Where-Object { $_.name -eq 'windows-msvc' }
+          if ($cfg.generator -ne 'Visual Studio 17 2022') { throw "generator is $($cfg.generator)" }
+          if ($cfg.architecture.value -ne 'x64') { throw "architecture is $($cfg.architecture.value)" }
+          if ($cfg.toolset.value -ne 'v143') { throw "toolset is $($cfg.toolset.value)" }
+          if ($presets.cmakeMinimumRequired -eq $null) { } # presence check only
+          $runnerImageOs = if ([string]::IsNullOrWhiteSpace($env:ImageOS)) { 'windows-2022' } else { $env:ImageOS.Trim() }
+          $runnerImageVersion = if ([string]::IsNullOrWhiteSpace($env:ImageVersion)) { $os.BuildNumber } else { $env:ImageVersion.Trim() }
+          $env_report.runner_image_os = $runnerImageOs
+          $env_report.runner_image_version = $runnerImageVersion
+          @(
+            "runner_image_os=$runnerImageOs"
+            "runner_image_version=$runnerImageVersion"
+            "windows_build=$($os.BuildNumber)"
+            "msvc_toolset=$($cl.Name)"
+            "msvc_compiler_sha256=$compilerFingerprint"
+            "msbuild_version=$msbuildVersion"
+          ) | Add-Content $env:GITHUB_OUTPUT
+          $env_report | ConvertTo-Json -Depth 4 | Set-Content verify-evidence\environment.json
+          Get-Content verify-evidence\environment.json
+
+) {
+            throw "Unable to determine the installed MSBuild version."
+          }
+          $msbuildVersion = $Matches[1]
+          $env_report.msbuild = $msbuildVersion
+          $env_report.dumpbin = Test-Path (Join-Path $cl.FullName 'bin\Hostx64\x64\dumpbin.exe')
+          if (-not $env_report.dumpbin) { throw "dumpbin.exe not found." }
+          # Compiler identity: must be the Microsoft optimizing compiler on x64.
+          $banner = cmd /c "`"$(Join-Path $vs 'VC\Auxiliary\Build\vcvars64.bat')`" && cl 2>&1" | Out-String
+          $env_report.cl_banner = ($banner -split "`r?`n" | Where-Object { $_ -match 'Version' }) -join ' | '
+          if ($banner -notmatch 'Optimizing Compiler') { throw "cl.exe did not identify as the Microsoft C/C++ Optimizing Compiler." }
+          if ($env_report.msvc_toolset -notmatch '^14\.(3[0-9]|4[0-9])\.') { throw "cl.exe toolset is not v143." }
+          # Preset assertions: generator/arch/toolset/standard pinned to the mission contract.
+          $presets = Get-Content CMakePresets.json -Raw | ConvertFrom-Json
+          $cfg = $presets.configurePresets | Where-Object { $_.name -eq 'windows-msvc' }
+          if ($cfg.generator -ne 'Visual Studio 17 2022') { throw "generator is $($cfg.generator)" }
+          if ($cfg.architecture.value -ne 'x64') { throw "architecture is $($cfg.architecture.value)" }
+          if ($cfg.toolset.value -ne 'v143') { throw "toolset is $($cfg.toolset.value)" }
+          if ($presets.cmakeMinimumRequired -eq $null) { } # presence check only
+          $env_report | ConvertTo-Json -Depth 4 | Set-Content verify-evidence\environment.json
+          Get-Content verify-evidence\environment.json
+
+
       - name: Restore vcpkg compiled package cache
         if: ${{ inputs.clean_cache != true }}
         id: vcpkg-binary-cache
         uses: actions/cache/restore@v6.1.0
         with:
           path: .vcpkg-binary-cache
-          key: vcpkg-${{ runner.os }}-msvc-v143-x64-windows-static-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}-${{ github.sha }}
+          key: vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ steps.windows-env.outputs.runner_image_os }}-${{ steps.windows-env.outputs.runner_image_version }}-cl-${{ steps.windows-env.outputs.msvc_compiler_sha256 }}-msbuild-${{ steps.windows-env.outputs.msbuild_version }}-msvc-v143-x64-windows-static-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}-${{ github.sha }}
           restore-keys: |
-            vcpkg-${{ runner.os }}-msvc-v143-x64-windows-static-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}-
-            vcpkg-${{ runner.os }}-msvc-v143-x64-windows-static-
+            vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ steps.windows-env.outputs.runner_image_os }}-${{ steps.windows-env.outputs.runner_image_version }}-cl-${{ steps.windows-env.outputs.msvc_compiler_sha256 }}-msbuild-${{ steps.windows-env.outputs.msbuild_version }}-msvc-v143-x64-windows-static-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}-
+            vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ steps.windows-env.outputs.runner_image_os }}-${{ steps.windows-env.outputs.runner_image_version }}-cl-${{ steps.windows-env.outputs.msvc_compiler_sha256 }}-msbuild-${{ steps.windows-env.outputs.msbuild_version }}-msvc-v143-x64-windows-static-
 
       # The vcpkg source checkout and its bootstrapped executable are pinned
       # to an immutable commit, so they can be safely reused between runs.
@@ -92,9 +180,9 @@ jobs:
         uses: actions/cache/restore@v6.1.0
         with:
           path: ${{ runner.temp }}\ccache-store
-          key: ccache-windows-msvc-v143-4.14.3-${{ github.sha }}
+          key: ccache-${{ steps.windows-env.outputs.runner_image_os }}-${{ steps.windows-env.outputs.runner_image_version }}-${{ runner.arch }}-cl-${{ steps.windows-env.outputs.msvc_compiler_sha256 }}-msbuild-${{ steps.windows-env.outputs.msbuild_version }}-v143-4.14.3-${{ github.sha }}
           restore-keys: |
-            ccache-windows-msvc-v143-4.14.3-
+            ccache-${{ steps.windows-env.outputs.runner_image_os }}-${{ steps.windows-env.outputs.runner_image_version }}-${{ runner.arch }}-cl-${{ steps.windows-env.outputs.msvc_compiler_sha256 }}-msbuild-${{ steps.windows-env.outputs.msbuild_version }}-v143-4.14.3-
 
       - name: Report cache restore results
         shell: pwsh
@@ -110,57 +198,6 @@ jobs:
             "Cache-free clean run requested: ${{ inputs.clean_cache }}"
           ) | Tee-Object -FilePath verify-cache-status.txt
           Get-Content verify-cache-status.txt | Add-Content $env:GITHUB_STEP_SUMMARY
-
-      - name: Initialize verification evidence
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path verify-evidence | Out-Null
-          "Windows verification started for $env:GITHUB_SHA" | Set-Content verify-evidence\run-start.txt
-
-      - name: Verify Windows runner environment
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          New-Item -ItemType Directory -Force -Path verify-evidence | Out-Null
-          $env_report = [ordered]@{}
-          $os = Get-CimInstance Win32_OperatingSystem
-          $env_report.os = "$($os.Caption) build $($os.BuildNumber)"
-          $env_report.arch = $env:PROCESSOR_ARCHITECTURE
-          $env_report.memory_gb = [math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB, 1)
-          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-          $vs = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
-          if (-not $vs) { throw "Visual Studio 2022 with v143 toolset not found by vswhere." }
-          $env_report.vs_path = $vs
-          $catalog = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property catalog_productLineVersion
-          $env_report.vs_catalog_version = "$catalog"
-          $cl = Get-ChildItem (Join-Path $vs 'VC\Tools\MSVC') -Directory | Sort-Object Name -Descending | Select-Object -First 1
-          $env_report.msvc_toolset = $cl.Name
-          if ($cl.Name -notmatch '^14\.(3[0-9]|4[0-9])\.') { throw "Toolset is $($cl.Name); MSVC v143 requires toolset 14.30 through 14.49." }
-          $env_report.msvc_toolset_family = 'v143'
-          $compilerExecutable = Join-Path $cl.FullName 'bin\Hostx64\x64\cl.exe'
-          if (-not (Test-Path -LiteralPath $compilerExecutable -PathType Leaf)) { throw "Host-x64 cl.exe not found: $compilerExecutable" }
-          $compilerFingerprint = (Get-FileHash -LiteralPath $compilerExecutable -Algorithm SHA256).Hash.ToLowerInvariant()
-          $env_report.msvc_compiler_sha256 = $compilerFingerprint
-          Add-Content $env:GITHUB_ENV "SUBORNO_MSVC_COMPILER_FINGERPRINT=$compilerFingerprint"
-          $env_report.cmake = (cmake --version | Select-Object -First 1)
-          $msbuild = Join-Path $vs 'MSBuild\Current\Bin\amd64\MSBuild.exe'
-          $env_report.msbuild = (& $msbuild -version -nologo)
-          $env_report.dumpbin = Test-Path (Join-Path $cl.FullName 'bin\Hostx64\x64\dumpbin.exe')
-          if (-not $env_report.dumpbin) { throw "dumpbin.exe not found." }
-          # Compiler identity: must be the Microsoft optimizing compiler on x64.
-          $banner = cmd /c "`"$(Join-Path $vs 'VC\Auxiliary\Build\vcvars64.bat')`" && cl 2>&1" | Out-String
-          $env_report.cl_banner = ($banner -split "`r?`n" | Where-Object { $_ -match 'Version' }) -join ' | '
-          if ($banner -notmatch 'Optimizing Compiler') { throw "cl.exe did not identify as the Microsoft C/C++ Optimizing Compiler." }
-          if ($env_report.msvc_toolset -notmatch '^14\.(3[0-9]|4[0-9])\.') { throw "cl.exe toolset is not v143." }
-          # Preset assertions: generator/arch/toolset/standard pinned to the mission contract.
-          $presets = Get-Content CMakePresets.json -Raw | ConvertFrom-Json
-          $cfg = $presets.configurePresets | Where-Object { $_.name -eq 'windows-msvc' }
-          if ($cfg.generator -ne 'Visual Studio 17 2022') { throw "generator is $($cfg.generator)" }
-          if ($cfg.architecture.value -ne 'x64') { throw "architecture is $($cfg.architecture.value)" }
-          if ($cfg.toolset.value -ne 'v143') { throw "toolset is $($cfg.toolset.value)" }
-          if ($presets.cmakeMinimumRequired -eq $null) { } # presence check only
-          $env_report | ConvertTo-Json -Depth 4 | Set-Content verify-evidence\environment.json
-          Get-Content verify-evidence\environment.json
 
       - name: Install pinned vcpkg
         shell: pwsh
@@ -267,7 +304,7 @@ jobs:
         uses: actions/cache/save@v6.1.0
         with:
           path: .vcpkg-binary-cache
-          key: vcpkg-${{ runner.os }}-msvc-v143-x64-windows-static-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}-${{ github.sha }}
+          key: vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ steps.windows-env.outputs.runner_image_os }}-${{ steps.windows-env.outputs.runner_image_version }}-cl-${{ steps.windows-env.outputs.msvc_compiler_sha256 }}-msbuild-${{ steps.windows-env.outputs.msbuild_version }}-msvc-v143-x64-windows-static-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}-${{ github.sha }}
 
       - name: Save vcpkg downloaded assets
         if: always() && inputs.clean_cache != true
@@ -506,7 +543,7 @@ jobs:
         uses: actions/cache/save@v6.1.0
         with:
           path: ${{ runner.temp }}\ccache-store
-          key: ccache-windows-msvc-v143-4.14.3-${{ github.sha }}
+          key: ccache-${{ steps.windows-env.outputs.runner_image_os }}-${{ steps.windows-env.outputs.runner_image_version }}-${{ runner.arch }}-cl-${{ steps.windows-env.outputs.msvc_compiler_sha256 }}-msbuild-${{ steps.windows-env.outputs.msbuild_version }}-v143-4.14.3-${{ github.sha }}
 
       - name: Upload verification artifacts
         if: always()
