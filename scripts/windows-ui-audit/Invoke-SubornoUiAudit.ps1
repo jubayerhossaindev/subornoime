@@ -281,6 +281,44 @@ function Get-StartupDiagnostics {
     $lines | Tee-Object -FilePath $script:startupDiagnosticsPath -Append | ForEach-Object { Write-Host $_ }
 }
 
+function Write-UIATreeDiagnostics {
+    param(
+        [System.Windows.Automation.AutomationElement] $Window,
+        [string] $Label
+    )
+
+    if ($null -eq $Window) {
+        Write-Host ("UIA tree [{0}]: window element is null." -f $Label)
+        return
+    }
+
+    try {
+        Write-Host ("UIA tree [{0}] root: Name=[{1}] Class=[{2}] AutomationId=[{3}] ControlType=[{4}] HWND=0x{5:X}" -f
+            $Label,
+            $Window.Current.Name,
+            $Window.Current.ClassName,
+            $Window.Current.AutomationId,
+            $Window.Current.ControlType.ProgrammaticName,
+            $Window.Current.NativeWindowHandle)
+        $condition = [System.Windows.Automation.Condition]::TrueCondition
+        $elements = $Window.FindAll([System.Windows.Automation.TreeScope]::Descendants, $condition)
+        Write-Host ("UIA tree [{0}] descendant_count={1}" -f $Label, $elements.Count)
+        $limit = [math]::Min($elements.Count, 120)
+        for ($index = 0; $index -lt $limit; $index++) {
+            $element = $elements.Item($index)
+            Write-Host ("  [{0}] Name=[{1}] AutomationId=[{2}] Class=[{3}] Type=[{4}] HWND=0x{5:X}" -f
+                $index,
+                $element.Current.Name,
+                $element.Current.AutomationId,
+                $element.Current.ClassName,
+                $element.Current.ControlType.ProgrammaticName,
+                $element.Current.NativeWindowHandle)
+        }
+    } catch {
+        Write-Host ("UIA tree [{0}] inspection failed: {1}" -f $Label, $_.Exception.Message)
+    }
+}
+
 function Assert-Element {
     param([string] $Id, [System.Windows.Automation.AutomationElement] $El, [System.Windows.Automation.AutomationElement] $Window, [string] $ControlType)
     if ($null -eq $El) { Add-Result $Id "element exists" "NOT FOUND" $false; return $false }
@@ -392,6 +430,22 @@ if ($null -eq $settings) {
     exit $failed
 }
 Add-Result 'SET-OPEN' 'Settings window found' $settings.Current.Name $true
+$settingsByHandle = [System.Windows.Automation.AutomationElement]::FromHandle($settingsHost)
+Write-UIATreeDiagnostics -Window $settings -Label 'desktop-tree-find-window'
+Write-UIATreeDiagnostics -Window $settingsByHandle -Label 'direct-from-hwnd'
+$rootIdCondition = New-Object System.Windows.Automation.PropertyCondition(
+    [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
+    'window'
+)
+$rootIdElement = $settingsByHandle.FindFirst([System.Windows.Automation.TreeScope]::Element, $rootIdCondition)
+Write-Host ("UIA root AutomationId='window' matched={0}" -f ($null -ne $rootIdElement))
+$settingsHandleGeneral = Find-ById $settingsByHandle 'sidebar.general'
+$settingsDesktopGeneral = Find-ById $settings 'sidebar.general'
+Write-Host ("UIA selector probe sidebar.general: direct-from-hwnd={0}, desktop-tree={1}" -f
+    ($null -ne $settingsHandleGeneral), ($null -ne $settingsDesktopGeneral))
+if ($null -ne $settingsHandleGeneral) {
+    $settings = $settingsByHandle
+}
 $shot = Save-WindowScreenshot 'SET-OPEN' $settings
 
 # 1) Sidebar pages
