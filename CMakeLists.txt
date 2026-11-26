@@ -94,6 +94,31 @@ include(CTest)
 if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
+# Compiler-specific libFuzzer campaigns are independent of BUILD_TESTING so
+# fuzz-only CI jobs do not need GoogleTest or the full test suite.
+if(SUBORNO_BUILD_FUZZING)
+    if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        message(FATAL_ERROR "The optional libFuzzer target requires a Clang compiler.")
+    endif()
+    add_executable(suborno_phonetic_fuzz tests/fuzz/phonetic_fuzz.cpp)
+    target_link_libraries(suborno_phonetic_fuzz PRIVATE suborno_core)
+    target_compile_options(suborno_phonetic_fuzz PRIVATE
+        -fsanitize=fuzzer,address,undefined
+        -fno-omit-frame-pointer)
+    target_link_options(suborno_phonetic_fuzz PRIVATE
+        -fsanitize=fuzzer,address,undefined)
+
+    # Public C API boundary campaign: engine/session lifecycle with fuzzed
+    # UTF-8 composition text and fuzzed candidate indices.
+    add_executable(suborno_c_api_fuzz tests/fuzz/c_api_fuzz.cpp)
+    target_link_libraries(suborno_c_api_fuzz PRIVATE suborno_core)
+    target_compile_options(suborno_c_api_fuzz PRIVATE
+        -fsanitize=fuzzer,address,undefined
+        -fno-omit-frame-pointer)
+    target_link_options(suborno_c_api_fuzz PRIVATE
+        -fsanitize=fuzzer,address,undefined)
+endif()
+
 
 # Optional Doxygen documentation target: configures docs/api/Doxyfile.in into
 # the build tree and generates the public-API HTML documentation. Requires
