@@ -1413,12 +1413,17 @@ class Application final : public ui_access::ElementSource {
         return a11y_close_index() + 1;
     }
 
+    std::uint64_t tree_generation() const override {
+        return a11y_generation_;
+    }
+
     bool element_info(int index, ui_access::ElementInfo& out) const override {
         const std::vector<UiControl>& controls = pages_[static_cast<int>(page_)];
         if (index >= 0 && index < a11y_sidebar_count) {
             out.name = sidebar_title(index);
             out.role = ui_access::ElementRole::list_item;
             out.automation_id = sidebar_automation_ids[index];
+            out.runtime_id = static_cast<std::uint32_t>(index + 1);
             out.rect = scale_rect(design_rect(sidebar_left,
                                               sidebar_top + index * sidebar_stride,
                                               sidebar_width,
@@ -1433,6 +1438,8 @@ class Application final : public ui_access::ElementSource {
             const UiControl& control = controls[static_cast<std::size_t>(control_index)];
             out.rect = scale_rect(control.rect);
             out.automation_id = control_automation_id(control, control_index);
+            out.runtime_id = static_cast<std::uint32_t>((static_cast<int>(page_) + 1) * 10000
+                                                        + control_index + 1);
             out.focusable =
                 control.kind != CtrlKind::section_label && control.kind != CtrlKind::status;
             out.focused = out.focusable && focus_footer_ == 0 && focus_index_ == control_index;
@@ -1454,7 +1461,14 @@ class Application final : public ui_access::ElementSource {
                 out.supports_expand_collapse = true;
                 out.expanded = active_dropdown_control_ == control_index
                                && active_dropdown_popup_ != nullptr
-                               && ::IsWindow(active_dropdown_popup_) != FALSE;
+                               && ::IsWindow(active_dropdown_popup_) != FALSE
+                               && ::IsWindowVisible(active_dropdown_popup_) != FALSE;
+                out.supports_value = true;
+                if (control.dropdown_index >= 0
+                    && control.dropdown_index < static_cast<int>(control.dropdown_items.size())) {
+                    out.value_text =
+                        control.dropdown_items[static_cast<std::size_t>(control.dropdown_index)];
+                }
 
                 return true;
             case CtrlKind::slider:
@@ -1477,6 +1491,7 @@ class Application final : public ui_access::ElementSource {
             out.name = ui::text("settings.action.save", L"Save");
             out.role = ui_access::ElementRole::button;
             out.automation_id = L"action.save";
+            out.runtime_id = 101;
             out.rect = scale_rect(save_button_rect());
             out.supports_invoke = true;
             out.focusable = true;
@@ -1487,6 +1502,7 @@ class Application final : public ui_access::ElementSource {
             out.name = ui::text("settings.action.cancel", L"Cancel");
             out.role = ui_access::ElementRole::button;
             out.automation_id = L"action.cancel";
+            out.runtime_id = 102;
             out.rect = scale_rect(cancel_button_rect());
             out.supports_invoke = true;
             out.focusable = true;
@@ -1497,6 +1513,7 @@ class Application final : public ui_access::ElementSource {
             out.name = ui::text("common.close", L"Close");
             out.role = ui_access::ElementRole::button;
             out.automation_id = L"action.close";
+            out.runtime_id = 103;
             out.rect = scale_rect(design_rect(696, 4, 32, 32));
             out.supports_invoke = true;
             return true;
@@ -1519,11 +1536,7 @@ class Application final : public ui_access::ElementSource {
 
     bool focus_element(int index) override {
         if (index >= 0 && index < a11y_sidebar_count) {
-            close_active_dropdown();
-            page_ = static_cast<PageId>(index);
-            focus_index_ = -1;
-            focus_footer_ = 0;
-            ::InvalidateRect(window_, nullptr, TRUE);
+            switch_settings_page(static_cast<PageId>(index));
             return true;
         }
         const int control_index = index - a11y_sidebar_count;
@@ -1551,10 +1564,8 @@ class Application final : public ui_access::ElementSource {
 
     bool invoke_element(int index) override {
         if (index >= 0 && index < a11y_sidebar_count) {
-            close_active_dropdown();
-            page_ = static_cast<PageId>(index);
-            focus_index_ = -1;
-            ::InvalidateRect(window_, nullptr, TRUE);
+            switch_settings_page(static_cast<PageId>(index));
+            ui_access::notify_focus_changed(window_, this, a11y_alive_);
             return true;
         }
         const int control_index = index - a11y_sidebar_count;
@@ -1615,13 +1626,16 @@ class Application final : public ui_access::ElementSource {
         if (!expand) {
             if (active_dropdown_control_ == control_index || active_dropdown_popup_ != nullptr) {
                 close_active_dropdown();
-                ::InvalidateRect(window_, nullptr, FALSE);
+                if (window_ != nullptr) {
+                    ::InvalidateRect(window_, nullptr, FALSE);
+                }
             }
             return true;
         }
         focus_index_ = control_index;
         open_dropdown(control, control_index, false);
-        return active_dropdown_popup_ != nullptr;
+        return active_dropdown_popup_ != nullptr && ::IsWindow(active_dropdown_popup_) != FALSE
+               && ::IsWindowVisible(active_dropdown_popup_) != FALSE;
     }
 
     bool set_element_value(int index, double value) override {
@@ -2582,6 +2596,24 @@ class Application final : public ui_access::ElementSource {
             420,
             ui::text("settings.input.traditional_typing_style", L"Traditional Typing Style"),
             staged_.typing_style == "traditional"));
+
+        ++a11y_generation_;
+        if (window_ != nullptr && ::IsWindowVisible(window_) != FALSE) {
+            ui_access::notify_structure_changed(window_, this, a11y_alive_);
+        }
+    }
+
+    void switch_settings_page(PageId next_page) {
+        close_active_dropdown();
+        page_ = next_page;
+        focus_index_ = -1;
+        focus_footer_ = 0;
+        sidebar_hover_ = -1;
+        ++a11y_generation_;
+        if (window_ != nullptr) {
+            ::InvalidateRect(window_, nullptr, TRUE);
+            ui_access::notify_structure_changed(window_, this, a11y_alive_);
+        }
     }
 
     int staged_font_index(const std::vector<std::wstring>& items) const noexcept {
@@ -2778,8 +2810,11 @@ class Application final : public ui_access::ElementSource {
                      window_rect.top + scaled(control.rect.bottom) + scaled(4)};
         std::vector<MenuItem> items;
         items.reserve(control.dropdown_items.size());
-        for (const std::wstring& label : control.dropdown_items) {
-            items.push_back(MenuItem{label});
+        for (std::size_t idx = 0; idx < control.dropdown_items.size(); ++idx) {
+            MenuItem item{control.dropdown_items[idx]};
+            item.radio = true;
+            item.checked = static_cast<int>(idx) == control.dropdown_index;
+            items.push_back(std::move(item));
         }
         const PageId opened_page = page_;
         const int opened_action = control.action;
@@ -3017,10 +3052,8 @@ class Application final : public ui_access::ElementSource {
         }
         const int sidebar = sidebar_hit(design_point);
         if (sidebar >= 0) {
-            page_ = static_cast<PageId>(sidebar);
-            focus_index_ = -1;
-            sidebar_hover_ = -1;
-            ::InvalidateRect(window_, nullptr, TRUE);
+            switch_settings_page(static_cast<PageId>(sidebar));
+            ui_access::notify_focus_changed(window_, this, a11y_alive_);
             return;
         }
         std::vector<UiControl>& controls = page_controls();
@@ -3130,7 +3163,6 @@ class Application final : public ui_access::ElementSource {
         // Ctrl+Tab / Ctrl+Shift+Tab cycle pages (standard dialog navigation).
 
         if (virtual_key == VK_TAB && (::GetKeyState(VK_CONTROL) & 0x8000) != 0) {
-            close_active_dropdown();
             const bool backwards = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
             int page = static_cast<int>(page_) + (backwards ? -1 : 1);
             if (page < 0) {
@@ -3139,10 +3171,7 @@ class Application final : public ui_access::ElementSource {
             if (page >= page_count) {
                 page = 0;
             }
-            page_ = static_cast<PageId>(page);
-            focus_index_ = -1;
-            focus_footer_ = 0;
-            ::InvalidateRect(window_, nullptr, TRUE);
+            switch_settings_page(static_cast<PageId>(page));
             ui_access::notify_focus_changed(window_, this, a11y_alive_);
             return;
         }
@@ -4491,8 +4520,12 @@ class Application final : public ui_access::ElementSource {
         slider_drag_ = -1;
         ::InvalidateRect(window_, nullptr, TRUE);
         ::ShowWindow(window_, SW_RESTORE);
+        ::SetWindowPos(window_, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+        ::BringWindowToTop(window_);
         ::SetForegroundWindow(window_);
         ::SetFocus(window_);
+        ::UpdateWindow(window_);
+        ui_access::notify_structure_changed(window_, this, a11y_alive_);
         persist_last_ui_mode("window");
     }
 
@@ -4505,6 +4538,7 @@ class Application final : public ui_access::ElementSource {
     UINT ui_dpi_ = 96;
     ToastWindow toast_;
     std::shared_ptr<int> a11y_alive_ = std::make_shared<int>(0);
+    std::uint64_t a11y_generation_ = 1;
     std::array<std::vector<UiControl>, page_count> pages_;
     PageId page_ = PageId::general;
     int focus_index_ = -1;

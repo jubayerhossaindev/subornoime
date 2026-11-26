@@ -546,6 +546,7 @@ HWND open_menu_popup(HWND owner,
     // Ownership transfers to menu_popup_proc, which deletes the state on WM_NCDESTROY.
     (void)state.release();
     ::ShowWindow(window, SW_SHOWNOACTIVATE);
+    ::UpdateWindow(window);
     if (focus_popup && (owner == nullptr || ::GetForegroundWindow() == owner)) {
         ::SetFocus(window);
     }

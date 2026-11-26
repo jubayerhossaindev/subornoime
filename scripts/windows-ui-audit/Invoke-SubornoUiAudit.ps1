@@ -2,20 +2,18 @@
 # SubornoIME UI Automation audit harness.
 # Uses the .NET Framework UIA client that ships with Windows (no external deps).
 # WinApp CLI is optional; the audit never requires it.
-# Exit code = number of failed checks.
+# Exit code = number of failed/blocked checks.
 #
 # Section 15 duties covered here: environment detection, application launch,
-# window discovery, UI element inspection, interactive check execution, test
-# result capture, per-window screenshots, logging, and a results JSON that
+# process-scoped window discovery, UI element inspection, interactive check
+# execution, test result capture, per-window screenshots, structured failure
+# classification, and a results JSON that
 # scripts/layout_verify/merge_audit_results.py merges into the traceability
 # matrix (--map functional/checkmap.json).
 #
-# Real mouse clicks use SendInput-class input injection (user32 mouse_event
-# after SetCursorPos); they require an unlocked interactive desktop with the
-# target window in the foreground — the same constraint the official WinApp
-# CLI documents for its input-injecting verbs (ui-automation.md). UIA Invoke
-# and mouse click are recorded as SEPARATE checks; an Invoke success is never
-# treated as proof of a mouse-click PASS.
+# Real mouse clicks use Win32 SendInput after desktop availability verification
+# and controlled foreground activation with live BoundingRectangle re-query;
+# UIA Invoke and mouse click remain strictly separate checks.
 
 [CmdletBinding()]
 param(
@@ -29,37 +27,100 @@ Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
 Add-Type -AssemblyName System.Drawing
 
-Add-Type -Namespace Suborno.Audit -Name Native -MemberDefinition @'
-[DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
-[DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
-[DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
-[DllImport("user32.dll")] public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, System.UIntPtr dwExtraInfo);
-[DllImport("user32.dll", EntryPoint = "FindWindowW", CharSet = CharSet.Unicode, SetLastError = true)]
-public static extern IntPtr FindWindow(string className, string windowName);
-[DllImport("user32.dll", EntryPoint = "SendMessageW", SetLastError = true)]
-public static extern IntPtr SendMessage(IntPtr hWnd, uint message, IntPtr wParam, IntPtr lParam);
-[DllImport("user32.dll", EntryPoint = "GetClassNameW", CharSet = CharSet.Unicode, SetLastError = true)]
-public static extern int GetClassName(IntPtr hWnd, System.Text.StringBuilder className, int maxCount);
-[DllImport("user32.dll", EntryPoint = "GetWindowTextW", CharSet = CharSet.Unicode, SetLastError = true)]
-public static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder text, int maxCount);
-[DllImport("user32.dll", EntryPoint = "GetWindowThreadProcessId", SetLastError = true)]
-public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
-[DllImport("user32.dll", EntryPoint = "IsWindowVisible")]
-[return: MarshalAs(UnmanagedType.Bool)]
-public static extern bool IsWindowVisible(IntPtr hWnd);
-'@
-
-# Use the Win32 API that Microsoft recommends for enumerating top-level windows.
-# GetWindow-in-a-loop is explicitly documented as less reliable because HWNDs
-# can be destroyed while the Z-order is being traversed.
 Add-Type -TypeDefinition @'
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Suborno.Audit
 {
+    public static class Native
+    {
+        public const int SW_RESTORE = 9;
+        public const uint SWP_NOSIZE = 0x0001;
+        public const uint SWP_NOMOVE = 0x0002;
+        public const int SM_XVIRTUALSCREEN = 76;
+        public const int SM_YVIRTUALSCREEN = 77;
+        public const int SM_CXVIRTUALSCREEN = 78;
+        public const int SM_CYVIRTUALSCREEN = 79;
+        public const uint DESKTOP_READOBJECTS = 0x0001;
+        public const uint DESKTOP_WRITEOBJECTS = 0x0080;
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool SetProcessDPIAware();
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool AllowSetForegroundWindow(int dwProcessId);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool BringWindowToTop(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool SetWindowPos(
+            IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+
+        [DllImport("kernel32.dll")]
+        public static extern uint GetCurrentThreadId();
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool SetCursorPos(int x, int y);
+
+        [DllImport("user32.dll")]
+        public static extern int GetSystemMetrics(int nIndex);
+
+        [DllImport("user32.dll", EntryPoint = "FindWindowW", CharSet = CharSet.Unicode, SetLastError = true)]
+        public static extern IntPtr FindWindow(string className, string windowName);
+
+        [DllImport("user32.dll", EntryPoint = "SendMessageW", SetLastError = true)]
+        public static extern IntPtr SendMessage(IntPtr hWnd, uint message, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll", EntryPoint = "GetClassNameW", CharSet = CharSet.Unicode, SetLastError = true)]
+        public static extern int GetClassName(IntPtr hWnd, StringBuilder className, int maxCount);
+
+        [DllImport("user32.dll", EntryPoint = "GetWindowTextW", CharSet = CharSet.Unicode, SetLastError = true)]
+        public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int maxCount);
+
+        [DllImport("user32.dll", EntryPoint = "GetWindowThreadProcessId", SetLastError = true)]
+        public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool IsWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll", EntryPoint = "IsWindowVisible")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool IsWindowVisible(IntPtr hWnd);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr OpenInputDesktop(uint dwFlags, [MarshalAs(UnmanagedType.Bool)] bool fInherit, uint dwDesiredAccess);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool CloseDesktop(IntPtr hDesktop);
+    }
+
     public static class WindowEnumerator
     {
         private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
@@ -85,6 +146,80 @@ namespace Suborno.Audit
             return handles.ToArray();
         }
     }
+
+    public static class InputSender
+    {
+        private const uint INPUT_MOUSE = 0;
+        private const uint MOUSEEVENTF_LEFTDOWN = 0x0002;
+        private const uint MOUSEEVENTF_LEFTUP = 0x0004;
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MOUSEINPUT
+        {
+            public int dx;
+            public int dy;
+            public uint mouseData;
+            public uint dwFlags;
+            public uint time;
+            public UIntPtr dwExtraInfo;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct KEYBDINPUT
+        {
+            public ushort wVk;
+            public ushort wScan;
+            public uint dwFlags;
+            public uint time;
+            public UIntPtr dwExtraInfo;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct HARDWAREINPUT
+        {
+            public uint uMsg;
+            public ushort wParamL;
+            public ushort wParamH;
+        }
+
+        [StructLayout(LayoutKind.Explicit)]
+        private struct InputUnion
+        {
+            [FieldOffset(0)] public MOUSEINPUT mi;
+            [FieldOffset(0)] public KEYBDINPUT ki;
+            [FieldOffset(0)] public HARDWAREINPUT hi;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct INPUT
+        {
+            public uint type;
+            public InputUnion U;
+        }
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern uint SendInput(uint nInputs, [MarshalAs(UnmanagedType.LPArray), In] INPUT[] pInputs, int cbSize);
+
+        private static bool SendMouseFlag(uint flag, out int win32Error)
+        {
+            var inputs = new INPUT[1];
+            inputs[0].type = INPUT_MOUSE;
+            inputs[0].U.mi.dwFlags = flag;
+            uint sent = SendInput(1, inputs, Marshal.SizeOf(typeof(INPUT)));
+            win32Error = sent == 1 ? 0 : Marshal.GetLastWin32Error();
+            return sent == 1;
+        }
+
+        public static bool SendLeftDown(out int win32Error)
+        {
+            return SendMouseFlag(MOUSEEVENTF_LEFTDOWN, out win32Error);
+        }
+
+        public static bool SendLeftUp(out int win32Error)
+        {
+            return SendMouseFlag(MOUSEEVENTF_LEFTUP, out win32Error);
+        }
+    }
 }
 '@
 
@@ -92,42 +227,134 @@ namespace Suborno.Audit
 
 $script:results = New-Object System.Collections.Generic.List[object]
 $script:screenshots = New-Object System.Collections.Generic.List[object]
+$script:lastUiaError = ''
+$script:pageProbeControl = @{
+    'sidebar.general'   = 'action.remember-layout'
+    'sidebar.interface' = 'action.show-candidate-window'
+    'sidebar.topbar'    = 'action.idle-dimming'
+    'sidebar.input'     = 'action.map-numpad'
+}
 
 function Add-Result {
-    param([string] $Id, [string] $Expected, [string] $Actual, [bool] $Passed, [string] $Screenshot = '')
-    $script:results.Add([pscustomobject]@{ check_id = $Id; expected = $Expected; actual = $Actual; status = (& { if ($Passed) { 'PASS' } else { 'FAIL' } }); screenshot = $Screenshot }) | Out-Null
-    $line = ('{0} {1}  expected=[{2}] actual=[{3}]' -f (& { if ($Passed) { 'PASS' } else { 'FAIL' } }), $Id, $Expected, $Actual)
+    param(
+        [string] $Id,
+        [string] $Expected,
+        [string] $Actual,
+        [bool] $Passed,
+        [string] $Screenshot = '',
+        [string] $StatusOverride = '',
+        [string] $VerificationLevel = 'runtime-executed'
+    )
+    $status = if ($StatusOverride -ne '') {
+        $StatusOverride
+    } elseif ($Passed) {
+        'PASS'
+    } else {
+        'FAIL'
+    }
+    $level = if ($status -eq 'BLOCKED') { 'blocked' } else { $VerificationLevel }
+    $script:results.Add([pscustomobject]@{
+        check_id           = $Id
+        expected           = $Expected
+        actual             = $Actual
+        status             = $status
+        verification_level = $level
+        screenshot         = $Screenshot
+    }) | Out-Null
+    $line = ('{0} {1}  expected=[{2}] actual=[{3}]' -f $status, $Id, $Expected, $Actual)
     if ($Screenshot -ne '') { $line = "$line  shot=$Screenshot" }
     Write-Host $line
 }
 
 function Get-AuditEnvironment {
     $osCaption = ''
-    try { $osCaption = (Get-CimInstance Win32_OperatingSystem).Caption + ' build ' + (Get-CimInstance Win32_OperatingSystem).BuildNumber } catch { $osCaption = 'unknown' }
+    try {
+        $os = Get-CimInstance Win32_OperatingSystem
+        $osCaption = $os.Caption + ' build ' + $os.BuildNumber
+    } catch {
+        $osCaption = 'unknown'
+    }
     $winapp = Get-Command winapp.exe -ErrorAction SilentlyContinue
     $winappVersion = 'NOT INSTALLED (optional; in-box UIAutomationClient is used)'
-    if ($winapp) { try { $winappVersion = (& winapp -V 2>&1 | Out-String).Trim() } catch { $winappVersion = 'present; version probe failed: ' + $_.Exception.Message } }
+    if ($winapp) {
+        try {
+            $winappVersion = (& winapp -V 2>&1 | Out-String).Trim()
+        } catch {
+            $winappVersion = 'present; version probe failed: ' + $_.Exception.Message
+        }
+    }
     $exeVersion = 'unknown'
     try { $exeVersion = (Get-Item $ExePath).VersionInfo.ProductVersion } catch { }
     return [pscustomobject]@{
-        run_date            = (Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')
-        os                  = $osCaption
-        powershell_version  = $PSVersionTable.PSVersion.ToString()
-        powershell_edition  = [string]$PSVersionTable.PSEdition
-        is_elevated         = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-        target_exe          = $ExePath
-        target_exe_version  = $exeVersion
-        uia_assembly        = 'UIAutomationClient (in-box .NET Framework)'
-        winapp_cli          = $winappVersion
-        input_injection_note = 'mouse_event/SendInput verbs require an unlocked interactive desktop with the target window foreground'
+        run_date             = (Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')
+        os                   = $osCaption
+        powershell_version   = $PSVersionTable.PSVersion.ToString()
+        powershell_edition   = [string]$PSVersionTable.PSEdition
+        is_elevated          = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+        target_exe           = $ExePath
+        target_exe_version   = $exeVersion
+        uia_assembly         = 'UIAutomationClient (in-box .NET Framework)'
+        winapp_cli           = $winappVersion
+        input_injection_note = 'Win32 SendInput verbs verify interactive desktop availability and foreground activation'
     }
+}
+
+function Classify-UiaException {
+    param([System.Exception] $Exception)
+    if ($null -eq $Exception) { return 'UnexpectedError' }
+    if ($Exception -is [System.Windows.Automation.ElementNotAvailableException]) {
+        return 'ElementUnavailable'
+    }
+    if ($Exception -is [System.InvalidOperationException] -and $Exception.Message -like '*Pattern*') {
+        return 'PatternUnsupported'
+    }
+    if ($Exception -is [System.Runtime.InteropServices.COMException]) {
+        if ($Exception.HResult -eq ([int][uint32]::Parse('80040201', [System.Globalization.NumberStyles]::HexNumber))) {
+            return 'ElementUnavailable'
+        }
+        return 'ComFailure'
+    }
+    if ($Exception -is [System.TimeoutException]) {
+        return 'Timeout'
+    }
+    return 'UnexpectedError'
+}
+
+function Format-UiaDiagnostic {
+    param(
+        [string] $Category,
+        [string] $Operation,
+        [string] $AutomationId = '',
+        [string] $ControlType = '',
+        [int] $ProcessId = 0,
+        [IntPtr] $Hwnd = [IntPtr]::Zero,
+        [string] $PatternName = '',
+        [double] $ElapsedMs = 0,
+        [System.Exception] $Exception = $null
+    )
+    $parts = New-Object System.Collections.Generic.List[string]
+    $parts.Add("category=$Category")
+    $parts.Add("op=$Operation")
+    if ($AutomationId -ne '') { $parts.Add("id=$AutomationId") }
+    if ($ControlType -ne '') { $parts.Add("type=$ControlType") }
+    if ($PatternName -ne '') { $parts.Add("pattern=$PatternName") }
+    if ($ProcessId -gt 0) { $parts.Add("pid=$ProcessId") }
+    if ($Hwnd -ne [IntPtr]::Zero) { $parts.Add(('hwnd=0x{0:X}' -f $Hwnd.ToInt64())) }
+    if ($ElapsedMs -gt 0) { $parts.Add(('elapsed={0:N0}ms' -f $ElapsedMs)) }
+    if ($null -ne $Exception) {
+        $parts.Add(('ex={0}(0x{1:X8}): {2}' -f $Exception.GetType().Name, $Exception.HResult, $Exception.Message))
+    }
+    return ($parts -join ' ')
 }
 
 function Save-WindowScreenshot {
     param([string] $Id, [System.Windows.Automation.AutomationElement] $El)
+    if ($null -eq $El) { return '' }
     try {
         $rect = $El.Current.BoundingRectangle
-        if ($rect.Width -le 0 -or $rect.Height -le 0) { return '' }
+        if ([double]::IsInfinity($rect.Width) -or [double]::IsNaN($rect.Width) -or $rect.Width -le 0 -or $rect.Height -le 0) {
+            return ''
+        }
         $dir = Join-Path $EvidenceDir 'screenshots'
         New-Item -ItemType Directory -Force -Path $dir | Out-Null
         $path = Join-Path $dir ('{0}-{1}.png' -f $Id, (Get-Date -Format 'yyyyMMdd-HHmmss'))
@@ -135,102 +362,37 @@ function Save-WindowScreenshot {
         $gfx = [System.Drawing.Graphics]::FromImage($bmp)
         $gfx.CopyFromScreen([int]$rect.X, [int]$rect.Y, 0, 0, $bmp.Size)
         $bmp.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
-        $gfx.Dispose(); $bmp.Dispose()
+        $gfx.Dispose()
+        $bmp.Dispose()
         $script:screenshots.Add([pscustomobject]@{ check_id = $Id; path = $path }) | Out-Null
         return $path
-    } catch { Write-Host ('screenshot failed for {0}: {1}' -f $Id, $_.Exception.Message); return '' }
-}
-
-function Invoke-MouseClickCenter {
-    param(
-        [string] $Id,
-        [System.Windows.Automation.AutomationElement] $El,
-        [IntPtr] $FocusHwnd = [IntPtr]::Zero
-    )
-    if ($null -eq $El) { Add-Result $Id 'element exists for mouse click' 'NOT FOUND' $false; return $false }
-    $rect = $El.Current.BoundingRectangle
-    if ($rect.Width -le 0 -or $rect.Height -le 0) { Add-Result $Id 'clickable rect' 'EMPTY RECT' $false; return $false }
-    $hwnd = [IntPtr]$El.Current.NativeWindowHandle
-    if ($hwnd -eq [IntPtr]::Zero) { $hwnd = $FocusHwnd }
-    if ($hwnd -ne [IntPtr]::Zero) { [void][Suborno.Audit.Native]::SetForegroundWindow($hwnd); Start-Sleep -Milliseconds 250 }
-    $cx = [int]($rect.X + $rect.Width / 2); $cy = [int]($rect.Y + $rect.Height / 2)
-    [void][Suborno.Audit.Native]::SetCursorPos($cx, $cy); Start-Sleep -Milliseconds 120
-    [Suborno.Audit.Native]::mouse_event(0x0002, 0, 0, 0, [System.UIntPtr]::Zero)  # LEFTDOWN
-    Start-Sleep -Milliseconds 60
-    [Suborno.Audit.Native]::mouse_event(0x0004, 0, 0, 0, [System.UIntPtr]::Zero)  # LEFTUP
-    Start-Sleep -Milliseconds 300
-    Add-Result "$Id-coords" 'mouse click delivered at element center' ('x={0} y={1}' -f $cx, $cy) $true
-    return $true
-}
-
-function Get-RootElement { [System.Windows.Automation.AutomationElement]::RootElement }
-
-function Find-Window {
-    param([System.Windows.Automation.AutomationElement] $Root, [string] $Class, [string] $NameContains)
-    $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ClassNameProperty, $Class)
-    $windows = $Root.FindAll([System.Windows.Automation.TreeScope]::Children, $cond)
-    foreach ($w in $windows) {
-        if ($NameContains -eq '' -or $w.Current.Name -like "*$NameContains*") { return $w }
+    } catch {
+        Write-Host ('screenshot failed for {0}: {1}' -f $Id, $_.Exception.Message)
+        return ''
     }
-    return $null
 }
 
-function Find-ById {
-    param([System.Windows.Automation.AutomationElement] $Root, [string] $AutomationId)
-    $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::AutomationIdProperty, $AutomationId)
-    return $Root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $cond)
-}
-
-function Select-SettingsPage {
-    param([System.Windows.Automation.AutomationElement] $SettingsWindow, [string] $PageId)
-    $pageEl = Find-ById $SettingsWindow $PageId
-    if ($null -eq $pageEl) { return $false }
-    $inv = $pageEl.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
-    if ($null -eq $inv) { return $false }
-    $inv.Invoke()
-    Start-Sleep -Milliseconds 200
-    return $true
-}
-
-function Open-SettingsWindow {
-    param(
-        [System.Windows.Automation.AutomationElement] $Root,
-        [IntPtr] $HostHwnd,
-        [uint32] $WmCommand,
-        [IntPtr] $MenuOpenSettings
-    )
-    [void][Suborno.Audit.Native]::SendMessage($HostHwnd, $WmCommand, $MenuOpenSettings, [IntPtr]::Zero)
-    for ($attempt = 0; $attempt -lt 25; $attempt++) {
-        if ([Suborno.Audit.Native]::IsWindowVisible($HostHwnd)) {
-            $byHandle = [System.Windows.Automation.AutomationElement]::FromHandle($HostHwnd)
-            if ($null -ne $byHandle -and (Find-ById $byHandle 'sidebar.general')) {
-                return $byHandle
-            }
-        }
-        $win = Find-Window $Root 'SubornoDesktopWindow' ''
-        if ($null -ne $win -and (Find-ById $win 'sidebar.general')) {
-            return $win
-        }
-        Start-Sleep -Milliseconds 200
-    }
-    return $null
+function Get-RootElement {
+    [System.Windows.Automation.AutomationElement]::RootElement
 }
 
 function Find-NativeWindowByClass {
     param(
         [Parameter(Mandatory = $true)] [string] $ClassName,
-        [Parameter(Mandatory = $true)] [int] $ProcessId
+        [Parameter(Mandatory = $true)] [int] $ProcessId,
+        [switch] $RequireVisible
     )
 
-    # Enumerate all desktop top-level windows, including hidden windows, then
-    # match both the native class and the exact owning process ID.
     foreach ($handle in [Suborno.Audit.WindowEnumerator]::GetTopLevelWindows()) {
+        if (-not [Suborno.Audit.Native]::IsWindow($handle)) { continue }
         [uint32]$windowProcessId = 0
         $threadId = [Suborno.Audit.Native]::GetWindowThreadProcessId($handle, [ref]$windowProcessId)
         if ($threadId -eq 0 -or $windowProcessId -ne $ProcessId) {
             continue
         }
-
+        if ($RequireVisible -and -not [Suborno.Audit.Native]::IsWindowVisible($handle)) {
+            continue
+        }
         $classNameBuffer = New-Object System.Text.StringBuilder 256
         [void][Suborno.Audit.Native]::GetClassName($handle, $classNameBuffer, $classNameBuffer.Capacity)
         if ($classNameBuffer.ToString() -ceq $ClassName) {
@@ -241,6 +403,615 @@ function Find-NativeWindowByClass {
     return [IntPtr]::Zero
 }
 
+function Find-WindowByClassAndPid {
+    param(
+        [System.Windows.Automation.AutomationElement] $Root,
+        [string] $Class,
+        [int] $ProcessId = 0,
+        [string] $NameContains = ''
+    )
+    if ($null -eq $Root) { return $null }
+    try {
+        $classCond = New-Object System.Windows.Automation.PropertyCondition(
+            [System.Windows.Automation.AutomationElement]::ClassNameProperty,
+            $Class
+        )
+        $cond = if ($ProcessId -gt 0) {
+            New-Object System.Windows.Automation.AndCondition(
+                $classCond,
+                (New-Object System.Windows.Automation.PropertyCondition(
+                    [System.Windows.Automation.AutomationElement]::ProcessIdProperty,
+                    $ProcessId
+                ))
+            )
+        } else {
+            $classCond
+        }
+        $windows = $Root.FindAll([System.Windows.Automation.TreeScope]::Children, $cond)
+        foreach ($w in $windows) {
+            if ($NameContains -eq '' -or $w.Current.Name -like "*$NameContains*") {
+                return $w
+            }
+        }
+    } catch {
+        $script:lastUiaError = Format-UiaDiagnostic -Category (Classify-UiaException $_.Exception) -Operation 'FindAll(RootChildren)' -ControlType $Class -ProcessId $ProcessId -Exception $_.Exception
+    }
+    return $null
+}
+
+function Wait-WindowByClass {
+    param(
+        [Parameter(Mandatory = $true)] [string] $ClassName,
+        [Parameter(Mandatory = $true)] [int] $ProcessId,
+        [int] $TimeoutMs = 5000,
+        [int] $PollMs = 50,
+        [System.Windows.Automation.AutomationElement] $FallbackRoot = $null,
+        [switch] $IncludeHidden
+    )
+
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($sw.ElapsedMilliseconds -lt $TimeoutMs) {
+        $hwnd = if ($IncludeHidden) {
+            Find-NativeWindowByClass -ClassName $ClassName -ProcessId $ProcessId
+        } else {
+            Find-NativeWindowByClass -ClassName $ClassName -ProcessId $ProcessId -RequireVisible
+        }
+        if ($hwnd -ne [IntPtr]::Zero) {
+            try {
+                $el = [System.Windows.Automation.AutomationElement]::FromHandle($hwnd)
+                if ($null -ne $el -and $el.Current.ProcessId -eq $ProcessId) {
+                    $sw.Stop()
+                    return $el
+                }
+            } catch {
+                $script:lastUiaError = Format-UiaDiagnostic -Category (Classify-UiaException $_.Exception) -Operation 'FromHandle' -ControlType $ClassName -ProcessId $ProcessId -Hwnd $hwnd -ElapsedMs $sw.ElapsedMilliseconds -Exception $_.Exception
+            }
+        }
+        if ($null -ne $FallbackRoot -and -not $IncludeHidden) {
+            $fallback = Find-WindowByClassAndPid -Root $FallbackRoot -Class $ClassName -ProcessId $ProcessId
+            if ($null -ne $fallback) {
+                $sw.Stop()
+                return $fallback
+            }
+        }
+        Start-Sleep -Milliseconds $PollMs
+    }
+    $sw.Stop()
+    $script:lastUiaError = Format-UiaDiagnostic -Category 'Timeout' -Operation 'WaitWindowByClass' -ControlType $ClassName -ProcessId $ProcessId -ElapsedMs $sw.ElapsedMilliseconds
+    return $null
+}
+
+function Wait-WindowClosed {
+    param(
+        [Parameter(Mandatory = $true)] [string] $ClassName,
+        [Parameter(Mandatory = $true)] [int] $ProcessId,
+        [int] $TimeoutMs = 2000,
+        [int] $PollMs = 40
+    )
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($sw.ElapsedMilliseconds -lt $TimeoutMs) {
+        $hwnd = Find-NativeWindowByClass -ClassName $ClassName -ProcessId $ProcessId -RequireVisible
+        if ($hwnd -eq [IntPtr]::Zero) {
+            return $true
+        }
+        Start-Sleep -Milliseconds $PollMs
+    }
+    return $false
+}
+
+function Try-FindById {
+    param(
+        [System.Windows.Automation.AutomationElement] $Root,
+        [string] $AutomationId
+    )
+    $script:lastUiaError = ''
+    if ($null -eq $Root) {
+        $script:lastUiaError = Format-UiaDiagnostic -Category 'ElementNotFound' -Operation 'FindFirst(null root)' -AutomationId $AutomationId
+        return $null
+    }
+    try {
+        $cond = New-Object System.Windows.Automation.PropertyCondition(
+            [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
+            $AutomationId
+        )
+        $el = $Root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $cond)
+        if ($null -eq $el) {
+            $script:lastUiaError = Format-UiaDiagnostic -Category 'ElementNotFound' -Operation 'FindFirst' -AutomationId $AutomationId
+        }
+        return $el
+    } catch {
+        $script:lastUiaError = Format-UiaDiagnostic -Category (Classify-UiaException $_.Exception) -Operation 'FindFirst' -AutomationId $AutomationId -Exception $_.Exception
+        return $null
+    }
+}
+
+function Find-ById {
+    param(
+        [System.Windows.Automation.AutomationElement] $Root,
+        [string] $AutomationId
+    )
+    return (Try-FindById -Root $Root -AutomationId $AutomationId)
+}
+
+function Try-GetElementSnapshot {
+    param([System.Windows.Automation.AutomationElement] $El)
+    if ($null -eq $El) {
+        return [pscustomobject]@{
+            Success = $false; Category = 'ElementNotFound'; Error = 'Element is null'
+        }
+    }
+    try {
+        $cur = $El.Current
+        return [pscustomobject]@{
+            Success            = $true
+            Name               = [string]$cur.Name
+            AutomationId       = [string]$cur.AutomationId
+            ControlTypeName    = [string]$cur.ControlType.ProgrammaticName
+            BoundingRectangle  = $cur.BoundingRectangle
+            IsEnabled          = [bool]$cur.IsEnabled
+            IsOffscreen        = [bool]$cur.IsOffscreen
+            ProcessId          = [int]$cur.ProcessId
+            NativeWindowHandle = [IntPtr]$cur.NativeWindowHandle
+            Category           = ''
+            Error              = ''
+        }
+    } catch {
+        $cat = Classify-UiaException $_.Exception
+        return [pscustomobject]@{
+            Success  = $false
+            Category = $cat
+            Error    = Format-UiaDiagnostic -Category $cat -Operation 'CurrentSnapshot' -Exception $_.Exception
+        }
+    }
+}
+
+function Try-GetValueText {
+    param([System.Windows.Automation.AutomationElement] $El)
+    if ($null -eq $El) { return '' }
+    try {
+        $vp = $El.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)
+        if ($null -ne $vp) {
+            return [string]$vp.Current.Value
+        }
+    } catch {
+    }
+    try {
+        $raw = $El.GetCurrentPropertyValue([System.Windows.Automation.ValuePattern]::ValueProperty)
+        if ($null -ne $raw -and $raw -ne [System.Windows.Automation.AutomationElement]::NotSupported) {
+            return [string]$raw
+        }
+    } catch {
+    }
+    return ''
+}
+
+function Try-InvokePattern {
+    param(
+        [System.Windows.Automation.InvokePattern] $Pattern,
+        [string] $AutomationId = ''
+    )
+    if ($null -eq $Pattern) {
+        return [pscustomobject]@{ Success = $false; Category = 'PatternUnsupported'; HResult = 0; Error = 'InvokePattern is null' }
+    }
+    try {
+        $Pattern.Invoke()
+        return [pscustomobject]@{ Success = $true; Category = ''; HResult = 0; Error = '' }
+    } catch {
+        $cat = Classify-UiaException $_.Exception
+        return [pscustomobject]@{
+            Success  = $false
+            Category = $cat
+            HResult  = $_.Exception.HResult
+            Error    = Format-UiaDiagnostic -Category $cat -Operation 'InvokePattern.Invoke' -AutomationId $AutomationId -PatternName 'InvokePattern' -Exception $_.Exception
+        }
+    }
+}
+
+function Try-TogglePattern {
+    param(
+        [System.Windows.Automation.TogglePattern] $Pattern,
+        [string] $AutomationId = ''
+    )
+    if ($null -eq $Pattern) {
+        return [pscustomobject]@{ Success = $false; Category = 'PatternUnsupported'; HResult = 0; Error = 'TogglePattern is null' }
+    }
+    try {
+        $Pattern.Toggle()
+        return [pscustomobject]@{ Success = $true; Category = ''; HResult = 0; Error = '' }
+    } catch {
+        $cat = Classify-UiaException $_.Exception
+        return [pscustomobject]@{
+            Success  = $false
+            Category = $cat
+            HResult  = $_.Exception.HResult
+            Error    = Format-UiaDiagnostic -Category $cat -Operation 'TogglePattern.Toggle' -AutomationId $AutomationId -PatternName 'TogglePattern' -Exception $_.Exception
+        }
+    }
+}
+
+function Try-GetToggleState {
+    param(
+        [System.Windows.Automation.AutomationElement] $El,
+        [string] $AutomationId = ''
+    )
+    if ($null -eq $El) {
+        return [pscustomobject]@{ Success = $false; State = ''; Category = 'ElementNotFound'; Error = 'Element is null' }
+    }
+    try {
+        $tp = $El.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern)
+        if ($null -eq $tp) {
+            return [pscustomobject]@{ Success = $false; State = ''; Category = 'PatternUnsupported'; Error = 'TogglePattern unavailable' }
+        }
+        return [pscustomobject]@{ Success = $true; State = [string]$tp.Current.ToggleState; Pattern = $tp; Category = ''; Error = '' }
+    } catch {
+        $cat = Classify-UiaException $_.Exception
+        return [pscustomobject]@{
+            Success  = $false
+            State    = ''
+            Category = $cat
+            Error    = Format-UiaDiagnostic -Category $cat -Operation 'TogglePattern.Current.ToggleState' -AutomationId $AutomationId -PatternName 'TogglePattern' -Exception $_.Exception
+        }
+    }
+}
+
+function Try-ExpandCollapseOp {
+    param(
+        [System.Windows.Automation.ExpandCollapsePattern] $Pattern,
+        [ValidateSet('Expand', 'Collapse')] [string] $Action,
+        [string] $AutomationId = ''
+    )
+    if ($null -eq $Pattern) {
+        return [pscustomobject]@{ Success = $false; Category = 'PatternUnsupported'; HResult = 0; Error = 'ExpandCollapsePattern is null' }
+    }
+    try {
+        if ($Action -eq 'Expand') {
+            $Pattern.Expand()
+        } else {
+            $Pattern.Collapse()
+        }
+        return [pscustomobject]@{ Success = $true; Category = ''; HResult = 0; Error = '' }
+    } catch {
+        $cat = Classify-UiaException $_.Exception
+        return [pscustomobject]@{
+            Success  = $false
+            Category = $cat
+            HResult  = $_.Exception.HResult
+            Error    = Format-UiaDiagnostic -Category $cat -Operation ("ExpandCollapsePattern.$Action") -AutomationId $AutomationId -PatternName 'ExpandCollapsePattern' -Exception $_.Exception
+        }
+    }
+}
+
+function Try-GetExpandCollapseState {
+    param(
+        [System.Windows.Automation.AutomationElement] $El,
+        [string] $AutomationId = ''
+    )
+    if ($null -eq $El) {
+        return [pscustomobject]@{ Success = $false; State = ''; Category = 'ElementNotFound'; Error = 'Element is null' }
+    }
+    try {
+        $ep = $El.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)
+        if ($null -eq $ep) {
+            return [pscustomobject]@{ Success = $false; State = ''; Category = 'PatternUnsupported'; Error = 'ExpandCollapsePattern unavailable' }
+        }
+        return [pscustomobject]@{ Success = $true; State = [string]$ep.Current.ExpandCollapseState; Pattern = $ep; Category = ''; Error = '' }
+    } catch {
+        $cat = Classify-UiaException $_.Exception
+        return [pscustomobject]@{
+            Success  = $false
+            State    = ''
+            Category = $cat
+            Error    = Format-UiaDiagnostic -Category $cat -Operation 'ExpandCollapseState' -AutomationId $AutomationId -PatternName 'ExpandCollapsePattern' -Exception $_.Exception
+        }
+    }
+}
+
+function Try-SetRangeValue {
+    param(
+        [System.Windows.Automation.RangeValuePattern] $Pattern,
+        [double] $Value,
+        [string] $AutomationId = ''
+    )
+    if ($null -eq $Pattern) {
+        return [pscustomobject]@{ Success = $false; Category = 'PatternUnsupported'; Error = 'RangeValuePattern is null' }
+    }
+    try {
+        $Pattern.SetValue($Value)
+        return [pscustomobject]@{ Success = $true; Category = ''; Error = '' }
+    } catch {
+        $cat = Classify-UiaException $_.Exception
+        return [pscustomobject]@{
+            Success  = $false
+            Category = $cat
+            Error    = Format-UiaDiagnostic -Category $cat -Operation ("RangeValuePattern.SetValue($Value)") -AutomationId $AutomationId -PatternName 'RangeValuePattern' -Exception $_.Exception
+        }
+    }
+}
+
+function Try-GetRangeValue {
+    param(
+        [System.Windows.Automation.AutomationElement] $El,
+        [string] $AutomationId = ''
+    )
+    if ($null -eq $El) {
+        return [pscustomobject]@{ Success = $false; Value = [double]::NaN; Category = 'ElementNotFound'; Error = 'Element is null' }
+    }
+    try {
+        $rp = $El.GetCurrentPattern([System.Windows.Automation.RangeValuePattern]::Pattern)
+        if ($null -eq $rp) {
+            return [pscustomobject]@{ Success = $false; Value = [double]::NaN; Category = 'PatternUnsupported'; Error = 'RangeValuePattern unavailable' }
+        }
+        return [pscustomobject]@{
+            Success  = $true
+            Value    = [double]$rp.Current.Value
+            Minimum  = [double]$rp.Current.Minimum
+            Maximum  = [double]$rp.Current.Maximum
+            Pattern  = $rp
+            Category = ''
+            Error    = ''
+        }
+    } catch {
+        $cat = Classify-UiaException $_.Exception
+        return [pscustomobject]@{
+            Success  = $false
+            Value    = [double]::NaN
+            Category = $cat
+            Error    = Format-UiaDiagnostic -Category $cat -Operation 'RangeValuePattern.Current' -AutomationId $AutomationId -PatternName 'RangeValuePattern' -Exception $_.Exception
+        }
+    }
+}
+
+function Test-InteractiveDesktopAvailable {
+    $access = [Suborno.Audit.Native]::DESKTOP_READOBJECTS -bor [Suborno.Audit.Native]::DESKTOP_WRITEOBJECTS
+    $desktop = [Suborno.Audit.Native]::OpenInputDesktop(0, $false, $access)
+    if ($desktop -eq [IntPtr]::Zero) {
+        return $false
+    }
+    [void][Suborno.Audit.Native]::CloseDesktop($desktop)
+    return $true
+}
+
+function Set-WindowForeground {
+    param(
+        [IntPtr] $TargetHwnd,
+        [int] $TargetPid = 0
+    )
+    if ($TargetHwnd -eq [IntPtr]::Zero -or -not [Suborno.Audit.Native]::IsWindow($TargetHwnd)) {
+        return $false
+    }
+    if ($TargetPid -gt 0) {
+        [void][Suborno.Audit.Native]::AllowSetForegroundWindow($TargetPid)
+    }
+    $fgHwnd = [Suborno.Audit.Native]::GetForegroundWindow()
+    [uint32]$unusedPid = 0
+    $fgThread = if ($fgHwnd -ne [IntPtr]::Zero) { [Suborno.Audit.Native]::GetWindowThreadProcessId($fgHwnd, [ref]$unusedPid) } else { [uint32]0 }
+    $curThread = [Suborno.Audit.Native]::GetCurrentThreadId()
+    $attached = $false
+    try {
+        if ($fgThread -ne 0 -and $fgThread -ne $curThread) {
+            $attached = [Suborno.Audit.Native]::AttachThreadInput($curThread, $fgThread, $true)
+        }
+        [void][Suborno.Audit.Native]::ShowWindow($TargetHwnd, [Suborno.Audit.Native]::SW_RESTORE)
+        [void][Suborno.Audit.Native]::SetWindowPos($TargetHwnd, [IntPtr]::Zero, 0, 0, 0, 0, ([Suborno.Audit.Native]::SWP_NOMOVE -bor [Suborno.Audit.Native]::SWP_NOSIZE))
+        [void][Suborno.Audit.Native]::BringWindowToTop($TargetHwnd)
+        [void][Suborno.Audit.Native]::SetForegroundWindow($TargetHwnd)
+    } finally {
+        if ($attached) {
+            [void][Suborno.Audit.Native]::AttachThreadInput($curThread, $fgThread, $false)
+        }
+    }
+
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($sw.ElapsedMilliseconds -lt 1000) {
+        if ([Suborno.Audit.Native]::GetForegroundWindow() -eq $TargetHwnd) {
+            return $true
+        }
+        Start-Sleep -Milliseconds 40
+    }
+    return ([Suborno.Audit.Native]::GetForegroundWindow() -eq $TargetHwnd)
+}
+
+function Test-RectInVirtualDesktop {
+    param([System.Windows.Rect] $Rect)
+    if ([double]::IsNaN($Rect.Width) -or [double]::IsNaN($Rect.Height) -or $Rect.Width -le 0 -or $Rect.Height -le 0) {
+        return $false
+    }
+    $vx = [Suborno.Audit.Native]::GetSystemMetrics([Suborno.Audit.Native]::SM_XVIRTUALSCREEN)
+    $vy = [Suborno.Audit.Native]::GetSystemMetrics([Suborno.Audit.Native]::SM_YVIRTUALSCREEN)
+    $vw = [Suborno.Audit.Native]::GetSystemMetrics([Suborno.Audit.Native]::SM_CXVIRTUALSCREEN)
+    $vh = [Suborno.Audit.Native]::GetSystemMetrics([Suborno.Audit.Native]::SM_CYVIRTUALSCREEN)
+    if ($vw -le 0 -or $vh -le 0) { return $true }
+    $cx = $Rect.X + ($Rect.Width / 2.0)
+    $cy = $Rect.Y + ($Rect.Height / 2.0)
+    return ($cx -ge $vx -and $cx -lt ($vx + $vw) -and $cy -ge $vy -and $cy -lt ($vy + $vh))
+}
+
+function Invoke-MouseClickCenter {
+    param(
+        [string] $Id,
+        [System.Windows.Automation.AutomationElement] $ContainerWindow,
+        [string] $AutomationId,
+        [IntPtr] $FocusHwnd = [IntPtr]::Zero,
+        [int] $ProcessId = 0
+    )
+    if (-not (Test-InteractiveDesktopAvailable)) {
+        Add-Result "$Id-coords" 'interactive desktop available for SendInput' 'BLOCKED: input desktop locked or non-interactive' $false -StatusOverride 'BLOCKED'
+        return 'BLOCKED'
+    }
+
+    $targetHwnd = $FocusHwnd
+    if ($targetHwnd -eq [IntPtr]::Zero -and $null -ne $ContainerWindow) {
+        $winSnap = Try-GetElementSnapshot $ContainerWindow
+        if ($winSnap.Success) { $targetHwnd = $winSnap.NativeWindowHandle }
+    }
+    if ($targetHwnd -ne [IntPtr]::Zero) {
+        $fgOk = Set-WindowForeground -TargetHwnd $targetHwnd -TargetPid $ProcessId
+        if (-not $fgOk) {
+            $actualFg = [Suborno.Audit.Native]::GetForegroundWindow()
+            Add-Result "$Id-coords" ('target hwnd 0x{0:X} is foreground before SendInput' -f $targetHwnd.ToInt64()) ('FOREGROUND LOCKED: actual fg=0x{0:X}' -f $actualFg.ToInt64()) $false -StatusOverride 'BLOCKED'
+            return 'BLOCKED'
+        }
+        Start-Sleep -Milliseconds 120
+    }
+
+    $freshEl = if ($null -ne $ContainerWindow -and $AutomationId -ne '') {
+        Try-FindById $ContainerWindow $AutomationId
+    } else {
+        $null
+    }
+    if ($null -eq $freshEl) {
+        Add-Result "$Id-coords" 'element exists for live mouse click' ("NOT FOUND: $script:lastUiaError") $false
+        return 'FAIL'
+    }
+    $snap = Try-GetElementSnapshot $freshEl
+    if (-not $snap.Success) {
+        Add-Result "$Id-coords" 'live element snapshot available' $snap.Error $false
+        return 'FAIL'
+    }
+    $rect = $snap.BoundingRectangle
+    if (-not (Test-RectInVirtualDesktop $rect)) {
+        Add-Result "$Id-coords" 'clickable non-empty rect within virtual desktop' ('INVALID RECT x={0:0} y={1:0} w={2:0} h={3:0}' -f $rect.X, $rect.Y, $rect.Width, $rect.Height) $false
+        return 'FAIL'
+    }
+
+    $cx = [int][math]::Round($rect.X + $rect.Width / 2.0)
+    $cy = [int][math]::Round($rect.Y + $rect.Height / 2.0)
+    [void][Suborno.Audit.Native]::SetCursorPos($cx, $cy)
+    Start-Sleep -Milliseconds 80
+    $errDown = 0
+    $errUp = 0
+    if (-not [Suborno.Audit.InputSender]::SendLeftDown([ref]$errDown)) {
+        Add-Result "$Id-coords" 'SendInput LEFTDOWN succeeds' ("SendInput LEFTDOWN failed win32=$errDown") $false
+        return 'FAIL'
+    }
+    Start-Sleep -Milliseconds 50
+    if (-not [Suborno.Audit.InputSender]::SendLeftUp([ref]$errUp)) {
+        Add-Result "$Id-coords" 'SendInput LEFTUP succeeds' ("SendInput LEFTUP failed win32=$errUp") $false
+        return 'FAIL'
+    }
+    Start-Sleep -Milliseconds 250
+    $fgNow = [Suborno.Audit.Native]::GetForegroundWindow()
+    Add-Result "$Id-coords" 'mouse click delivered via SendInput at live element center' ('x={0} y={1} fg=0x{2:X}' -f $cx, $cy, $fgNow.ToInt64()) $true
+    return 'OK'
+}
+
+function Select-SettingsPage {
+    param(
+        [System.Windows.Automation.AutomationElement] $SettingsWindow,
+        [string] $PageId
+    )
+    $pageEl = Try-FindById $SettingsWindow $PageId
+    if ($null -eq $pageEl) { return $false }
+    try {
+        $inv = $pageEl.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
+        if ($null -eq $inv) { return $false }
+        $res = Try-InvokePattern -Pattern $inv -AutomationId $PageId
+        if (-not $res.Success) { return $false }
+    } catch {
+        return $false
+    }
+
+    $probeId = $script:pageProbeControl[$PageId]
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($sw.ElapsedMilliseconds -lt 2500) {
+        if ([string]::IsNullOrEmpty($probeId) -or $null -ne (Try-FindById $SettingsWindow $probeId)) {
+            Start-Sleep -Milliseconds 50
+            return $true
+        }
+        Start-Sleep -Milliseconds 40
+    }
+    return $false
+}
+
+function Open-SettingsWindow {
+    param(
+        [System.Windows.Automation.AutomationElement] $Root,
+        [IntPtr] $HostHwnd,
+        [int] $ProcessId,
+        [uint32] $WmCommand,
+        [IntPtr] $MenuOpenSettings
+    )
+    [void][Suborno.Audit.Native]::SendMessage($HostHwnd, $WmCommand, $MenuOpenSettings, [IntPtr]::Zero)
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($sw.ElapsedMilliseconds -lt 5000) {
+        if ([Suborno.Audit.Native]::IsWindowVisible($HostHwnd)) {
+            try {
+                $byHandle = [System.Windows.Automation.AutomationElement]::FromHandle($HostHwnd)
+                if ($null -ne $byHandle -and $byHandle.Current.ProcessId -eq $ProcessId -and $null -ne (Try-FindById $byHandle 'sidebar.general')) {
+                    return $byHandle
+                }
+            } catch {
+            }
+        }
+        $win = Find-WindowByClassAndPid -Root $Root -Class 'SubornoDesktopWindow' -ProcessId $ProcessId
+        if ($null -ne $win -and $null -ne (Try-FindById $win 'sidebar.general')) {
+            return $win
+        }
+        Start-Sleep -Milliseconds 80
+    }
+    return $null
+}
+
+function Wait-WindowHidden {
+    param(
+        [IntPtr] $Hwnd,
+        [int] $TimeoutMs = 2000
+    )
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($sw.ElapsedMilliseconds -lt $TimeoutMs) {
+        if (-not [Suborno.Audit.Native]::IsWindowVisible($Hwnd)) {
+            return $true
+        }
+        Start-Sleep -Milliseconds 40
+    }
+    return (-not [Suborno.Audit.Native]::IsWindowVisible($Hwnd))
+}
+
+function Get-SettingsIniPath {
+    $candidates = @(
+        (Join-Path $env:APPDATA 'Suborno\settings.ini'),
+        (Join-Path $env:LOCALAPPDATA 'Suborno\settings.ini')
+    )
+    foreach ($candidate in $candidates) {
+        if (-not [string]::IsNullOrWhiteSpace($candidate) -and (Test-Path $candidate)) {
+            return $candidate
+        }
+    }
+    return $candidates[0]
+}
+
+function Get-IniKeyValue {
+    param(
+        [string] $Path,
+        [string] $Key
+    )
+    if ([string]::IsNullOrWhiteSpace($Path) -or -not (Test-Path $Path)) { return $null }
+    $prefix = "$Key="
+    foreach ($line in (Get-Content -Path $Path -Encoding UTF8)) {
+        if ($line.StartsWith($prefix, [System.StringComparison]::Ordinal)) {
+            return $line.Substring($prefix.Length).Trim()
+        }
+    }
+    return $null
+}
+
+function Wait-SettingsIniKey {
+    param(
+        [string] $Path,
+        [string] $Key,
+        [string] $ExpectedValue,
+        [int] $TimeoutMs = 1500
+    )
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($sw.ElapsedMilliseconds -lt $TimeoutMs) {
+        $actual = Get-IniKeyValue -Path $Path -Key $Key
+        if ($actual -eq $ExpectedValue) {
+            return $actual
+        }
+        Start-Sleep -Milliseconds 50
+    }
+    return (Get-IniKeyValue -Path $Path -Key $Key)
+}
 
 function Get-StartupDiagnostics {
     param(
@@ -269,7 +1040,6 @@ function Get-StartupDiagnostics {
         }
     }
 
-    $root = Get-RootElement
     $textCondition = New-Object System.Windows.Automation.PropertyCondition(
         [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
         [System.Windows.Automation.ControlType]::Text
@@ -333,26 +1103,20 @@ function Write-UIATreeDiagnostics {
     }
 
     try {
-        Write-Host ("UIA tree [{0}] root: Name=[{1}] Class=[{2}] AutomationId=[{3}] ControlType=[{4}] HWND=0x{5:X}" -f
-            $Label,
-            $Window.Current.Name,
-            $Window.Current.ClassName,
-            $Window.Current.AutomationId,
-            $Window.Current.ControlType.ProgrammaticName,
-            $Window.Current.NativeWindowHandle)
-        $condition = [System.Windows.Automation.Condition]::TrueCondition
-        $elements = $Window.FindAll([System.Windows.Automation.TreeScope]::Descendants, $condition)
+        $snap = Try-GetElementSnapshot $Window
+        if ($snap.Success) {
+            Write-Host ("UIA tree [{0}] root: Name=[{1}] AutomationId=[{2}] ControlType=[{3}] HWND=0x{4:X} PID={5}" -f
+                $Label, $snap.Name, $snap.AutomationId, $snap.ControlTypeName, $snap.NativeWindowHandle.ToInt64(), $snap.ProcessId)
+        }
+        $elements = $Window.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
         Write-Host ("UIA tree [{0}] descendant_count={1}" -f $Label, $elements.Count)
         $limit = [math]::Min($elements.Count, 120)
         for ($index = 0; $index -lt $limit; $index++) {
-            $element = $elements.Item($index)
-            Write-Host ("  [{0}] Name=[{1}] AutomationId=[{2}] Class=[{3}] Type=[{4}] HWND=0x{5:X}" -f
-                $index,
-                $element.Current.Name,
-                $element.Current.AutomationId,
-                $element.Current.ClassName,
-                $element.Current.ControlType.ProgrammaticName,
-                $element.Current.NativeWindowHandle)
+            $s = Try-GetElementSnapshot $elements.Item($index)
+            if ($s.Success) {
+                Write-Host ("  [{0}] Name=[{1}] AutomationId=[{2}] Type=[{3}] HWND=0x{4:X}" -f
+                    $index, $s.Name, $s.AutomationId, $s.ControlTypeName, $s.NativeWindowHandle.ToInt64())
+            }
         }
     } catch {
         Write-Host ("UIA tree [{0}] inspection failed: {1}" -f $Label, $_.Exception.Message)
@@ -360,35 +1124,57 @@ function Write-UIATreeDiagnostics {
 }
 
 function Assert-Element {
-    param([string] $Id, [System.Windows.Automation.AutomationElement] $El, [System.Windows.Automation.AutomationElement] $Window, [string] $ControlType)
-    if ($null -eq $El) { Add-Result $Id "element exists" "NOT FOUND" $false; return $false }
-    $okRect = $El.Current.BoundingRectangle.Width -gt 0 -and $El.Current.BoundingRectangle.Height -gt 0
-    $okType = ($ControlType -eq '' -or $El.Current.ControlType.ProgrammaticName -like "*$ControlType*")
-    $okEnabled = $El.Current.IsEnabled
+    param(
+        [string] $Id,
+        [System.Windows.Automation.AutomationElement] $El,
+        [System.Windows.Automation.AutomationElement] $Window,
+        [string] $ControlType
+    )
+    if ($null -eq $El) {
+        $msg = if ($script:lastUiaError -ne '') { "NOT FOUND ($script:lastUiaError)" } else { 'NOT FOUND' }
+        Add-Result $Id 'element exists' $msg $false
+        return $false
+    }
+    $snap = Try-GetElementSnapshot $El
+    if (-not $snap.Success) {
+        Add-Result $Id ("visible enabled, type~$ControlType") ("SNAPSHOT FAILED: $($snap.Error)") $false
+        return $false
+    }
+    $okRect = ($snap.BoundingRectangle.Width -gt 0 -and $snap.BoundingRectangle.Height -gt 0)
+    $okType = ($ControlType -eq '' -or $snap.ControlTypeName -like "*$ControlType*")
+    $okEnabled = $snap.IsEnabled
     $ok = $okRect -and $okType -and $okEnabled
-    Add-Result $Id ("visible {0} enabled, type~{1}" -f (& { if ($okEnabled) { '' } else { 'NOT ' } }), $ControlType) ("rect={0:0}x{1:0} type={2}" -f $El.Current.BoundingRectangle.Width, $El.Current.BoundingRectangle.Height, $El.Current.ControlType.ProgrammaticName) $ok
+    Add-Result $Id ("visible enabled, type~$ControlType") ("enabled=$($snap.IsEnabled) rect=$($snap.BoundingRectangle.Width.ToString('0'))x$($snap.BoundingRectangle.Height.ToString('0')) type=$($snap.ControlTypeName)") $ok
     return $ok
 }
 
 function Invoke-Pattern {
-    param([string] $Id, [System.Windows.Automation.AutomationElement] $El, [Type] $PatternType)
+    param(
+        [string] $Id,
+        [System.Windows.Automation.AutomationElement] $El,
+        [Type] $PatternType
+    )
+    if ($null -eq $El) {
+        Add-Result $Id "pattern $($PatternType.Name) supported" 'ELEMENT IS NULL' $false
+        return $null
+    }
     $pattern = $null
     $patternObject = switch ($PatternType.Name) {
-        'InvokePattern' { [System.Windows.Automation.InvokePattern]::Pattern }
-        'TogglePattern' { [System.Windows.Automation.TogglePattern]::Pattern }
+        'InvokePattern'         { [System.Windows.Automation.InvokePattern]::Pattern }
+        'TogglePattern'         { [System.Windows.Automation.TogglePattern]::Pattern }
         'ExpandCollapsePattern' { [System.Windows.Automation.ExpandCollapsePattern]::Pattern }
-        'RangeValuePattern' { [System.Windows.Automation.RangeValuePattern]::Pattern }
-        default { $null }
+        'RangeValuePattern'     { [System.Windows.Automation.RangeValuePattern]::Pattern }
+        default                 { $null }
     }
     $availabilityProperty = switch ($PatternType.Name) {
-        'InvokePattern' { [System.Windows.Automation.AutomationElement]::IsInvokePatternAvailableProperty }
-        'TogglePattern' { [System.Windows.Automation.AutomationElement]::IsTogglePatternAvailableProperty }
+        'InvokePattern'         { [System.Windows.Automation.AutomationElement]::IsInvokePatternAvailableProperty }
+        'TogglePattern'         { [System.Windows.Automation.AutomationElement]::IsTogglePatternAvailableProperty }
         'ExpandCollapsePattern' { [System.Windows.Automation.AutomationElement]::IsExpandCollapsePatternAvailableProperty }
-        'RangeValuePattern' { [System.Windows.Automation.AutomationElement]::IsRangeValuePatternAvailableProperty }
-        default { $null }
+        'RangeValuePattern'     { [System.Windows.Automation.AutomationElement]::IsRangeValuePatternAvailableProperty }
+        default                 { $null }
     }
     if ($null -eq $patternObject) {
-        Add-Result $Id "known UIA pattern type" ("UNMAPPED: " + $PatternType.FullName) $false
+        Add-Result $Id 'known UIA pattern type' ('UNMAPPED: ' + $PatternType.FullName) $false
         return $null
     }
     $availability = 'not queried'
@@ -401,15 +1187,14 @@ function Invoke-Pattern {
     }
     $patternError = ''
     try {
-        # GetCurrentPattern expects an AutomationPattern instance, not the
-        # System.Type that identifies the .NET wrapper class.
         $pattern = $El.GetCurrentPattern($patternObject)
     } catch {
-        $patternError = ('{0} HRESULT=0x{1:X8}: {2}' -f $_.Exception.GetType().FullName, $_.Exception.HResult, $_.Exception.Message)
+        $cat = Classify-UiaException $_.Exception
+        $patternError = Format-UiaDiagnostic -Category $cat -Operation 'GetCurrentPattern' -PatternName $PatternType.Name -Exception $_.Exception
     }
     if ($null -eq $pattern) {
         $actual = "NOT SUPPORTED; availability=$availability"
-        if ($patternError -ne '') { $actual += "; GetCurrentPattern=$patternError" }
+        if ($patternError -ne '') { $actual += "; $patternError" }
         Add-Result $Id "pattern $($PatternType.Name) supported" $actual $false
         return $null
     }
@@ -423,13 +1208,9 @@ $script:environment = Get-AuditEnvironment
 Write-Host ('environment: {0} | PS {1} | winapp-cli: {2}' -f $script:environment.os, $script:environment.powershell_version, $script:environment.winapp_cli)
 New-Item -ItemType Directory -Force -Path $EvidenceDir | Out-Null
 
-# Persist startup evidence even when the application never creates its host window.
 $script:startupDiagnosticsPath = Join-Path (Get-Location) 'uia-startup-diagnostics.txt'
-"Suborno UIA startup diagnostics" | Set-Content -Path $script:startupDiagnosticsPath -Encoding UTF8
+'Suborno UIA startup diagnostics' | Set-Content -Path $script:startupDiagnosticsPath -Encoding UTF8
 
-# Run the application's non-interactive initialization/window-creation path first.
-# --smoke-test suppresses modal error dialogs and returns a process exit code,
-# making startup failures observable without changing production behavior.
 Write-Host 'Running Suborno --smoke-test startup preflight (30-second bound).'
 $smokeProcess = Start-Process -FilePath $ExePath -ArgumentList '--smoke-test' -PassThru
 $smokeCompleted = $smokeProcess.WaitForExit(30000)
@@ -445,8 +1226,7 @@ if ($smokeCompleted) {
 }
 $smokeProcess.Dispose()
 
-# 0) Build/attach. Keep a Process object in both paths so all discovery
-# remains scoped to the exact PID, including when an existing instance is reused.
+# 0) Launch or attach strictly scoped to target PID.
 $existing = Get-Process -Name 'Suborno' -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($null -eq $existing) {
     $process = Start-Process -FilePath $ExePath -PassThru
@@ -456,10 +1236,6 @@ if ($null -eq $existing) {
     Write-Host ("Attaching to running Suborno PID {0}." -f $process.Id)
 }
 
-# The application intentionally starts in its configured topbar/tray surface;
-# Settings is not guaranteed to be visible on launch. Find its hidden native
-# host by class + owning PID, then dispatch the production Settings command.
-# Use a monotonic timeout so delayed window creation is not mistaken for failure.
 $settingsHost = [IntPtr]::Zero
 $windowStartupTimeoutMs = 60000
 $windowPollIntervalMs = 200
@@ -493,56 +1269,53 @@ $wmSecondInstanceShowTopbar = [uint32]0x8002
 $menuOpenSettings = [IntPtr]2003
 $menuOsk = [IntPtr]2007
 $menuAbout = [IntPtr]2011
-$wildcardFindWindow = [Suborno.Audit.Native]::FindWindow('SubornoDesktopWindow', $null)
-$titleFindWindow = [Suborno.Audit.Native]::FindWindow('SubornoDesktopWindow', 'Suborno Settings')
-Write-Host ('FindWindowW comparison: null-title=0x{0:X}, exact-title=0x{1:X}; process-scoped enumeration=0x{2:X}.' -f
-    $wildcardFindWindow.ToInt64(), $titleFindWindow.ToInt64(), $settingsHost.ToInt64())
-Write-Host ('Opening Settings through the app WM_COMMAND handler; host HWND=0x{0:X}.' -f $settingsHost.ToInt64())
-[void][Suborno.Audit.Native]::SendMessage($settingsHost, $wmCommand, $menuOpenSettings, [IntPtr]::Zero)
 
+Write-Host ('Opening Settings through WM_COMMAND handler; host HWND=0x{0:X} PID={1}.' -f $settingsHost.ToInt64(), $process.Id)
 $root = Get-RootElement
-$settings = $null
-for ($attempt = 0; $attempt -lt 50; $attempt++) {
-    $settings = Find-Window $root 'SubornoDesktopWindow' ''
-    if ($null -ne $settings) { break }
-    Start-Sleep -Milliseconds 200
-}
+$settings = Open-SettingsWindow -Root $root -HostHwnd $settingsHost -ProcessId $process.Id -WmCommand $wmCommand -MenuOpenSettings $menuOpenSettings
 if ($null -eq $settings) {
     Add-Result 'SET-OPEN' 'Settings window found by class SubornoDesktopWindow after app menu command' 'NOT FOUND after WM_COMMAND 2003' $false
-    $script:results | ConvertTo-Json -Depth 3 | Set-Content -Path $ResultsJson -Encoding UTF8
-    $failed = @($script:results | Where-Object { $_.status -eq 'FAIL' }).Count
-    exit $failed
+    $envelope = [pscustomobject]@{ environment = $script:environment; screenshots = $script:screenshots; results = $script:results }
+    $envelope | ConvertTo-Json -Depth 4 | Set-Content -Path $ResultsJson -Encoding UTF8
+    exit (@($script:results | Where-Object { $_.status -ne 'PASS' }).Count)
 }
-Add-Result 'SET-OPEN' 'Settings window found' $settings.Current.Name $true
-$settingsByHandle = [System.Windows.Automation.AutomationElement]::FromHandle($settingsHost)
-Write-UIATreeDiagnostics -Window $settings -Label 'desktop-tree-find-window'
-Write-UIATreeDiagnostics -Window $settingsByHandle -Label 'direct-from-hwnd'
-$rootIdCondition = New-Object System.Windows.Automation.PropertyCondition(
-    [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
-    'window'
-)
-$rootIdElement = $settingsByHandle.FindFirst([System.Windows.Automation.TreeScope]::Element, $rootIdCondition)
-Write-Host ("UIA root AutomationId='window' matched={0}" -f ($null -ne $rootIdElement))
-$settingsHandleGeneral = Find-ById $settingsByHandle 'sidebar.general'
-$settingsDesktopGeneral = Find-ById $settings 'sidebar.general'
-Write-Host ("UIA selector probe sidebar.general: direct-from-hwnd={0}, desktop-tree={1}" -f
-    ($null -ne $settingsHandleGeneral), ($null -ne $settingsDesktopGeneral))
-if ($null -ne $settingsHandleGeneral) {
-    $settings = $settingsByHandle
-}
+$settingsSnap = Try-GetElementSnapshot $settings
+Add-Result 'SET-OPEN' 'Settings window found' ($(if ($settingsSnap.Success) { $settingsSnap.Name } else { 'Suborno Settings' })) $true
+Write-UIATreeDiagnostics -Window $settings -Label 'settings-root'
 $shot = Save-WindowScreenshot 'SET-OPEN' $settings
 
 # 1) Sidebar pages
 foreach ($page in 'sidebar.general', 'sidebar.interface', 'sidebar.topbar', 'sidebar.input') {
-    $el = Find-ById $settings $page
-    [void](Assert-Element "NAV-$page" $el $settings 'ListItem')
-    $invoke = $null
-    if ($el) { $invoke = Invoke-Pattern "NAV-$page-invoke" $el ([System.Windows.Automation.InvokePattern]) }
-    if ($invoke) { $invoke.Invoke(); Start-Sleep -Milliseconds 300 }
-    if ($invoke) { Add-Result "NAV-$page-invoke" 'Invoke succeeded' 'invoked' $true }
+    $el = Try-FindById $settings $page
+    $okEl = Assert-Element "NAV-$page" $el $settings 'ListItem'
+    if (-not $okEl) { continue }
+    $invoke = Invoke-Pattern "NAV-$page-invoke" $el ([System.Windows.Automation.InvokePattern])
+    if ($null -ne $invoke) {
+        $invRes = Try-InvokePattern -Pattern $invoke -AutomationId $page
+        $switched = $false
+        if ($invRes.Success) {
+            $probeId = $script:pageProbeControl[$page]
+            $sw = [System.Diagnostics.Stopwatch]::StartNew()
+            while ($sw.ElapsedMilliseconds -lt 2500) {
+                if ([string]::IsNullOrEmpty($probeId) -or $null -ne (Try-FindById $settings $probeId)) {
+                    $switched = $true
+                    break
+                }
+                Start-Sleep -Milliseconds 40
+            }
+        }
+        $actualMsg = if ($invRes.Success -and $switched) {
+            'invoked and page controls verified'
+        } elseif ($invRes.Success) {
+            "invoked but expected page control $($script:pageProbeControl[$page]) missing"
+        } else {
+            $invRes.Error
+        }
+        Add-Result "NAV-$page-invoke" 'Invoke succeeded and switched page' $actualMsg ($invRes.Success -and $switched)
+    }
 }
 
-# 2) Every control action present on its page, both states, all options
+# 2) Checkboxes across all 4 pages: Assert -> Toggle -> verify UIA state changed -> restore
 $checkboxPages = @(
     @{ Page = 'sidebar.general'; Ids = @('action.remember-layout', 'action.start-with-windows') },
     @{ Page = 'sidebar.interface'; Ids = @('action.show-candidate-window', 'action.next-word-prediction', 'action.candidate-fixed-height', 'action.sliding-effect', 'action.follow-caret', 'action.follow-mouse', 'action.use-os-default-font') },
@@ -550,228 +1323,515 @@ $checkboxPages = @(
     @{ Page = 'sidebar.input'; Ids = @('action.map-numpad', 'action.ignore-caps-lock', 'action.number-keys', 'action.change-locale', 'action.disable-encoding-shortcut') }
 )
 foreach ($group in $checkboxPages) {
-    [void](Select-SettingsPage $settings $group.Page)
+    if (-not (Select-SettingsPage $settings $group.Page)) {
+        foreach ($id in $group.Ids) {
+            Add-Result "CHK-$id" 'settings page active for checkbox' ("failed to switch to $($group.Page)") $false
+        }
+        continue
+    }
     foreach ($id in $group.Ids) {
-        $el = Find-ById $settings $id
+        $el = Try-FindById $settings $id
         if (-not (Assert-Element "CHK-$id" $el $settings 'CheckBox')) { continue }
         $toggle = Invoke-Pattern "CHK-$id" $el ([System.Windows.Automation.TogglePattern])
-        if ($toggle) {
-            $before = $toggle.Current.ToggleState
-            $toggle.Toggle(); Start-Sleep -Milliseconds 150
-            $after = ((Find-ById $settings $id).GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern)).Current.ToggleState
-            Add-Result "CHK-$id-toggle" "state changed $before -> opposite" "$before -> $after" ($after -ne $before)
-            $toggle.Toggle(); Start-Sleep -Milliseconds 150   # restore original state
+        if ($null -eq $toggle) { continue }
+
+        $beforeInfo = Try-GetToggleState -El $el -AutomationId $id
+        if (-not $beforeInfo.Success) {
+            Add-Result "CHK-$id-toggle" 'initial ToggleState readable' $beforeInfo.Error $false
+            continue
         }
+        $before = $beforeInfo.State
+        $togRes = Try-TogglePattern -Pattern $toggle -AutomationId $id
+        if (-not $togRes.Success) {
+            Add-Result "CHK-$id-toggle" "state changed $before -> opposite" $togRes.Error $false
+            continue
+        }
+        Start-Sleep -Milliseconds 80
+
+        $freshAfterEl = Try-FindById $settings $id
+        $afterInfo = Try-GetToggleState -El $freshAfterEl -AutomationId $id
+        $after = if ($afterInfo.Success) { $afterInfo.State } else { $afterInfo.Error }
+        $changed = $afterInfo.Success -and ($after -ne $before)
+
+        # Restore original checkbox state cleanly using fresh pattern reference.
+        if ($changed -and $null -ne $afterInfo.Pattern) {
+            [void](Try-TogglePattern -Pattern $afterInfo.Pattern -AutomationId $id)
+            Start-Sleep -Milliseconds 60
+        }
+        Add-Result "CHK-$id-toggle" "state changed $before -> opposite" "$before -> $after" $changed
     }
 }
 
+# 3) Dropdowns across pages: Assert -> Expand -> Enumerate -> Select option & verify -> Restore -> Collapse
 $dropdownPages = @(
     @{ Page = 'sidebar.general'; Ids = @('action.start-mode', 'action.switching-mode', 'action.default-layout') },
     @{ Page = 'sidebar.interface'; Ids = @('action.orientation', 'action.theme', 'action.ui-language', 'action.font') },
     @{ Page = 'sidebar.input'; Ids = @('action.learning', 'action.layout-shortcut', 'action.encoding') }
 )
-$listCond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::ListItem)
+$listCond = New-Object System.Windows.Automation.PropertyCondition(
+    [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+    [System.Windows.Automation.ControlType]::ListItem
+)
 foreach ($group in $dropdownPages) {
-    [void](Select-SettingsPage $settings $group.Page)
+    if (-not (Select-SettingsPage $settings $group.Page)) {
+        foreach ($id in $group.Ids) {
+            Add-Result "DD-$id" 'settings page active for dropdown' ("failed to switch to $($group.Page)") $false
+        }
+        continue
+    }
     foreach ($id in $group.Ids) {
-        $el = Find-ById $settings $id
+        $el = Try-FindById $settings $id
         if (-not (Assert-Element "DD-$id" $el $settings 'ComboBox')) { continue }
         $expand = Invoke-Pattern "DD-$id" $el ([System.Windows.Automation.ExpandCollapsePattern])
-        if (-not $expand) { continue }
-        $expand.Expand()
-        $popup = $null
-        for ($attempt = 0; $attempt -lt 20; $attempt++) {
-            $popup = Find-Window $root 'SubornoMenuPopupWindow' ''
-            if ($null -ne $popup) { break }
-            Start-Sleep -Milliseconds 50
+        if ($null -eq $expand) { continue }
+
+        $beforeValue = Try-GetValueText $el
+        $expRes = Try-ExpandCollapseOp -Pattern $expand -Action 'Expand' -AutomationId $id
+        if (-not $expRes.Success) {
+            Add-Result "DD-$id-options" '>0 selectable options enumerated' $expRes.Error $false
+            Add-Result "DD-$id-select" 'option selected and dropdown value updated' $expRes.Error $false
+            continue
         }
-        $optionCount = 0
-        # This custom dropdown exposes ExpandCollapsePattern, not SelectionPattern.
+
+        $popup = Wait-WindowByClass -ClassName 'SubornoMenuPopupWindow' -ProcessId $process.Id -TimeoutMs 3000 -FallbackRoot $root
+        $visibleItems = New-Object System.Collections.Generic.List[object]
         if ($null -ne $popup) {
-            $items = $popup.FindAll([System.Windows.Automation.TreeScope]::Descendants, $listCond)
-            foreach ($item in $items) {
-                if ($item.Current.IsOffscreen) { continue }
-                $optionCount++
+            try {
+                $items = $popup.FindAll([System.Windows.Automation.TreeScope]::Descendants, $listCond)
+                foreach ($item in $items) {
+                    $itemSnap = Try-GetElementSnapshot $item
+                    if ($itemSnap.Success -and -not $itemSnap.IsOffscreen -and $itemSnap.IsEnabled) {
+                        $togInfo = Try-GetToggleState -El $item -AutomationId $itemSnap.AutomationId
+                        $visibleItems.Add([pscustomobject]@{
+                            Element     = $item
+                            Name        = $itemSnap.Name
+                            ToggleState = if ($togInfo.Success) { $togInfo.State } else { '' }
+                        }) | Out-Null
+                    }
+                }
+            } catch {
+                $script:lastUiaError = Format-UiaDiagnostic -Category (Classify-UiaException $_.Exception) -Operation 'EnumeratePopupItems' -AutomationId $id -Exception $_.Exception
             }
         }
-        Add-Result "DD-$id-options" ('>0 selectable options enumerated') "$optionCount visible items" ($optionCount -gt 0)
-        $expand.Collapse(); Start-Sleep -Milliseconds 150
-    }
-}
+        $optionCount = $visibleItems.Count
+        Add-Result "DD-$id-options" '>0 selectable options enumerated' ("$optionCount visible items" + $(if ($null -eq $popup) { " ($script:lastUiaError)" } else { '' })) ($optionCount -gt 0)
 
-# 3) Sliders: RangeValue min/mid/max + keyboard
-[void](Select-SettingsPage $settings 'sidebar.topbar')
-$sliderIds = @('action.idle-opacity', 'action.idle-time')
-foreach ($id in $sliderIds) {
-    $el = Find-ById $settings $id
-    if (-not (Assert-Element "SLD-$id" $el $settings 'Slider')) { continue }
-    $range = Invoke-Pattern "SLD-$id" $el ([System.Windows.Automation.RangeValuePattern])
-    if ($range) {
-        $initial = [double]$range.Current.Value
-        $min = [double]$range.Current.Minimum; $max = [double]$range.Current.Maximum
-        $mid = ($min + $max) / 2
-        foreach ($v in $min, $max, $mid) {
-            $range.SetValue($v); Start-Sleep -Milliseconds 120
-            $now = (Find-ById $settings $id).GetCurrentPattern([System.Windows.Automation.RangeValuePattern]::Pattern).Current.Value
-            Add-Result "SLD-$id-set-$v" ("value set to {0}" -f $v) ("value now {0}" -f $now) ([math]::Abs($now - $v) -lt 0.51)
+        # Select an option via real UIA InvokePattern, verify selection change, then restore & test Collapse.
+        if ($optionCount -le 0) {
+            Add-Result "DD-$id-select" 'selectable dropdown item invoked and verified' 'no visible popup options to select' $false
+            [void](Try-ExpandCollapseOp -Pattern $expand -Action 'Collapse' -AutomationId $id)
+            continue
         }
-        $range.SetValue($initial); Start-Sleep -Milliseconds 100
+
+        $candidate = $null
+        $originalItemName = $beforeValue
+        foreach ($opt in $visibleItems) {
+            if ($opt.ToggleState -eq 'On' -and $originalItemName -eq '') {
+                $originalItemName = $opt.Name
+            }
+            if ($null -eq $candidate -and ($opt.ToggleState -eq 'Off' -or ($beforeValue -ne '' -and $opt.Name -ne $beforeValue))) {
+                $candidate = $opt
+            }
+        }
+        if ($null -eq $candidate) {
+            $candidate = if ($visibleItems.Count -gt 1) { $visibleItems[1] } else { $visibleItems[0] }
+        }
+
+        $selectOk = $false
+        $selectActual = ''
+        try {
+            $itemInvoke = $candidate.Element.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
+            $selRes = Try-InvokePattern -Pattern $itemInvoke -AutomationId $id
+            if (-not $selRes.Success) {
+                $selectActual = $selRes.Error
+            } else {
+                $closedAfterPick = Wait-WindowClosed -ClassName 'SubornoMenuPopupWindow' -ProcessId $process.Id -TimeoutMs 2000
+                Start-Sleep -Milliseconds 60
+                $freshDropdown = Try-FindById $settings $id
+                $afterValue = Try-GetValueText $freshDropdown
+                if (-not $closedAfterPick) {
+                    $selectActual = 'popup remained open after selecting item'
+                } elseif ($optionCount -gt 1) {
+                    $selectOk = ($afterValue -ne '' -and $afterValue -ne $beforeValue -and $afterValue -eq $candidate.Name)
+                    $selectActual = "value [$beforeValue] -> [$afterValue] (picked [$($candidate.Name)])"
+                } else {
+                    $selectOk = ($afterValue -eq $candidate.Name)
+                    $selectActual = "single-option selected [$afterValue]"
+                }
+            }
+        } catch {
+            $cat = Classify-UiaException $_.Exception
+            $selectActual = Format-UiaDiagnostic -Category $cat -Operation 'SelectDropdownItem' -AutomationId $id -Exception $_.Exception
+        }
+
+        # Restore original selection if changed, using fresh UIA elements.
+        if ($optionCount -gt 1 -and $originalItemName -ne '') {
+            $freshForRestore = Try-FindById $settings $id
+            $restoreExp = Try-GetExpandCollapseState -El $freshForRestore -AutomationId $id
+            if ($restoreExp.Success -and $null -ne $restoreExp.Pattern) {
+                $rExpRes = Try-ExpandCollapseOp -Pattern $restoreExp.Pattern -Action 'Expand' -AutomationId $id
+                if ($rExpRes.Success) {
+                    $restorePopup = Wait-WindowByClass -ClassName 'SubornoMenuPopupWindow' -ProcessId $process.Id -TimeoutMs 2000 -FallbackRoot $root
+                    if ($null -ne $restorePopup) {
+                        try {
+                            $restoreItems = $restorePopup.FindAll([System.Windows.Automation.TreeScope]::Descendants, $listCond)
+                            foreach ($rItem in $restoreItems) {
+                                $rSnap = Try-GetElementSnapshot $rItem
+                                if ($rSnap.Success -and $rSnap.Name -eq $originalItemName) {
+                                    $rInv = $rItem.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
+                                    [void](Try-InvokePattern -Pattern $rInv -AutomationId $id)
+                                    [void](Wait-WindowClosed -ClassName 'SubornoMenuPopupWindow' -ProcessId $process.Id -TimeoutMs 1500)
+                                    break
+                                }
+                            }
+                        } catch {
+                        }
+                    }
+                }
+            }
+        }
+
+        # Also explicitly verify Expand -> Collapse returns S_OK and closes popup cleanly.
+        $freshForCollapse = Try-FindById $settings $id
+        $colStateCheck = Try-GetExpandCollapseState -El $freshForCollapse -AutomationId $id
+        $collapseOk = $true
+        $collapseNote = ''
+        if ($colStateCheck.Success -and $null -ne $colStateCheck.Pattern) {
+            $reOpenRes = Try-ExpandCollapseOp -Pattern $colStateCheck.Pattern -Action 'Expand' -AutomationId $id
+            if ($reOpenRes.Success) {
+                [void](Wait-WindowByClass -ClassName 'SubornoMenuPopupWindow' -ProcessId $process.Id -TimeoutMs 2000 -FallbackRoot $root)
+                $colRes = Try-ExpandCollapseOp -Pattern $colStateCheck.Pattern -Action 'Collapse' -AutomationId $id
+                $closedAfterCol = Wait-WindowClosed -ClassName 'SubornoMenuPopupWindow' -ProcessId $process.Id -TimeoutMs 1500
+                if (-not $colRes.Success) {
+                    $collapseOk = $false
+                    $collapseNote = "; collapse failed: $($colRes.Error)"
+                } elseif (-not $closedAfterCol) {
+                    $collapseOk = $false
+                    $collapseNote = '; popup did not close on Collapse()'
+                } else {
+                    $collapseNote = '; Collapse=OK'
+                }
+            } else {
+                $collapseOk = $false
+                $collapseNote = "; re-expand failed: $($reOpenRes.Error)"
+            }
+        }
+
+        Add-Result "DD-$id-select" 'non-active option selected, verified via UIA Value, restored, and Collapse=OK' ($selectActual + $collapseNote) ($selectOk -and $collapseOk)
     }
 }
 
-# 4) Save -> persistence file contains values; Cancel -> unchanged
-[void](Select-SettingsPage $settings 'sidebar.general')
-$save = Find-ById $settings 'action.save'
-$cancel = Find-ById $settings 'action.cancel'
-[void](Assert-Element 'SET-SAVE' $save $settings 'Button')
-[void](Assert-Element 'SET-CANCEL' $cancel $settings 'Button')
-$settingsPath = Join-Path $env:APPDATA 'Suborno\settings.ini'
-if (-not (Test-Path $settingsPath)) { $settingsPath = Join-Path $env:LOCALAPPDATA 'Suborno\settings.ini' }
+# 4) Sliders: RangeValue min / max / mid aligned with checkmap.json
+if (Select-SettingsPage $settings 'sidebar.topbar') {
+    $sliderIds = @('action.idle-opacity', 'action.idle-time')
+    foreach ($id in $sliderIds) {
+        $el = Try-FindById $settings $id
+        if (-not (Assert-Element "SLD-$id" $el $settings 'Slider')) { continue }
+        $range = Invoke-Pattern "SLD-$id" $el ([System.Windows.Automation.RangeValuePattern])
+        if ($null -eq $range) { continue }
+
+        $rangeSnap = Try-GetRangeValue -El $el -AutomationId $id
+        if (-not $rangeSnap.Success) {
+            foreach ($suffix in 'min', 'max', 'mid') {
+                Add-Result "SLD-$id-set-$suffix" "slider value set to $suffix" $rangeSnap.Error $false
+            }
+            continue
+        }
+        $initial = $rangeSnap.Value
+        $min = $rangeSnap.Minimum
+        $max = $rangeSnap.Maximum
+        $mid = ($min + $max) / 2.0
+        $targets = @(
+            @{ Suffix = 'min'; Raw = $min; Expected = [int][math]::Round($min, [System.MidpointRounding]::AwayFromZero) },
+            @{ Suffix = 'max'; Raw = $max; Expected = [int][math]::Round($max, [System.MidpointRounding]::AwayFromZero) },
+            @{ Suffix = 'mid'; Raw = $mid; Expected = [int][math]::Round($mid, [System.MidpointRounding]::AwayFromZero) }
+        )
+        foreach ($t in $targets) {
+            $freshEl = Try-FindById $settings $id
+            $freshRangeInfo = Try-GetRangeValue -El $freshEl -AutomationId $id
+            if (-not $freshRangeInfo.Success) {
+                Add-Result "SLD-$id-set-$($t.Suffix)" "value set to $($t.Expected)" $freshRangeInfo.Error $false
+                continue
+            }
+            $setRes = Try-SetRangeValue -Pattern $freshRangeInfo.Pattern -Value $t.Raw -AutomationId $id
+            if (-not $setRes.Success) {
+                Add-Result "SLD-$id-set-$($t.Suffix)" "value set to $($t.Expected)" $setRes.Error $false
+                continue
+            }
+            Start-Sleep -Milliseconds 80
+            $readEl = Try-FindById $settings $id
+            $readBack = Try-GetRangeValue -El $readEl -AutomationId $id
+            $passed = $readBack.Success -and ([math]::Abs($readBack.Value - $t.Expected) -lt 0.01)
+            $actualText = if ($readBack.Success) { "target=$($t.Raw) expectedInt=$($t.Expected) actual=$($readBack.Value)" } else { $readBack.Error }
+            Add-Result "SLD-$id-set-$($t.Suffix)" "value set to $($t.Expected)" $actualText $passed
+        }
+
+        $restoreEl = Try-FindById $settings $id
+        $restoreRange = Try-GetRangeValue -El $restoreEl -AutomationId $id
+        if ($restoreRange.Success -and $null -ne $restoreRange.Pattern) {
+            [void](Try-SetRangeValue -Pattern $restoreRange.Pattern -Value $initial -AutomationId $id)
+            Start-Sleep -Milliseconds 60
+        }
+    }
+} else {
+    foreach ($id in 'action.idle-opacity', 'action.idle-time') {
+        Add-Result "SLD-$id" 'sidebar.topbar active for slider checks' 'failed to switch to sidebar.topbar' $false
+    }
+}
+
+# 5) Save -> persistence file + reopened UIA verification; Mouse-click Save -> SendInput; Rapid Save; Cancel -> unchanged
 $toastVisible = $false
-if ($save -and (Test-Path $settingsPath)) {
-    # Modify a staged value first so Save writes non-identical bytes cleanly.
-    $rememberEl = Find-ById $settings 'action.remember-layout'
-    if ($rememberEl) {
-        $rememberToggle = $rememberEl.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern)
-        if ($rememberToggle) { $rememberToggle.Toggle(); Start-Sleep -Milliseconds 100 }
+$toastShot = ''
+$settingsPath = Get-SettingsIniPath
+$null = Select-SettingsPage $settings 'sidebar.general'
+$save = Try-FindById $settings 'action.save'
+$cancel = Try-FindById $settings 'action.cancel'
+$okSaveEl = Assert-Element 'SET-SAVE' $save $settings 'Button'
+$okCancelEl = Assert-Element 'SET-CANCEL' $cancel $settings 'Button'
+
+if ($okSaveEl -and (Test-Path $settingsPath)) {
+    $rememberEl = Try-FindById $settings 'action.remember-layout'
+    $initialToggle = Try-GetToggleState -El $rememberEl -AutomationId 'action.remember-layout'
+    $expectedAfterSaveIni = if ($initialToggle.Success -and $initialToggle.State -eq 'On') { 'false' } else { 'true' }
+    $expectedAfterSaveToggle = if ($expectedAfterSaveIni -eq 'true') { 'On' } else { 'Off' }
+    $expectedRestoredIni = if ($expectedAfterSaveIni -eq 'true') { 'false' } else { 'true' }
+    $expectedRestoredToggle = if ($expectedRestoredIni -eq 'true') { 'On' } else { 'Off' }
+
+    if ($initialToggle.Success -and $null -ne $initialToggle.Pattern) {
+        [void](Try-TogglePattern -Pattern $initialToggle.Pattern -AutomationId 'action.remember-layout')
+        Start-Sleep -Milliseconds 80
     }
-    $hashBefore = (Get-FileHash $settingsPath).Hash
+    $hashBeforeSave = (Get-FileHash $settingsPath).Hash
+    $save = Try-FindById $settings 'action.save'
     $saveInvoke = Invoke-Pattern 'SET-SAVE-invoke' $save ([System.Windows.Automation.InvokePattern])
-    if ($saveInvoke) {
-        $saveInvoke.Invoke()
-        for ($attempt = 0; $attempt -lt 20; $attempt++) {
-            $toastWin = Find-Window $root 'SubornoToastWindow' ''
-            if ($null -ne $toastWin -and (Find-ById $toastWin 'toast.message')) {
+    if ($null -ne $saveInvoke) {
+        $saveInvRes = Try-InvokePattern -Pattern $saveInvoke -AutomationId 'action.save'
+        if ($saveInvRes.Success) {
+            # Toast window appears immediately on save success; poll quickly before auto-dismiss.
+            $toastWin = Wait-WindowByClass -ClassName 'SubornoToastWindow' -ProcessId $process.Id -TimeoutMs 2500 -PollMs 40 -FallbackRoot $root
+            if ($null -ne $toastWin -and $null -ne (Try-FindById $toastWin 'toast.message')) {
                 $toastVisible = $true
-                break
+                $toastShot = Save-WindowScreenshot 'TOAST-element' $toastWin
             }
-            Start-Sleep -Milliseconds 100
+            [void](Wait-WindowHidden -Hwnd $settingsHost -TimeoutMs 2000)
+            $actualIni = Wait-SettingsIniKey -Path $settingsPath -Key 'remember_last_input_layout' -ExpectedValue $expectedAfterSaveIni -TimeoutMs 1500
+            $hashAfterSave = (Get-FileHash $settingsPath).Hash
+
+            # Re-open Settings and verify persisted state matches via fresh UIA query.
+            $settings = Open-SettingsWindow -Root $root -HostHwnd $settingsHost -ProcessId $process.Id -WmCommand $wmCommand -MenuOpenSettings $menuOpenSettings
+            $reopenedState = 'UNAVAILABLE'
+            if ($null -ne $settings) {
+                [void](Select-SettingsPage $settings 'sidebar.general')
+                $reopenedEl = Try-FindById $settings 'action.remember-layout'
+                $reopenedTog = Try-GetToggleState -El $reopenedEl -AutomationId 'action.remember-layout'
+                if ($reopenedTog.Success) { $reopenedState = $reopenedTog.State }
+            }
+            $persistOk = ($hashBeforeSave -ne $hashAfterSave) -and ($actualIni -eq $expectedAfterSaveIni) -and ($reopenedState -eq $expectedAfterSaveToggle)
+            Add-Result 'SET-SAVE-persist' "remember_last_input_layout=$expectedAfterSaveIni persisted on disk & reopened UIA ($expectedAfterSaveToggle)" "hashChanged=$($hashBeforeSave -ne $hashAfterSave) ini=$actualIni reopenedUIA=$reopenedState" $persistOk
+        } else {
+            Add-Result 'SET-SAVE-persist' 'settings file rewritten on Save' $saveInvRes.Error $false
         }
-        Start-Sleep -Milliseconds 400
-        $hashAfter = ''
-        if (Test-Path $settingsPath) { $hashAfter = (Get-FileHash $settingsPath).Hash }
-        Add-Result 'SET-SAVE-persist' 'settings file rewritten on Save' (& { if ($hashBefore -ne $hashAfter) { 'file changed' } else { 'file unchanged' } }) ($hashBefore -ne $hashAfter)
     }
 
-    # Re-open Settings (Save hides to tray) and restore the staged checkbox via real mouse click.
-    $settings = Open-SettingsWindow $root $settingsHost $wmCommand $menuOpenSettings
-    if ($settings) {
+    # Restore original value via real SendInput mouse click on Save.
+    if ($null -eq $settings) {
+        $settings = Open-SettingsWindow -Root $root -HostHwnd $settingsHost -ProcessId $process.Id -WmCommand $wmCommand -MenuOpenSettings $menuOpenSettings
+    }
+    if ($null -ne $settings) {
         [void](Select-SettingsPage $settings 'sidebar.general')
-        $rememberEl = Find-ById $settings 'action.remember-layout'
-        if ($rememberEl) {
-            $rememberToggle = $rememberEl.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern)
-            if ($rememberToggle) { $rememberToggle.Toggle(); Start-Sleep -Milliseconds 100 }
+        $rememberEl = Try-FindById $settings 'action.remember-layout'
+        $togBeforeMouse = Try-GetToggleState -El $rememberEl -AutomationId 'action.remember-layout'
+        if ($togBeforeMouse.Success -and $null -ne $togBeforeMouse.Pattern) {
+            [void](Try-TogglePattern -Pattern $togBeforeMouse.Pattern -AutomationId 'action.remember-layout')
+            Start-Sleep -Milliseconds 80
         }
-        $save = Find-ById $settings 'action.save'
         $hashBeforeMouse = (Get-FileHash $settingsPath).Hash
-        if (Invoke-MouseClickCenter 'SET-SAVE-mouse' $save $settingsHost) {
-            Start-Sleep -Milliseconds 800
-            $hashAfterMouse = ''
-            if (Test-Path $settingsPath) { $hashAfterMouse = (Get-FileHash $settingsPath).Hash }
-            Add-Result 'SET-SAVE-mouseclick' 'real mouse click on Save rewrites the settings file' (& { if ($hashBeforeMouse -ne $hashAfterMouse) { 'file changed by mouse click' } else { 'file unchanged after mouse click' } }) ($hashBeforeMouse -ne $hashAfterMouse)
+        $mouseStatus = Invoke-MouseClickCenter -Id 'SET-SAVE-mouse' -ContainerWindow $settings -AutomationId 'action.save' -FocusHwnd $settingsHost -ProcessId $process.Id
+        if ($mouseStatus -eq 'BLOCKED') {
+            Add-Result 'SET-SAVE-mouseclick' 'real mouse click on Save rewrites settings file' 'BLOCKED: interactive foreground unavailable for SendInput' $false -StatusOverride 'BLOCKED'
+        } elseif ($mouseStatus -eq 'OK') {
+            [void](Wait-WindowHidden -Hwnd $settingsHost -TimeoutMs 2000)
+            $actualMouseIni = Wait-SettingsIniKey -Path $settingsPath -Key 'remember_last_input_layout' -ExpectedValue $expectedRestoredIni -TimeoutMs 1500
+            $hashAfterMouse = (Get-FileHash $settingsPath).Hash
+            $reopenedAfterMouse = Open-SettingsWindow -Root $root -HostHwnd $settingsHost -ProcessId $process.Id -WmCommand $wmCommand -MenuOpenSettings $menuOpenSettings
+            $mouseUiaState = 'UNAVAILABLE'
+            if ($null -ne $reopenedAfterMouse) {
+                [void](Select-SettingsPage $reopenedAfterMouse 'sidebar.general')
+                $mEl = Try-FindById $reopenedAfterMouse 'action.remember-layout'
+                $mTog = Try-GetToggleState -El $mEl -AutomationId 'action.remember-layout'
+                if ($mTog.Success) { $mouseUiaState = $mTog.State }
+                $settings = $reopenedAfterMouse
+            }
+            $mouseOk = ($hashBeforeMouse -ne $hashAfterMouse) -and ($actualMouseIni -eq $expectedRestoredIni) -and ($mouseUiaState -eq $expectedRestoredToggle)
+            Add-Result 'SET-SAVE-mouseclick' "real SendInput click restores remember_last_input_layout=$expectedRestoredIni" "hashChanged=$($hashBeforeMouse -ne $hashAfterMouse) ini=$actualMouseIni reopenedUIA=$mouseUiaState" $mouseOk
+        } else {
+            Add-Result 'SET-SAVE-mouseclick' 'real SendInput click on Save rewrites settings file' 'mouse click delivery failed' $false
         }
+    } else {
+        Add-Result 'SET-SAVE-mouse-coords' 'Settings window reopened for mouse click' 'NOT OPEN' $false
+        Add-Result 'SET-SAVE-mouseclick' 'real mouse click on Save rewrites settings file' 'Settings window did not reopen' $false
     }
 
-    # Re-open Settings and run rapid repeated Save (negative: no crash, no duplicate writes)
-    $settings = Open-SettingsWindow $root $settingsHost $wmCommand $menuOpenSettings
-    if ($settings) {
-        $save = Find-ById $settings 'action.save'
-        $saveInvokeRapid = if ($save) { $save.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern) } else { $null }
-        if ($saveInvokeRapid) { $saveInvokeRapid.Invoke(); $saveInvokeRapid.Invoke(); $saveInvokeRapid.Invoke(); Start-Sleep -Milliseconds 800 }
+    # Rapid repeated Save: first Save commits & hides (incrementing tree_generation);
+    # subsequent rapid Invoke() calls on the stale proxy must either return expected
+    # ElementUnavailable cleanly or succeed without crashing or hanging.
+    $settingsRapid = Open-SettingsWindow -Root $root -HostHwnd $settingsHost -ProcessId $process.Id -WmCommand $wmCommand -MenuOpenSettings $menuOpenSettings
+    $rapidUnexpectedError = ''
+    if ($null -ne $settingsRapid) {
+        $saveRapidEl = Try-FindById $settingsRapid 'action.save'
+        if ($null -ne $saveRapidEl) {
+            try {
+                $saveInvokeRapid = $saveRapidEl.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
+                for ($call = 1; $call -le 3; $call++) {
+                    $rRes = Try-InvokePattern -Pattern $saveInvokeRapid -AutomationId 'action.save'
+                    if (-not $rRes.Success) {
+                        if ($call -ge 2 -and ($rRes.Category -eq 'ElementUnavailable' -or $rRes.Category -eq 'ComFailure')) {
+                            Write-Host ("Rapid Save call #{0} returned expected post-hide lifecycle status: {1}" -f $call, $rRes.Category)
+                        } else {
+                            $rapidUnexpectedError = "call #$call failed unexpectedly: $($rRes.Error)"
+                            break
+                        }
+                    }
+                }
+            } catch {
+                $rapidUnexpectedError = Format-UiaDiagnostic -Category (Classify-UiaException $_.Exception) -Operation 'RapidSaveSetup' -AutomationId 'action.save' -Exception $_.Exception
+            }
+        }
+        [void](Wait-WindowHidden -Hwnd $settingsHost -TimeoutMs 1500)
+    } else {
+        $rapidUnexpectedError = 'Settings window did not reopen for rapid Save check'
     }
-    $alive = $true
-    if ($process) { $alive = -not $process.HasExited }
-    Add-Result 'SET-SAVE-rapid' 'process alive after 3 rapid Saves' ('alive=' + $alive) $alive
+    $process.Refresh()
+    $alive = -not $process.HasExited
+    Add-Result 'SET-SAVE-rapid' 'process alive and rapid Save stale-proxy lifecycle handled cleanly' ("alive=$alive" + $(if ($rapidUnexpectedError -ne '') { "; $rapidUnexpectedError" } else { '' })) ($alive -and $rapidUnexpectedError -eq '')
+} elseif ($okSaveEl) {
+    Add-Result 'SET-SAVE-persist' 'settings.ini exists before Save persistence check' "NOT FOUND: $settingsPath" $false
 }
 
-$settingsForCancel = Open-SettingsWindow $root $settingsHost $wmCommand $menuOpenSettings
-$cancel = if ($settingsForCancel) { Find-ById $settingsForCancel 'action.cancel' } else { $null }
-if ($cancel) {
+# Cancel -> does not persist staged edits; discards staged UI state
+$settingsForCancel = Open-SettingsWindow -Root $root -HostHwnd $settingsHost -ProcessId $process.Id -WmCommand $wmCommand -MenuOpenSettings $menuOpenSettings
+if ($null -ne $settingsForCancel) {
     [void](Select-SettingsPage $settingsForCancel 'sidebar.general')
-    $rememberEl = Find-ById $settingsForCancel 'action.remember-layout'
-    if ($rememberEl) {
-        $rememberToggle = $rememberEl.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern)
-        if ($rememberToggle) { $rememberToggle.Toggle(); Start-Sleep -Milliseconds 100 }
+    $rememberBeforeCancelEl = Try-FindById $settingsForCancel 'action.remember-layout'
+    $togBeforeCancel = Try-GetToggleState -El $rememberBeforeCancelEl -AutomationId 'action.remember-layout'
+    $initialCancelState = if ($togBeforeCancel.Success) { $togBeforeCancel.State } else { '' }
+    if ($togBeforeCancel.Success -and $null -ne $togBeforeCancel.Pattern) {
+        [void](Try-TogglePattern -Pattern $togBeforeCancel.Pattern -AutomationId 'action.remember-layout')
+        Start-Sleep -Milliseconds 80
     }
-    $cancelInvoke = Invoke-Pattern 'SET-CANCEL-invoke' $cancel ([System.Windows.Automation.InvokePattern])
-    if ($cancelInvoke) {
-        $hashBeforeCancel = ''
-        if (Test-Path $settingsPath) { $hashBeforeCancel = (Get-FileHash $settingsPath).Hash }
-        $cancelInvoke.Invoke(); Start-Sleep -Milliseconds 600
-        $hashAfterCancel = ''
-        if (Test-Path $settingsPath) { $hashAfterCancel = (Get-FileHash $settingsPath).Hash }
-        Add-Result 'SET-CANCEL-nopersist' 'Cancel does not rewrite the settings file' (& { if ($hashBeforeCancel -eq $hashAfterCancel) { 'unchanged' } else { 'CHANGED' } }) ($hashBeforeCancel -eq $hashAfterCancel)
+    $cancelEl = Try-FindById $settingsForCancel 'action.cancel'
+    $cancelInvoke = Invoke-Pattern 'SET-CANCEL-invoke' $cancelEl ([System.Windows.Automation.InvokePattern])
+    if ($null -ne $cancelInvoke) {
+        $hashBeforeCancel = if (Test-Path $settingsPath) { (Get-FileHash $settingsPath).Hash } else { '' }
+        $iniBeforeCancel = Get-IniKeyValue -Path $settingsPath -Key 'remember_last_input_layout'
+        $cancelRes = Try-InvokePattern -Pattern $cancelInvoke -AutomationId 'action.cancel'
+        [void](Wait-WindowHidden -Hwnd $settingsHost -TimeoutMs 2000)
+        $hashAfterCancel = if (Test-Path $settingsPath) { (Get-FileHash $settingsPath).Hash } else { '' }
+        $iniAfterCancel = Get-IniKeyValue -Path $settingsPath -Key 'remember_last_input_layout'
+
+        # Re-open Settings briefly to confirm staged modification was discarded, then dismiss cleanly.
+        $verifyDiscardWin = Open-SettingsWindow -Root $root -HostHwnd $settingsHost -ProcessId $process.Id -WmCommand $wmCommand -MenuOpenSettings $menuOpenSettings
+        $discardedState = ''
+        if ($null -ne $verifyDiscardWin) {
+            [void](Select-SettingsPage $verifyDiscardWin 'sidebar.general')
+            $verifyEl = Try-FindById $verifyDiscardWin 'action.remember-layout'
+            $verifyTog = Try-GetToggleState -El $verifyEl -AutomationId 'action.remember-layout'
+            if ($verifyTog.Success) { $discardedState = $verifyTog.State }
+            $dismissCancel = Try-FindById $verifyDiscardWin 'action.cancel'
+            if ($null -ne $dismissCancel) {
+                try {
+                    $dismissInv = $dismissCancel.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
+                    [void](Try-InvokePattern -Pattern $dismissInv -AutomationId 'action.cancel')
+                    [void](Wait-WindowHidden -Hwnd $settingsHost -TimeoutMs 1500)
+                } catch {
+                }
+            }
+        }
+
+        $cancelOk = $cancelRes.Success -and ($hashBeforeCancel -eq $hashAfterCancel) -and ($iniBeforeCancel -eq $iniAfterCancel) -and ($initialCancelState -eq '' -or $discardedState -eq $initialCancelState)
+        Add-Result 'SET-CANCEL-nopersist' 'Cancel leaves settings.ini unchanged and discards staged edit' "fileUnchanged=$($hashBeforeCancel -eq $hashAfterCancel) ini=$iniBeforeCancel->$iniAfterCancel state=$initialCancelState->$discardedState" $cancelOk
     }
+} else {
+    Add-Result 'SET-CANCEL-nopersist' 'Settings window reopened for Cancel check' 'NOT OPEN' $false
 }
 
-# 5) Toast element appears after Save
+# 6) Toast element appears after Save
 if (-not $toastVisible) {
-    $toastWin = Find-Window $root 'SubornoToastWindow' ''
-    if ($null -ne $toastWin -and (Find-ById $toastWin 'toast.message')) { $toastVisible = $true }
+    $toastWin = Wait-WindowByClass -ClassName 'SubornoToastWindow' -ProcessId $process.Id -TimeoutMs 800 -PollMs 40 -FallbackRoot $root
+    if ($null -ne $toastWin -and $null -ne (Try-FindById $toastWin 'toast.message')) {
+        $toastVisible = $true
+        $toastShot = Save-WindowScreenshot 'TOAST-element' $toastWin
+    }
 }
-Add-Result 'TOAST-element' 'toast.message element visible after an action' (& { if ($toastVisible) { 'visible' } else { 'not visible (may have auto-dismissed; re-run with faster polling)' } }) $toastVisible
+Add-Result 'TOAST-element' 'toast.message element visible after Save' ($(if ($toastVisible) { 'visible' } else { "not visible ($script:lastUiaError)" })) $toastVisible $toastShot
 
-# 6) About dialog
-$about = Find-Window $root 'SubornoAboutWindow' ''
+# 7) About dialog (process-scoped visible HWND + Root fallback)
+$about = Wait-WindowByClass -ClassName 'SubornoAboutWindow' -ProcessId $process.Id -TimeoutMs 300 -FallbackRoot $root
 if ($null -eq $about) {
     [void][Suborno.Audit.Native]::SendMessage($settingsHost, $wmCommand, $menuAbout, [IntPtr]::Zero)
-    for ($attempt = 0; $attempt -lt 25; $attempt++) {
-        $about = Find-Window $root 'SubornoAboutWindow' ''
-        if ($null -ne $about) { break }
-        Start-Sleep -Milliseconds 200
-    }
+    $about = Wait-WindowByClass -ClassName 'SubornoAboutWindow' -ProcessId $process.Id -TimeoutMs 5000 -PollMs 50 -FallbackRoot $root
 }
-if ($about) {
+if ($null -ne $about) {
     $shotAbout = Save-WindowScreenshot 'ABT-open' $about
-    $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Button)
-    $btns = $about.FindAll([System.Windows.Automation.TreeScope]::Descendants, $cond)
-    Add-Result 'ABT-buttons' '>=5 buttons exposed' ("{0} buttons" -f $btns.Count) ($btns.Count -ge 5) $shotAbout
-    $aboutHwnd = [IntPtr]$about.Current.NativeWindowHandle
-    if ($aboutHwnd -ne [IntPtr]::Zero) {
-        [void][Suborno.Audit.Native]::SendMessage($aboutHwnd, $wmClose, [IntPtr]::Zero, [IntPtr]::Zero)
-        Start-Sleep -Milliseconds 150
+    $btnCond = New-Object System.Windows.Automation.PropertyCondition(
+        [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+        [System.Windows.Automation.ControlType]::Button
+    )
+    $btnCount = 0
+    try {
+        $btns = $about.FindAll([System.Windows.Automation.TreeScope]::Descendants, $btnCond)
+        $btnCount = $btns.Count
+    } catch {
+        $script:lastUiaError = Format-UiaDiagnostic -Category (Classify-UiaException $_.Exception) -Operation 'AboutButtons' -Exception $_.Exception
+    }
+    Add-Result 'ABT-buttons' '>=5 buttons exposed' ("$btnCount buttons" + $(if ($btnCount -lt 5 -and $script:lastUiaError -ne '') { " ($script:lastUiaError)" } else { '' })) ($btnCount -ge 5) $shotAbout
+    $aboutSnap = Try-GetElementSnapshot $about
+    if ($aboutSnap.Success -and $aboutSnap.NativeWindowHandle -ne [IntPtr]::Zero) {
+        [void][Suborno.Audit.Native]::SendMessage($aboutSnap.NativeWindowHandle, $wmClose, [IntPtr]::Zero, [IntPtr]::Zero)
+        [void](Wait-WindowClosed -ClassName 'SubornoAboutWindow' -ProcessId $process.Id -TimeoutMs 1500)
     }
 } else {
-    Add-Result 'ABT-open' 'About dialog opened via WM_COMMAND menu_about' 'NOT OPEN' $false
+    Add-Result 'ABT-open' 'About dialog opened via WM_COMMAND menu_about' "NOT OPEN ($script:lastUiaError)" $false
 }
 
-# 7) OSK elements
-$osk = Find-Window $root 'SubornoOskWindow' ''
+# 8) OSK elements (process-scoped visible HWND + Root fallback)
+$osk = Wait-WindowByClass -ClassName 'SubornoOskWindow' -ProcessId $process.Id -TimeoutMs 300 -FallbackRoot $root
 if ($null -eq $osk) {
     [void][Suborno.Audit.Native]::SendMessage($settingsHost, $wmCommand, $menuOsk, [IntPtr]::Zero)
-    for ($attempt = 0; $attempt -lt 25; $attempt++) {
-        $osk = Find-Window $root 'SubornoOskWindow' ''
-        if ($null -ne $osk) { break }
-        Start-Sleep -Milliseconds 200
-    }
+    $osk = Wait-WindowByClass -ClassName 'SubornoOskWindow' -ProcessId $process.Id -TimeoutMs 5000 -PollMs 50 -FallbackRoot $root
 }
-if ($osk) {
+if ($null -ne $osk) {
     $shotOsk = Save-WindowScreenshot 'OSK-open' $osk
-    $btnCond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Button)
-    $keys = $osk.FindAll([System.Windows.Automation.TreeScope]::Descendants, $btnCond)
-    Add-Result 'OSK-elements' '36 invokable elements' ("{0} buttons" -f $keys.Count) ($keys.Count -ge 36) $shotOsk
+    $btnCond = New-Object System.Windows.Automation.PropertyCondition(
+        [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+        [System.Windows.Automation.ControlType]::Button
+    )
+    $keyCount = 0
+    try {
+        $keys = $osk.FindAll([System.Windows.Automation.TreeScope]::Descendants, $btnCond)
+        $keyCount = $keys.Count
+    } catch {
+        $script:lastUiaError = Format-UiaDiagnostic -Category (Classify-UiaException $_.Exception) -Operation 'OskKeys' -Exception $_.Exception
+    }
+    Add-Result 'OSK-elements' '36 invokable elements' ("$keyCount buttons" + $(if ($keyCount -lt 36 -and $script:lastUiaError -ne '') { " ($script:lastUiaError)" } else { '' })) ($keyCount -ge 36) $shotOsk
 } else {
-    Add-Result 'OSK-open' 'OSK window opened via WM_COMMAND menu_osk' 'NOT OPEN' $false
+    Add-Result 'OSK-open' 'OSK window opened via WM_COMMAND menu_osk' "NOT OPEN ($script:lastUiaError)" $false
 }
 
-# 8) Topbar zones
-$topbar = Find-Window $root 'SubornoTopbarWindow' ''
+# 9) Topbar zones (process-scoped visible HWND + Root fallback)
+$topbar = Wait-WindowByClass -ClassName 'SubornoTopbarWindow' -ProcessId $process.Id -TimeoutMs 300 -FallbackRoot $root
 if ($null -eq $topbar) {
     [void][Suborno.Audit.Native]::SendMessage($settingsHost, $wmSecondInstanceShowTopbar, [IntPtr]::Zero, [IntPtr]::Zero)
-    for ($attempt = 0; $attempt -lt 25; $attempt++) {
-        $topbar = Find-Window $root 'SubornoTopbarWindow' ''
-        if ($null -ne $topbar) { break }
-        Start-Sleep -Milliseconds 200
-    }
+    $topbar = Wait-WindowByClass -ClassName 'SubornoTopbarWindow' -ProcessId $process.Id -TimeoutMs 5000 -PollMs 50 -FallbackRoot $root
 }
-if ($topbar) {
+if ($null -ne $topbar) {
     $shotTopbar = Save-WindowScreenshot 'TOP-open' $topbar
     foreach ($zone in 'zone.mode', 'zone.layout', 'zone.wrench', 'zone.close') {
-        $el = Find-ById $topbar $zone
+        $el = Try-FindById $topbar $zone
         [void](Assert-Element "TOP-$zone" $el $topbar 'Button')
     }
 } else {
-    Add-Result 'TOP-open' 'Topbar window opened via second_instance_show_topbar' 'NOT OPEN' $false
+    Add-Result 'TOP-open' 'Topbar window opened via second_instance_show_topbar' "NOT OPEN ($script:lastUiaError)" $false
 }
 
 $envelope = [pscustomobject]@{
@@ -779,9 +1839,10 @@ $envelope = [pscustomobject]@{
     screenshots = $script:screenshots
     results     = $script:results
 }
-$envelope | ConvertTo-Json -Depth 3 | Set-Content -Path $ResultsJson -Encoding UTF8
+$envelope | ConvertTo-Json -Depth 4 | Set-Content -Path $ResultsJson -Encoding UTF8
 $failed = @($script:results | Where-Object { $_.status -eq 'FAIL' }).Count
+$blocked = @($script:results | Where-Object { $_.status -eq 'BLOCKED' }).Count
 $passed = @($script:results | Where-Object { $_.status -eq 'PASS' }).Count
-Write-Host ('== totals: {0} PASS, {1} FAIL; log: {2}; screenshots: {3} ==' -f $passed, $failed, $ResultsJson, $script:screenshots.Count) -ForegroundColor Cyan
-Write-Host ('next: python3 scripts/layout_verify/merge_audit_results.py --results {0} --map windows-ui-audit/functional/checkmap.json --label "Windows run"' -f $ResultsJson)
-exit $failed
+Write-Host ('== totals: {0} PASS, {1} FAIL, {2} BLOCKED; log: {3}; screenshots: {4} ==' -f $passed, $failed, $blocked, $ResultsJson, $script:screenshots.Count) -ForegroundColor Cyan
+Write-Host ('next: python3 scripts/layout_verify/merge_audit_results.py --results {0} --map scripts/windows-ui-audit/functional/checkmap.json --label "Windows run"' -f $ResultsJson)
+exit ($failed + $blocked)

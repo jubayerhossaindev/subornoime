@@ -31,11 +31,14 @@ struct UiaFunctions {
     using ReturnRawFn = LRESULT(WINAPI*)(HWND, WPARAM, LPARAM, IRawElementProviderSimple*);
     using HostProviderFn = HRESULT(WINAPI*)(HWND, IRawElementProviderSimple**);
     using RaiseEventFn = HRESULT(WINAPI*)(IRawElementProviderSimple*, EVENTID);
+    using RaiseStructureChangedFn =
+        HRESULT(WINAPI*)(IRawElementProviderSimple*, StructureChangeType, int*, int);
 
     HMODULE module = nullptr;
     ReturnRawFn return_raw = nullptr;
     HostProviderFn host_provider = nullptr;
     RaiseEventFn raise_event = nullptr;
+    RaiseStructureChangedFn raise_structure_changed = nullptr;
 };
 
 const UiaFunctions& uia_functions() {
@@ -49,6 +52,9 @@ const UiaFunctions& uia_functions() {
                 ::GetProcAddress(resolved.module, "UiaHostProviderFromHwnd"));
             resolved.raise_event = reinterpret_cast<UiaFunctions::RaiseEventFn>(
                 ::GetProcAddress(resolved.module, "UiaRaiseAutomationEvent"));
+            resolved.raise_structure_changed =
+                reinterpret_cast<UiaFunctions::RaiseStructureChangedFn>(
+                    ::GetProcAddress(resolved.module, "UiaRaiseStructureChangedEvent"));
         }
         return resolved;
     }();
@@ -94,7 +100,8 @@ class ElementProvider final : public IRawElementProviderSimple,
                               public IInvokeProvider,
                               public IToggleProvider,
                               public IExpandCollapseProvider,
-                              public IRangeValueProvider {
+                              public IRangeValueProvider,
+                              public IValueProvider {
   public:
     ElementProvider(
         HWND window, ElementSource* source, std::weak_ptr<int> alive_token, bool is_root, int index)
@@ -103,7 +110,16 @@ class ElementProvider final : public IRawElementProviderSimple,
           alive_(std::move(alive_token)),
           is_root_(is_root),
           index_(index),
-          reference_count_(1) {}
+          reference_count_(1) {
+        if (!is_root_ && source_ != nullptr && !alive_.expired()) {
+            expected_generation_ = source_->tree_generation();
+            ElementInfo info{};
+            if (source_->element_info(index_, info)) {
+                expected_automation_id_ = info.automation_id;
+                has_identity_snapshot_ = true;
+            }
+        }
+    }
 
     // ---- IUnknown ----
 
@@ -128,6 +144,8 @@ class ElementProvider final : public IRawElementProviderSimple,
             *object = static_cast<IExpandCollapseProvider*>(this);
         } else if (!is_root_ && riid == __uuidof(IRangeValueProvider)) {
             *object = static_cast<IRangeValueProvider*>(this);
+        } else if (!is_root_ && riid == __uuidof(IValueProvider)) {
+            *object = static_cast<IValueProvider*>(this);
         }
         if (*object == nullptr) {
             return E_NOINTERFACE;
@@ -193,11 +211,14 @@ class ElementProvider final : public IRawElementProviderSimple,
             });
         }
         *pattern = nullptr;
-        if (is_root_ || !available()) {
+        if (!available()) {
+            return UIA_E_ELEMENTNOTAVAILABLE;
+        }
+        if (is_root_) {
             return S_OK;
         }
         ElementInfo info{};
-        if (!source_->element_info(index_, info)) {
+        if (!child_available(info)) {
             return UIA_E_ELEMENTNOTAVAILABLE;
         }
         // Return the exact control-pattern interface requested by UI
@@ -217,6 +238,9 @@ class ElementProvider final : public IRawElementProviderSimple,
         if (pattern_id == UIA_RangeValuePatternId && info.supports_range) {
             return QueryInterface(__uuidof(IRangeValueProvider), reinterpret_cast<void**>(pattern));
         }
+        if (pattern_id == UIA_ValuePatternId && info.supports_value) {
+            return QueryInterface(__uuidof(IValueProvider), reinterpret_cast<void**>(pattern));
+        }
         return S_OK;
     }
 
@@ -231,9 +255,13 @@ class ElementProvider final : public IRawElementProviderSimple,
             return UIA_E_ELEMENTNOTAVAILABLE;
         }
         try {
+            ElementInfo child_info{};
+            if (!is_root_ && !child_available(child_info)) {
+                return UIA_E_ELEMENTNOTAVAILABLE;
+            }
             switch (property_id) {
             case UIA_NamePropertyId: {
-                const std::wstring name = is_root_ ? source_->window_name() : element_name();
+                const std::wstring name = is_root_ ? source_->window_name() : child_info.name;
                 if ((value->bstrVal =
                          ::SysAllocStringLen(name.c_str(), static_cast<UINT>(name.size())))
                     == nullptr) {
@@ -248,15 +276,12 @@ class ElementProvider final : public IRawElementProviderSimple,
                 std::wstring id;
                 if (is_root_) {
                     id = L"window";
+                } else if (!child_info.automation_id.empty()) {
+                    id = child_info.automation_id;
                 } else {
-                    ElementInfo info{};
-                    if (source_->element_info(index_, info) && !info.automation_id.empty()) {
-                        id = info.automation_id;
-                    } else {
-                        wchar_t positional[32]{};
-                        swprintf_s(positional, _countof(positional), L"element-%d", index_);
-                        id = positional;
-                    }
+                    wchar_t positional[32]{};
+                    swprintf_s(positional, _countof(positional), L"element-%d", index_);
+                    id = positional;
                 }
                 if ((value->bstrVal = ::SysAllocStringLen(id.c_str(), static_cast<UINT>(id.size())))
                     == nullptr) {
@@ -266,12 +291,12 @@ class ElementProvider final : public IRawElementProviderSimple,
                 return S_OK;
             }
             case UIA_HelpTextPropertyId: {
-                ElementInfo info{};
-                if (is_root_ || !source_->element_info(index_, info) || info.help_text.empty()) {
+                if (is_root_ || child_info.help_text.empty()) {
                     return S_OK;  // empty VARIANT: no HelpText override
                 }
-                if ((value->bstrVal = ::SysAllocStringLen(info.help_text.c_str(),
-                                                          static_cast<UINT>(info.help_text.size())))
+                if ((value->bstrVal =
+                         ::SysAllocStringLen(child_info.help_text.c_str(),
+                                             static_cast<UINT>(child_info.help_text.size())))
                     == nullptr) {
                     return E_OUTOFMEMORY;
                 }
@@ -280,7 +305,8 @@ class ElementProvider final : public IRawElementProviderSimple,
             }
             case UIA_ControlTypePropertyId:
                 value->vt = VT_I4;
-                value->lVal = is_root_ ? UIA_WindowControlTypeId : control_type_for(element_role());
+                value->lVal =
+                    is_root_ ? UIA_WindowControlTypeId : control_type_for(child_info.role);
                 return S_OK;
             case UIA_IsControlElementPropertyId:
             case UIA_IsContentElementPropertyId:
@@ -290,7 +316,8 @@ class ElementProvider final : public IRawElementProviderSimple,
             case UIA_IsInvokePatternAvailablePropertyId:
             case UIA_IsTogglePatternAvailablePropertyId:
             case UIA_IsExpandCollapsePatternAvailablePropertyId:
-            case UIA_IsRangeValuePatternAvailablePropertyId: {
+            case UIA_IsRangeValuePatternAvailablePropertyId:
+            case UIA_IsValuePatternAvailablePropertyId: {
                 // Pattern availability is a separate UIA property contract:
                 // clients inspect these properties before requesting a
                 // pattern provider. Do not leave them at UIA's default FALSE
@@ -298,23 +325,22 @@ class ElementProvider final : public IRawElementProviderSimple,
                 value->vt = VT_BOOL;
                 value->boolVal = VARIANT_FALSE;
                 if (!is_root_) {
-                    ElementInfo info{};
-                    if (!source_->element_info(index_, info)) {
-                        return UIA_E_ELEMENTNOTAVAILABLE;
-                    }
                     bool supported = false;
                     switch (property_id) {
                     case UIA_IsInvokePatternAvailablePropertyId:
-                        supported = info.supports_invoke;
+                        supported = child_info.supports_invoke;
                         break;
                     case UIA_IsTogglePatternAvailablePropertyId:
-                        supported = info.supports_toggle;
+                        supported = child_info.supports_toggle;
                         break;
                     case UIA_IsExpandCollapsePatternAvailablePropertyId:
-                        supported = info.supports_expand_collapse;
+                        supported = child_info.supports_expand_collapse;
                         break;
                     case UIA_IsRangeValuePatternAvailablePropertyId:
-                        supported = info.supports_range;
+                        supported = child_info.supports_range;
+                        break;
+                    case UIA_IsValuePatternAvailablePropertyId:
+                        supported = child_info.supports_value;
                         break;
                     default:
                         break;
@@ -351,7 +377,8 @@ class ElementProvider final : public IRawElementProviderSimple,
                 return S_OK;
             case UIA_IsKeyboardFocusablePropertyId:
                 value->vt = VT_BOOL;
-                value->boolVal = (is_root_ || element_focusable()) ? VARIANT_TRUE : VARIANT_FALSE;
+                value->boolVal =
+                    (is_root_ || child_info.focusable) ? VARIANT_TRUE : VARIANT_FALSE;
                 return S_OK;
             case UIA_HasKeyboardFocusPropertyId:
                 value->vt = VT_BOOL;
@@ -377,47 +404,68 @@ class ElementProvider final : public IRawElementProviderSimple,
                 value->parray = array;
                 return S_OK;
             }
+            case UIA_ToggleToggleStatePropertyId:
+                if (!is_root_ && child_info.supports_toggle) {
+                    value->vt = VT_I4;
+                    value->lVal = child_info.toggle_state_on ? ToggleState_On : ToggleState_Off;
+                }
+                return S_OK;
+            case UIA_ExpandCollapseExpandCollapseStatePropertyId:
+                if (!is_root_ && child_info.supports_expand_collapse) {
+                    value->vt = VT_I4;
+                    value->lVal = child_info.expanded ? ExpandCollapseState_Expanded
+                                                      : ExpandCollapseState_Collapsed;
+                }
+                return S_OK;
+            case UIA_ValueValuePropertyId:
+                if (!is_root_ && child_info.supports_value) {
+                    if ((value->bstrVal =
+                             ::SysAllocStringLen(child_info.value_text.c_str(),
+                                                 static_cast<UINT>(child_info.value_text.size())))
+                        == nullptr) {
+                        return E_OUTOFMEMORY;
+                    }
+                    value->vt = VT_BSTR;
+                }
+                return S_OK;
+            case UIA_ValueIsReadOnlyPropertyId:
+                if (!is_root_ && child_info.supports_value) {
+                    value->vt = VT_BOOL;
+                    value->boolVal = VARIANT_TRUE;
+                }
+                return S_OK;
             case UIA_RangeValueIsReadOnlyPropertyId:
-                if (!is_root_ && element_role() == ElementRole::slider) {
+                if (!is_root_ && child_info.role == ElementRole::slider) {
                     value->vt = VT_BOOL;
                     value->boolVal = VARIANT_FALSE;
                 }
                 return S_OK;
-            case UIA_RangeValueValuePropertyId: {
-                ElementInfo info{};
-                if (is_root_ || !source_->element_info(index_, info) || !info.supports_range) {
-                    return S_OK;
+            case UIA_RangeValueValuePropertyId:
+                if (!is_root_ && child_info.supports_range) {
+                    value->vt = VT_R8;
+                    value->dblVal = child_info.range_value;
                 }
-                value->vt = VT_R8;
-                value->dblVal = info.range_value;
                 return S_OK;
-            }
-            case UIA_RangeValueMinimumPropertyId: {
-                ElementInfo info{};
-                if (is_root_ || !source_->element_info(index_, info) || !info.supports_range) {
-                    return S_OK;
+            case UIA_RangeValueMinimumPropertyId:
+                if (!is_root_ && child_info.supports_range) {
+                    value->vt = VT_R8;
+                    value->dblVal = child_info.range_min;
                 }
-                value->vt = VT_R8;
-                value->dblVal = info.range_min;
                 return S_OK;
-            }
-            case UIA_RangeValueMaximumPropertyId: {
-                ElementInfo info{};
-                if (is_root_ || !source_->element_info(index_, info) || !info.supports_range) {
-                    return S_OK;
+            case UIA_RangeValueMaximumPropertyId:
+                if (!is_root_ && child_info.supports_range) {
+                    value->vt = VT_R8;
+                    value->dblVal = child_info.range_max;
                 }
-                value->vt = VT_R8;
-                value->dblVal = info.range_max;
                 return S_OK;
-            }
             case UIA_RangeValueSmallChangePropertyId:
-                if (!is_root_ && element_role() == ElementRole::slider) {
+                if (!is_root_ && child_info.role == ElementRole::slider) {
                     value->vt = VT_R8;
                     value->dblVal = 1.0;
                 }
                 return S_OK;
             case UIA_RangeValueLargeChangePropertyId:
-                if (!is_root_ && element_role() == ElementRole::slider) {
+                if (!is_root_ && child_info.role == ElementRole::slider) {
                     value->vt = VT_R8;
                     value->dblVal = 10.0;
                 }
@@ -467,6 +515,10 @@ class ElementProvider final : public IRawElementProviderSimple,
                 }
                 return S_OK;
             }
+            ElementInfo info{};
+            if (!child_available(info)) {
+                return UIA_E_ELEMENTNOTAVAILABLE;
+            }
             switch (direction) {
             case NavigateDirection_Parent:
                 *target = make_root_provider().release();
@@ -514,9 +566,17 @@ class ElementProvider final : public IRawElementProviderSimple,
             return S_OK;
         }
 
-        // Child IDs are unique within this fragment. UI Automation scopes
-        // UiaAppendRuntimeId across provider instances.
-        LONG values[] = {UiaAppendRuntimeId, static_cast<LONG>(index_ + 1)};
+        ElementInfo info{};
+        if (!child_available(info)) {
+            return UIA_E_ELEMENTNOTAVAILABLE;
+        }
+
+        // Child IDs use surface/page-scoped runtime IDs when supplied by the
+        // ElementSource so page switches never collide in UIA's fragment cache.
+        const LONG item_runtime_id =
+            info.runtime_id != 0 ? static_cast<LONG>(info.runtime_id)
+                                 : static_cast<LONG>(index_ + 1);
+        LONG values[] = {UiaAppendRuntimeId, item_runtime_id};
         SAFEARRAY* array =
             ::SafeArrayCreateVector(VT_I4, 0, static_cast<ULONG>(_countof(values)));
         if (array == nullptr) {
@@ -565,6 +625,10 @@ class ElementProvider final : public IRawElementProviderSimple,
         if (is_root_) {
             ::SetFocus(window_);
             return S_OK;
+        }
+        ElementInfo info{};
+        if (!child_available(info)) {
+            return UIA_E_ELEMENTNOTAVAILABLE;
         }
         if (!source_->focus_element(index_)) {
             return E_INVALIDARG;
@@ -679,23 +743,25 @@ class ElementProvider final : public IRawElementProviderSimple,
     // ---- IInvokeProvider ----
 
     IFACEMETHODIMP Invoke() override {
-        if (!available() || is_root_) {
-            return run_inside_com_boundary([&]() -> HRESULT {
+        return run_inside_com_boundary([&]() -> HRESULT {
+            ElementInfo info{};
+            if (!child_available(info)) {
                 return UIA_E_ELEMENTNOTAVAILABLE;
-            });
-        }
-        return source_->invoke_element(index_) ? S_OK : E_INVALIDARG;
+            }
+            return source_->invoke_element(index_) ? S_OK : E_INVALIDARG;
+        });
     }
 
     // ---- IToggleProvider ----
 
     IFACEMETHODIMP Toggle() override {
-        if (!available() || is_root_) {
-            return run_inside_com_boundary([&]() -> HRESULT {
+        return run_inside_com_boundary([&]() -> HRESULT {
+            ElementInfo info{};
+            if (!child_available(info)) {
                 return UIA_E_ELEMENTNOTAVAILABLE;
-            });
-        }
-        return source_->toggle_element(index_) ? S_OK : E_INVALIDARG;
+            }
+            return source_->toggle_element(index_) ? S_OK : E_INVALIDARG;
+        });
     }
 
     IFACEMETHODIMP get_ToggleState(enum ToggleState* state) override {
@@ -705,11 +771,8 @@ class ElementProvider final : public IRawElementProviderSimple,
             });
         }
         *state = ToggleState_Off;
-        if (!available() || is_root_) {
-            return UIA_E_ELEMENTNOTAVAILABLE;
-        }
         ElementInfo info{};
-        if (!source_->element_info(index_, info)) {
+        if (!child_available(info)) {
             return UIA_E_ELEMENTNOTAVAILABLE;
         }
         *state = info.toggle_state_on ? ToggleState_On : ToggleState_Off;
@@ -719,21 +782,23 @@ class ElementProvider final : public IRawElementProviderSimple,
     // ---- IExpandCollapseProvider ----
 
     IFACEMETHODIMP Expand() override {
-        if (!available() || is_root_) {
-            return run_inside_com_boundary([&]() -> HRESULT {
+        return run_inside_com_boundary([&]() -> HRESULT {
+            ElementInfo info{};
+            if (!child_available(info)) {
                 return UIA_E_ELEMENTNOTAVAILABLE;
-            });
-        }
-        return source_->expand_element(index_, true) ? S_OK : E_INVALIDARG;
+            }
+            return source_->expand_element(index_, true) ? S_OK : E_INVALIDARG;
+        });
     }
 
     IFACEMETHODIMP Collapse() override {
-        if (!available() || is_root_) {
-            return run_inside_com_boundary([&]() -> HRESULT {
+        return run_inside_com_boundary([&]() -> HRESULT {
+            ElementInfo info{};
+            if (!child_available(info)) {
                 return UIA_E_ELEMENTNOTAVAILABLE;
-            });
-        }
-        return source_->expand_element(index_, false) ? S_OK : E_INVALIDARG;
+            }
+            return source_->expand_element(index_, false) ? S_OK : E_INVALIDARG;
+        });
     }
 
     IFACEMETHODIMP get_ExpandCollapseState(enum ExpandCollapseState* state) override {
@@ -743,11 +808,8 @@ class ElementProvider final : public IRawElementProviderSimple,
             });
         }
         *state = ExpandCollapseState_Collapsed;
-        if (!available() || is_root_) {
-            return UIA_E_ELEMENTNOTAVAILABLE;
-        }
         ElementInfo info{};
-        if (!source_->element_info(index_, info)) {
+        if (!child_available(info)) {
             return UIA_E_ELEMENTNOTAVAILABLE;
         }
         *state = info.expanded ? ExpandCollapseState_Expanded : ExpandCollapseState_Collapsed;
@@ -757,12 +819,13 @@ class ElementProvider final : public IRawElementProviderSimple,
     // ---- IRangeValueProvider ----
 
     IFACEMETHODIMP SetValue(double value) override {
-        if (!available() || is_root_) {
-            return run_inside_com_boundary([&]() -> HRESULT {
+        return run_inside_com_boundary([&]() -> HRESULT {
+            ElementInfo info{};
+            if (!child_available(info)) {
                 return UIA_E_ELEMENTNOTAVAILABLE;
-            });
-        }
-        return source_->set_element_value(index_, value) ? S_OK : E_INVALIDARG;
+            }
+            return source_->set_element_value(index_, value) ? S_OK : E_INVALIDARG;
+        });
     }
 
     IFACEMETHODIMP get_Value(double* value) override {
@@ -772,11 +835,8 @@ class ElementProvider final : public IRawElementProviderSimple,
             });
         }
         *value = 0.0;
-        if (!available() || is_root_) {
-            return UIA_E_ELEMENTNOTAVAILABLE;
-        }
         ElementInfo info{};
-        if (!source_->element_info(index_, info) || !info.supports_range) {
+        if (!child_available(info) || !info.supports_range) {
             return UIA_E_ELEMENTNOTAVAILABLE;
         }
         *value = info.range_value;
@@ -799,13 +859,48 @@ class ElementProvider final : public IRawElementProviderSimple,
         return fixed_range_step(value, 10.0);
     }
 
+    // ---- IValueProvider ----
+
+    IFACEMETHODIMP SetValue(LPCWSTR /*value*/) override {
+        return run_inside_com_boundary([&]() -> HRESULT {
+            ElementInfo info{};
+            if (!child_available(info)) {
+                return UIA_E_ELEMENTNOTAVAILABLE;
+            }
+            return UIA_E_INVALIDOPERATION;
+        });
+    }
+
+    IFACEMETHODIMP get_Value(BSTR* value) override {
+        if (value == nullptr) {
+            return run_inside_com_boundary([&]() -> HRESULT {
+                return E_POINTER;
+            });
+        }
+        *value = nullptr;
+        ElementInfo info{};
+        if (!child_available(info) || !info.supports_value) {
+            return UIA_E_ELEMENTNOTAVAILABLE;
+        }
+        *value =
+            ::SysAllocStringLen(info.value_text.c_str(), static_cast<UINT>(info.value_text.size()));
+        return *value != nullptr ? S_OK : E_OUTOFMEMORY;
+    }
+
+    // Shared by IRangeValueProvider and IValueProvider: sliders are writable,
+    // dropdown value display is read-only.
     IFACEMETHODIMP get_IsReadOnly(BOOL* read_only) override {
         if (read_only == nullptr) {
             return run_inside_com_boundary([&]() -> HRESULT {
                 return E_POINTER;
             });
         }
-        *read_only = FALSE;
+        *read_only = TRUE;
+        ElementInfo info{};
+        if (!child_available(info)) {
+            return UIA_E_ELEMENTNOTAVAILABLE;
+        }
+        *read_only = info.supports_range ? FALSE : TRUE;
         return S_OK;
     }
 
@@ -816,12 +911,23 @@ class ElementProvider final : public IRawElementProviderSimple,
         return source_ != nullptr && window_ != nullptr && !alive_.expired();
     }
 
-    ElementRole element_role() const {
-        ElementInfo info{};
-        if (source_->element_info(index_, info)) {
-            return info.role;
+    bool generation_changed() const noexcept {
+        return !is_root_ && source_ != nullptr
+               && source_->tree_generation() != expected_generation_;
+    }
+
+    bool child_available(ElementInfo& out) const {
+        if (is_root_ || !available() || generation_changed()) {
+            return false;
         }
-        return ElementRole::text;
+        if (!source_->element_info(index_, out)) {
+            return false;
+        }
+        if (has_identity_snapshot_ && !expected_automation_id_.empty()
+            && out.automation_id != expected_automation_id_) {
+            return false;
+        }
+        return true;
     }
 
     // First index at `start` (moving by `step`) whose element the source
@@ -839,25 +945,12 @@ class ElementProvider final : public IRawElementProviderSimple,
         return -1;
     }
 
-    std::wstring element_name() const {
-        ElementInfo info{};
-        if (source_->element_info(index_, info)) {
-            return info.name;
-        }
-        return {};
-    }
-
-    bool element_focusable() const {
-        ElementInfo info{};
-        return source_->element_info(index_, info) && info.focusable;
-    }
-
     bool element_has_focus() const {
         if (is_root_) {
             return ::GetForegroundWindow() == window_ && source_->focused_element() < 0;
         }
         ElementInfo info{};
-        return source_->element_info(index_, info) && info.focused;
+        return child_available(info) && info.focused;
     }
 
     HRESULT range_bound(double* value, RangeMember member) {
@@ -865,11 +958,8 @@ class ElementProvider final : public IRawElementProviderSimple,
             return E_POINTER;
         }
         *value = 0.0;
-        if (!available() || is_root_) {
-            return UIA_E_ELEMENTNOTAVAILABLE;
-        }
         ElementInfo info{};
-        if (!source_->element_info(index_, info) || !info.supports_range) {
+        if (!child_available(info) || !info.supports_range) {
             return UIA_E_ELEMENTNOTAVAILABLE;
         }
         *value = info.*member;
@@ -881,11 +971,8 @@ class ElementProvider final : public IRawElementProviderSimple,
             return E_POINTER;
         }
         *value = 0.0;
-        if (!available() || is_root_) {
-            return UIA_E_ELEMENTNOTAVAILABLE;
-        }
         ElementInfo info{};
-        if (!source_->element_info(index_, info) || !info.supports_range) {
+        if (!child_available(info) || !info.supports_range) {
             return UIA_E_ELEMENTNOTAVAILABLE;
         }
         *value = step;
@@ -896,7 +983,7 @@ class ElementProvider final : public IRawElementProviderSimple,
     HRESULT screen_rect(UiaRect& rect) {
         ElementInfo info{};
         if (!is_root_) {
-            if (!source_->element_info(index_, info)) {
+            if (!child_available(info)) {
                 return UIA_E_ELEMENTNOTAVAILABLE;
             }
         } else {
@@ -924,6 +1011,9 @@ class ElementProvider final : public IRawElementProviderSimple,
     std::weak_ptr<int> alive_;
     bool is_root_;
     int index_;
+    std::uint64_t expected_generation_ = 0;
+    std::wstring expected_automation_id_;
+    bool has_identity_snapshot_ = false;
     std::atomic<LONG> reference_count_;
 };
 
@@ -942,14 +1032,18 @@ LRESULT handle_get_object(HWND window,
     // through to DefWindowProc rather than returning a UIA provider for an
     // MSAA request.
     const DWORD object_id = static_cast<DWORD>(l_param);
-    if (object_id != static_cast<DWORD>(UiaRootObjectId) || !uia_available()) {
+    if (object_id != static_cast<DWORD>(UiaRootObjectId) || !uia_available()
+        || window == nullptr || source == nullptr || !alive_token) {
         return 0;
     }
     try {
         // LresultFromObject semantics: UiaReturnRawElementProvider marshals
         // the provider with its own reference, so this initial reference is
         // released right after the call.
-        auto* root = new ElementProvider(window, source, alive_token, true, -1);
+        auto* root = new (std::nothrow) ElementProvider(window, source, alive_token, true, -1);
+        if (root == nullptr) {
+            return 0;
+        }
         const UiaFunctions& functions = uia_functions();
         const LRESULT result = functions.return_raw(window, w_param, l_param, root);
         root->Release();
@@ -965,7 +1059,7 @@ LRESULT handle_get_object(HWND window,
 void notify_focus_changed(HWND window,
                           ElementSource* source,
                           const std::shared_ptr<int>& alive_token) {
-    if (!uia_available()) {
+    if (!uia_available() || window == nullptr || source == nullptr || !alive_token) {
         return;
     }
     try {
@@ -974,10 +1068,38 @@ void notify_focus_changed(HWND window,
         // Heap instances only: UIA AddRefs/releases providers it is handed,
         // so a stack-allocated provider could be deleted through Release().
         ElementProvider* target =
-            focus < 0 ? new ElementProvider(window, source, alive_token, true, -1)
-                      : new ElementProvider(window, source, alive_token, false, focus);
+            focus < 0
+                ? new (std::nothrow) ElementProvider(window, source, alive_token, true, -1)
+                : new (std::nothrow) ElementProvider(window, source, alive_token, false, focus);
+        if (target == nullptr) {
+            return;
+        }
         (void)functions.raise_event(target, UIA_AutomationFocusChangedEventId);
         target->Release();
+    } catch (...) {
+        // Accessibility events must never disturb the window's own path.
+    }
+}
+
+void notify_structure_changed(HWND window,
+                              ElementSource* source,
+                              const std::shared_ptr<int>& alive_token) {
+    if (window == nullptr || source == nullptr || !alive_token) {
+        return;
+    }
+    const UiaFunctions& functions = uia_functions();
+    if (functions.raise_structure_changed == nullptr) {
+        return;
+    }
+    try {
+        ElementProvider* root =
+            new (std::nothrow) ElementProvider(window, source, alive_token, true, -1);
+        if (root == nullptr) {
+            return;
+        }
+        (void)functions.raise_structure_changed(
+            root, StructureChangeType_ChildrenInvalidated, nullptr, 0);
+        root->Release();
     } catch (...) {
         // Accessibility events must never disturb the window's own path.
     }

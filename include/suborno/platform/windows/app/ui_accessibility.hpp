@@ -37,6 +37,7 @@
 // inside the protected TSF/COM surface.
 
 #include <Windows.h>
+#include <cstdint>
 #include <memory>
 #include <string>
 
@@ -69,6 +70,9 @@ struct ElementInfo {
     std::wstring automation_id;
     /// Accessible description (UIA HelpText); empty = not provided.
     std::wstring help_text;
+    /// Explicit collision-free runtime-ID discriminator within this surface.
+    /// 0 = provider falls back to positional (index + 1).
+    std::uint32_t runtime_id = 0;
     bool focusable = false;
     bool focused = false;
     /// Enabled state (UIA IsEnabled). Defaults to true so existing sources
@@ -86,6 +90,9 @@ struct ElementInfo {
     /// ExpandCollapse pattern (dropdown).
     bool supports_expand_collapse = false;
     bool expanded = false;
+    /// Read-only Value pattern (dropdown selected label).
+    bool supports_value = false;
+    std::wstring value_text;
     /// Invoke pattern (buttons, OSK keys, topbar zones).
     bool supports_invoke = false;
 };
@@ -100,6 +107,11 @@ class ElementSource {
     virtual int element_count() const = 0;
     virtual bool element_info(int index, ElementInfo& out) const = 0;
     virtual int focused_element() const = 0;
+    /// Monotonic generation incremented when fragment children change structurally
+    /// (e.g. tab switch or page rebuild), invalidating prior child proxies.
+    virtual std::uint64_t tree_generation() const {
+        return 0;
+    }
 
     // Actions; index is the element index. Return false when the window
     // cannot act (out of range, wrong kind, transient state).
@@ -124,5 +136,11 @@ LRESULT handle_get_object(HWND window,
 void notify_focus_changed(HWND window,
                           ElementSource* source,
                           const std::shared_ptr<int>& alive_token);
+
+/// Raises UIA structure-changed (ChildrenInvalidated) on the window root
+/// when the fragment subtree changes (e.g. tab switch or page rebuild).
+void notify_structure_changed(HWND window,
+                              ElementSource* source,
+                              const std::shared_ptr<int>& alive_token);
 
 }  // namespace suborno::platform::windows::app::ui_access
