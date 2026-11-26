@@ -6,8 +6,15 @@ if ($PSVersionTable.PSVersion.Major -ne 5 -or $PSVersionTable.PSVersion.Minor -n
 }
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
-$helperPath = Join-Path $PSScriptRoot 'UiaExceptionHelpers.ps1'
-$auditPath = Join-Path (Split-Path $PSScriptRoot -Parent) 'Invoke-SubornoUiAudit.ps1'
+$windowsAuditDirectory = Split-Path -Path $PSScriptRoot -Parent
+$helperPath = Join-Path $windowsAuditDirectory 'UiaExceptionHelpers.ps1'
+$auditPath = Join-Path $windowsAuditDirectory 'Invoke-SubornoUiAudit.ps1'
+if (-not (Test-Path -LiteralPath $helperPath -PathType Leaf)) {
+    throw "Required UIA exception helper not found: $helperPath"
+}
+if (-not (Test-Path -LiteralPath $auditPath -PathType Leaf)) {
+    throw "Required UIA audit script not found: $auditPath"
+}
 . $helperPath
 
 function Assert-Equal {
