@@ -52,6 +52,30 @@ jobs:
       - name: Configure
         run: cmake --preset ubuntu-ci
 
+      - name: Apply clang-format and capture formatted sources
+        run: |
+          mapfile -d '' sources < <(
+            find include src tests benchmarks -type f \
+              \( -name '*.h' -o -name '*.hpp' -o -name '*.cc' -o -name '*.cpp' -o -name '*.cxx' \) -print0
+          )
+          clang-format-23 -i "${sources[@]}"
+          output_dir="$RUNNER_TEMP/clang-format-sources"
+          mkdir -p "$output_dir"
+          while IFS= read -r -d '' source; do
+            target="$output_dir/$source"
+            mkdir -p "$(dirname "$target")"
+            cp -- "$source" "$target"
+          done < <(git diff --name-only -z -- include src tests benchmarks)
+          test -n "$(find "$output_dir" -type f -print -quit)"
+
+      - name: Upload formatted source files
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: clang-format-files-${{ github.run_number }}
+          path: ${{ runner.temp }}/clang-format-sources/
+          if-no-files-found: error
+          retention-days: 1
+
       - name: Check formatting
         run: scripts/check-format-ubuntu.sh
 
@@ -63,7 +87,7 @@ jobs:
 
       - name: Test
         run: |
-          cmake --build --preset ubuntu-ci --target suborno_unit_tests suborno_integration_tests
+          cmake --build --preset ubuntu-ci --target suborno_unit_tests suborno_integration_tests suborno_fuzz_smoke
           ctest --preset ubuntu-ci --output-on-failure
 
       - name: Build
@@ -108,7 +132,7 @@ jobs:
 
       - name: Test
         run: |
-          cmake --build --preset ubuntu-gcc-ci --target suborno_unit_tests suborno_integration_tests
+          cmake --build --preset ubuntu-gcc-ci --target suborno_unit_tests suborno_integration_tests suborno_fuzz_smoke
           ctest --preset ubuntu-gcc-ci --output-on-failure
 
       - name: Build
@@ -307,6 +331,7 @@ jobs:
         run: |
           # Versioned seeds (tests/fuzz/corpus stays read-only; mutations land
           # in /tmp/fuzz-artifacts) + the libFuzzer dictionary from audit #2.
+          mkdir -p /tmp/fuzz-artifacts
           ./build/system-deps/suborno_phonetic_fuzz \
             tests/fuzz/corpus /tmp/fuzz-artifacts \
             -dict=tests/fuzz/dictionaries/phonetic.dict \
