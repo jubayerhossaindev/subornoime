@@ -7,7 +7,7 @@ ENG-CORP-005,probhat,corpus,সুবর্ণ,সুবর্ণ,সুবর�
 ENG-CORP-006,probhat,corpus,কম্পিউটার,কম্পিউটার,কম্পিউটার,PASS,cps=U+0995 U+09AE U+09CD U+09AA U+09BF U+0989 U+099F U+09BE U+09B0; dict_top=
 ENG-CORP-007,probhat,corpus,প্রযুক্তি,প্রযুক্তি,প্রযুক্তি,PASS,cps=U+09AA U+09CD U+09B0 U+09AF U+09C1 U+0995 U+09CD U+09A4 U+09BF; dict_top=
 ENG-CORP-008,probhat,corpus,কীবোর্ড,কীবোর্ড,কীবোর্ড,PASS,cps=U+0995 U+09C0 U+09AC U+09CB U+09B0 U+09CD U+09A1; dict_top=
-ENG-CORP-009,probhat,corpus,অভ্র,অভ্র,অভ্র,PASS,cps=U+0985 U+09AD U+09CD U+09B0; dict_top=
+ENG-CORP-009,probhat,corpus,সুবর্ণ স্মার্ট,সুবর্ণ স্মার্ট,সুবর্ণ স্মার্ট,PASS,cps=U+0985 U+09AD U+09CD U+09B0; dict_top=
 ENG-CORP-010,probhat,corpus,বর্ণ,বর্ণ,বর্ণ,PASS,cps=U+09AC U+09B0 U+09CD U+09A3; dict_top=
 ENG-CORP-011,probhat,corpus,স্বাধীনতা,স্বাধীনতা,স্বাধীনতা,PASS,cps=U+09B8 U+09CD U+09AC U+09BE U+09A7 U+09C0 U+09A8 U+09A4 U+09BE; dict_top=
 ENG-CORP-012,probhat,corpus,বিদ্যালয়,বিদ্যালয়,বিদ্যালয়,PASS,cps=U+09AC U+09BF U+09A6 U+09CD U+09AF U+09BE U+09B2 U+09AF U+09BC; dict_top=
@@ -57,7 +57,7 @@ ENG-EDIT-03,probhat,editing,backspace_on_empty_is_noop,empty,empty,PASS,"no cras
 ENG-COMP-01,probhat,composition,candidate_system,N/A,,NOT_APPLICABLE,fixed layout: snapshot().candidates.empty()=true; ProbhatInputSession returns candidate_out_of_range for commit_candidate()
 ENG-STR-01,probhat,stress,fast_typing_repeat_count,ককককক,ককককক,PASS,single key event with repeat_count=5
 ENG-STR-02,probhat,stress,numbers_in_bangla_text,২০২৬,২০২৬,PASS,top-row digit keys are Bengali numerals in Probhat
-ENG-SW-01,all-6,switching,layout_cycle_no_contamination,,,PASS,"[""suborno-phonetic->আমি ok"",""probhat->বাংলা ok"",""national->তুমি ok"",""khipro->আমি ok"",""avro-phonetic->তুমি ok"",""borno-phonetic->বাংলা ok""]"
+ENG-SW-01,all-6,switching,layout_cycle_no_contamination,,,PASS,"[""suborno-phonetic->আমি ok"",""probhat->বাংলা ok"",""national->তুমি ok"",""khipro->আমি ok"",""suborno-smart->তুমি ok"",""suborno-classic->বাংলা ok""]"
 ENG-SW-02,engine,switching,engine_set_active_layout,"probhat,national","probhat,national",PASS,unknown id rejected: true
 ENG-SW-03,engine,switching,restart_layout_persistence,probhat,probhat,PASS,settings.ini saved with active_layout_id=probhat; a NEW Engine instance (simulated restart) restores it
 ENG-SW-04,suborno+probhat,switching,per_window_session_independence,আমি,আমি | আমি,PASS,switching_mode=per_application_window mirror

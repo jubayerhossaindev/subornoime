@@ -1,0 +1,7 @@
+test_id,bug_or_fix,gtest_id,layout,verdict,run
+REG-01,—,LayoutTypingRegressionTest.SmartUnchangedHeadlines,suborno-smart,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-02,—,SubornoSmartLayoutTest.HandlesAccentKeyOverrides,suborno-smart,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-03,—,SubornoSmartLayoutTest.ConvertsIndependentAndDependentVowels,suborno-smart,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-04,—,SubornoSmartLayoutTest.SupportsRephPhalaAndSpecialSigns,suborno-smart,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-05,—,SubornoSmartLayoutTest.PreservesCaseSensitiveConsonantTokens,suborno-smart,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-06,—,SubornoSmartLayoutTest.PreservesLiteralAndUnknownUnicodeText,suborno-smart,PASS,unit run 2026-11-23 (build/ubuntu-dev)

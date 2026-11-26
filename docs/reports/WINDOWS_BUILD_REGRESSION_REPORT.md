@@ -30,7 +30,7 @@ The historical baseline claim "542 unit tests" was re-verified against reality: 
 | BUG-02 | Topbar tooltip locale strings | Fixed (commit `993968c`) | i18n parity 160/160 executed; tooltip display BLOCKED |
 | BUG-03 | Error/confirmation dialog localization | Fixed (commit `5724528`) | i18n parity executed; dialog display BLOCKED |
 | BUG-04 | Language-changed toast wiring | Fixed (commit `5724528`) | i18n parity executed; toast display BLOCKED |
-| **BUG-05** | Borno display name mixed-script corruption ("Born" + U+09CB) | **Fixed this audit, commit `cf2a0ca`** | New regression test executed in the 543-test suite; on-screen rendering BLOCKED |
+| **BUG-05** | Classic layout display-name mixed-script corruption ("Born" + U+09CB) | **Fixed this audit, commit `cf2a0ca`** | New regression test executed in the 543-test suite; on-screen rendering BLOCKED |
 | **BUG-06** | Default layout drops chandrabindu (পাঁচ→পাচ) | **OPEN — High** | Engine-level reproduction executed; fix is a protected transliteration-engine change — **stopped and reported** per project protection rules |
 
 ## 4. Localization keys

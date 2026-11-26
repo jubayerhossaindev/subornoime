@@ -48,8 +48,8 @@
       "windows_runtime": "BLOCKED"
     },
     {
-      "layout": "borno-phonetic",
-      "display_name": "Borno",
+      "layout": "suborno-classic",
+      "display_name": "Suborno Classic",
       "brief_sequences": {
         "PASS": 11,
         "FAIL": 2
@@ -71,8 +71,8 @@
       "windows_runtime": "BLOCKED"
     },
     {
-      "layout": "avro-phonetic",
-      "display_name": "Avro",
+      "layout": "suborno-smart",
+      "display_name": "Suborno Smart",
       "brief_sequences": {
         "PASS": 10,
         "FAIL": 1

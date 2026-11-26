@@ -65,7 +65,7 @@ close one. **PHASE 2**: GAP-01 partially closed (2 official texts obtained,
 |---|---|
 | Standard | BDS 1738:2018 |
 | Requirement | The layout claiming "national" identity must match the official mapping exactly |
-| Current | National layout REWRITTEN as the positional Jatiyo layout (2026-11-24, PHASE 3): verified key-by-key against the official National Keyboard diagram republished in Unicode L2/19-079 Figure 4 + BornoTSF factual cross-reference (121/121 independent engine rows PASS, BornoTSF WIP status respected, Assamese ৰ/ৱ excluded, GPL facts-only clean-room). Clause-level equivalence to the purchased standard STILL BLOCKED (GAP-01) — diagram evidence is not the clause table |
+| Current | National layout REWRITTEN as the positional Jatiyo layout (2026-11-24, PHASE 3): verified key-by-key against the official National Keyboard diagram republished in Unicode L2/19-079 Figure 4 + legacy reference IME factual cross-reference (121/121 independent engine rows PASS, legacy reference IME WIP status respected, Assamese ৰ/ৱ excluded, GPL facts-only clean-room). Clause-level equivalence to the purchased standard STILL BLOCKED (GAP-01) — diagram evidence is not the clause table |
 | Root cause | GAP-01 (document unavailable) + Bijoy-linked IP question |
 | Severity | High (for any conformance claim); none for current product honesty (no BDS claim is made anywhere) |
 | Impact | UI/docs correctly avoid "BDS 1738 conformant" labels; no fake badge exists |
@@ -95,7 +95,7 @@ close one. **PHASE 2**: GAP-01 partially closed (2 official texts obtained,
 
 | Field | Value |
 |---|---|
-| Items | Borno & Avro lack a standalone-nukta token; Probhat dead-key composition stays literal |
+| Items | Classic & Smart lack a standalone-nukta token; Probhat dead-key composition stays literal |
 | Status | Documented previously; outside this mission's protected scope; unchanged |
 | Severity | Low |
 | Evidence | docs/standards/BD_BENGALI_STANDARD_COMPLIANCE.md §4 (carried forward) |

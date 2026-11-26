@@ -25,11 +25,11 @@ expose as little as possible.
    own header → C system → C++ standard → angle-bracket third parties →
    quoted project headers.
 7. **`#pragma once`** is the include-guard policy for all new headers; classic
-   guards (`SUBORNO_AVRO_PHONETIC_ENGINE_HPP`) are kept where already present.
+   guards (`SUBORNO_SMART_PHONETIC_ENGINE_HPP`) are kept where already present.
 8. **No `using namespace` in headers.** Even in source files, aliases are used
    sparingly and only for long nested platform namespaces.
 9. **No global namespace pollution**: every internal declaration lives in
-   `suborno::*` (or a module namespace like `khipro`, `borno_compat`);
+   `suborno::*` (or a module namespace like `khipro`, `compat`);
    file-local helpers sit in an anonymous namespace.
 10. **Header guard policy** includes license/provenance comments at the top of
     each file (see COMMENT_STANDARDS.md).

@@ -202,7 +202,7 @@ See the [Ubuntu development guide](docs/development/ubuntu.md) for setup details
 ## 🚀 Zero Bengali Language Pack Dependency (standalone mode)
 
 > Install → run → type Bangla anywhere. **No Bengali language pack, no
-> Win+Space, no language bar** — the Avro/Borno usability model, powered by
+> Win+Space, no language bar** — the classic standalone IME usability model, powered by
 > the same portable engine the TSF IME uses.
 
 `SubornoStandalone.exe` (target `suborno_standalone`) intercepts keyboard

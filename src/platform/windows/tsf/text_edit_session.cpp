@@ -74,7 +74,7 @@ HRESULT set_composition_text(TfEditCookie edit_cookie,
 
 // Sets or clears the display attribute on the composition range — the
 
-// BornoTSF parity helpers _SetCompositionDisplayAttributes and
+// legacy reference IME parity helpers _SetCompositionDisplayAttributes and
 
 // _ClearCompositionDisplayAttributes (display/DisplayAttribute.cpp).
 
@@ -324,7 +324,7 @@ STDMETHODIMP_(ULONG) TextCompositionEditSession::Release() {
 STDMETHODIMP TextCompositionEditSession::DoEditSession(TfEditCookie edit_cookie) {
     return run_inside_com_boundary([&]() -> HRESULT {
         if (terminate_) {
-            // BornoTSF _TerminateComposition (composition/EndComposition.cpp):
+            // legacy reference IME _TerminateComposition (composition/EndComposition.cpp):
 
             // clear the display attribute first, then end the composition. The
 
@@ -367,7 +367,7 @@ STDMETHODIMP TextCompositionEditSession::DoEditSession(TfEditCookie edit_cookie)
         }
 
         if (clear_display_attribute_) {
-            // BornoTSF clears the attribute before ending the composition
+            // legacy reference IME clears the attribute before ending the composition
 
             // (EndComposition.cpp:28 _ClearCompositionDisplayAttributes).
 
@@ -384,7 +384,7 @@ STDMETHODIMP TextCompositionEditSession::DoEditSession(TfEditCookie edit_cookie)
             return result;
         }
         if (display_attribute_ != no_display_attribute) {
-            // BornoTSF sets the input attribute after the text update in the same
+            // legacy reference IME sets the input attribute after the text update in the same
 
             // edit session (composition/Composition.cpp:173).
 

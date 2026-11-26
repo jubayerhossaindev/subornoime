@@ -175,8 +175,8 @@ TEST(UIAuditSettingsPages, DefaultLayoutDropdownCoversAllSevenRegisteredLayouts)
 
     const char* ids[] = {"english",
                          "suborno-phonetic",
-                         "borno-phonetic",
-                         "avro-phonetic",
+                         "suborno-classic",
+                         "suborno-smart",
                          "khipro",
                          "probhat",
                          "national"};
@@ -315,9 +315,9 @@ TEST(UIAuditSettingsPages, InputPageEveryControlKeyRoundTripsThroughSave) {
 
     staged.input.layout_switch_shortcut = "Ctrl+Space";  // shortcut dropdown
 
-    staged.phonetic_correction = false;  // BornoTSF compatibility checkbox
+    staged.phonetic_correction = false;  // legacy reference IME compatibility checkbox
 
-    staged.typing_style = "traditional";  // BornoTSF compatibility checkbox
+    staged.typing_style = "traditional";  // legacy reference IME compatibility checkbox
 
     const auto loaded = save_and_reload(file.path, staged);
     ASSERT_EQ(loaded.status, suborno::settings::SettingsStatus::ok) << loaded.error;
@@ -613,7 +613,7 @@ TEST(UIAuditNegative, UnknownSavedLayoutIdCorrectedOnEngineStart) {
 TEST(UIAuditOsk, PreviewLabelsForEveryRegisteredLayout) {
     suborno::core::Engine engine;
     const char* bangla_layouts[] = {
-        "suborno-phonetic", "borno-phonetic", "avro-phonetic", "khipro", "probhat", "national"};
+        "suborno-phonetic", "suborno-classic", "suborno-smart", "khipro", "probhat", "national"};
     // English mode: OSK letters preview as themselves (passthrough).
 
     ASSERT_TRUE(engine.set_active_layout("english"));

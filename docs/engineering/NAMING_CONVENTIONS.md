@@ -42,8 +42,8 @@ own naming.
 2. **The public C API** (`include/suborno/suborno.h`) uses its published
    `SUBORNO_*` / `suborno_*` ABI names — they are external contracts.
 3. **Feature vocabulary** — Bangla keyboard layout names
-   (`borno-phonetic`, `avro-phonetic`, `probhat`, `khipro`, `national`) and the
-   `src/layouts/borno_compat` compatibility module are domain concepts and part
+   (`suborno-classic`, `suborno-smart`, `probhat`, `khipro`, `national`) and the
+   `src/layouts/compat` compatibility module are domain concepts and part
    of the shipped feature surface; they are not "old project" remnants.
 
 ## Meaningful names

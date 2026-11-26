@@ -10,13 +10,11 @@ The current include/suborno + src layout is a sound starting point. Do not perfo
 
 | Project | Verified strengths | Structural / product limitations relevant to SUBORNO |
 |---|---|---|
-| BornoTSF | Native Windows TSF server; separately named composition, core, display, infrastructure, layout parsers, and storage areas; Borno/Avro/Khipro/National/Probhat feature breadth is a useful Windows compatibility checklist. | The implementation is Windows-specific and its current repository is GPL-3.0. Use public behavior and UI/compatibility observations only under the clean-room policy; do not port implementation code or tables. |
-| Avro Keyboard | Mature phonetic workflow, autocorrect, dictionary/spell-checking, layout editor, skin/layout tooling, and a modular Delphi application tree. The upstream repository is MPL-2.0. | Its desktop application is not a portable engine + per-platform adapter architecture. MPL source files and mapping assets have source-file obligations; they are not automatically suitable for an MIT clean-room rewrite. |
+| Legacy reference IME | Native Windows TSF server; separately named composition, core, display, infrastructure, layout parsers, and storage areas; Classic/Smart/Khipro/National/Probhat feature breadth is a useful Windows compatibility checklist. | The implementation is Windows-specific and its current repository is GPL-3.0. Use public behavior and UI/compatibility observations only under the clean-room policy; do not port implementation code or tables. |
+| Legacy phonetic reference | Mature phonetic workflow, autocorrect, dictionary/spell-checking, layout editor, skin/layout tooling, and a modular Delphi application tree. The upstream repository is MPL-2.0. | Its desktop application is not a portable engine + per-platform adapter architecture. MPL source files and mapping assets have source-file obligations; they are not automatically suitable for an MIT clean-room rewrite. |
 | Bongo | Shared Rust phonetic engine exposed via C FFI; offline lexicon; distinct macOS InputMethodKit, Linux IBus/Fcitx 5, and Windows service/application trees; release and platform validation documentation. | Its documented Windows frontend uses a low-level keyboard hook and SendInput rather than Windows TSF. That is not the Windows integration model selected for SUBORNO. Its architecture is a useful reference for cross-platform separation, not a design to copy wholesale. |
 
 Reference repositories and documents:
-- BornoTSF: https://github.com/JayedAhsan/BornoTSF
-- Avro Keyboard: https://github.com/mugli/Avro-Keyboard
 - Bongo architecture: https://github.com/mehedishakeel/Bongo/blob/main/docs/ARCHITECTURE.md
 - Bongo validation: https://github.com/mehedishakeel/Bongo/blob/main/docs/VALIDATION.md
 
@@ -83,7 +81,7 @@ Keep the existing repository root and migrate the internals toward these logical
     tests/
       unit/
       integration/
-      linguistic/{borno,avro,national,probhat,khipro}/
+      linguistic/{classic,smart,national,probhat,khipro}/
       system/windows/
       fuzz/
       fixtures/
@@ -171,7 +169,7 @@ A release cannot be called production-ready until every gate is evidenced:
 |---|---|
 | Build | Clean Release and Debug builds on supported Windows 10/11 x64 with MSVC v143; reproducible configure/build instructions. |
 | Tests | Unit, integration, linguistic corpus, property, fuzz smoke, and Windows TSF contract tests pass. No skipped tests caused by failed compilation. |
-| Linguistic compatibility | Versioned input/output corpus for Suborno, Borno regular behavior, Avro behavior, National, Probhat, and Khipro. Every unsupported case is explicit. |
+| Linguistic compatibility | Versioned input/output corpus for Suborno, Classic regular behavior, Smart behavior, National, Probhat, and Khipro. Every unsupported case is explicit. |
 | Unicode | Malformed UTF-8, NFC behavior, Bengali conjuncts, nukta forms, ZWJ/ZWNJ, EGC backspace, emoji, cursor and selection edge cases. |
 | Host compatibility | Interactive test matrix across supported Windows applications and input contexts. |
 | Reliability | No crash/hang on focus switching, app close during composition, TSF deactivate, corrupt settings/database, long input, or rapid layout switching. |
@@ -186,7 +184,7 @@ A release cannot be called production-ready until every gate is evidenced:
 2. Freeze layout API v1 and define logical-vs-physical key events.
 3. Implement real physical National and Probhat maps using independently verified published key-position corpora.
 4. Extract candidate collection/ranking into a shared language service and remove phonetic-specific generic dependencies.
-5. Complete Avro and Borno compatibility against versioned clean-room corpora; add Khipro as an independent compositional engine.
+5. Complete Smart and Classic compatibility against versioned clean-room corpora; add Khipro as an independent compositional engine.
 6. Finish Windows TSF lifecycle, candidate UIElement/window, display attributes, per-context switching, settings consumption, and native UX.
 7. Complete dictionary, autocorrect, personal vocabulary, learning controls, and corruption recovery.
 8. Add interactive Windows host matrix, fuzz/regression automation, and measured performance baselines.

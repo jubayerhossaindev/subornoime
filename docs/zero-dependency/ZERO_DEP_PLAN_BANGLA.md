@@ -15,14 +15,14 @@ input-language মডেলের ভেতর দিয়ে কাজ কর�
 3. কোনো কোনো মেশিনে বাংলা ইনপুট চালু করতে **Bengali Language Pack/feature** চায়।
 
 কিন্তু বাস্তব ব্যবহারকারী (আমাদের টার্গেট ইউজার) কখনো Win+Space ব্যবহার করেন না।
-তিনি অভ্যস্ত **Bijoy, Avro Keyboard, Borno**-র মডেলে: সফটওয়্যার ইনস্টল → চালু →
+তিনি অভ্যস্ত **Bijoy এবং জনপ্রিয় স্ট্যান্ডঅ্যালোন বাংলা কিবোর্ড**-এর মডেলে: সফটওয়্যার ইনস্টল → চালু →
 যেকোনো অ্যাপে সরাসরি বাংলা। ভাষা প্যাক নেই, Win+Space নেই, ভাষা-বারে হাত যায় না।
 সুতরাং "Zero Bengali Language Pack Dependency" শুধু সুবিধা নয় — এটা বাজারে টিকে
 থাকার **প্রবেশদ্বার শর্ত (entry condition)**।
 
 ## ২. প্রতিযোগীদের মেকানিজম — গভীর গবেষণা
 
-### ২.১ Avro Keyboard (OmicronLab)
+### ২.১ রেফারেন্স ওপেন-সোর্স ফনেটিক কিবোর্ড
 
 - প্রোডাক্ট পাতা নিজেই বলছে: *'Write anywhere "ami banglay gan gai", it will be
   automatically typed — "আমি বাংলায় গান গাই"'* + **Floating Preview Window**
@@ -31,14 +31,14 @@ input-language মডেলের ভেতর দিয়ে কাজ কর�
   ইন্টারসেপ্ট করে, নিজের phonetic ইঞ্জিনে ট্রান্সলিটারেট করে, আর টেক্সট
   ইনজেক্ট করে (SendInput/Unicode পাইপলাইন)। ফলে ভাষা প্যাক, ভাষা বার বা
   Win+Space-এর প্রয়োজনই পড়ে না। ডিফল্ট টগল শর্টকাট **F12** (পরে বদলানো যায়)।
-- সূত্র: omicronlab.com/avro-keyboard.html; Bengali input methods (Wikipedia)।
+- সূত্র: Bengali input methods (Wikipedia)।
 
-### ২.২ Borno (CodePotro, Windows)
+### ২.২ রেফারেন্স রিটেইল IME (Windows)
 
 - প্রোডাক্ট পাতা: *"Get instant transliteration results as you type. Press the
   **F10** key to instantly switch between Bangla and English modes"* — অর্থাৎ
   এখানেও ইনপুট সুইচ Windows-এর ভাষা মডেলে নয়, **অ্যাপের নিজের হটকিতে** হয়।
-- সূত্র: codepotro.com/borno।
+- সূত্র: codepotro.com।
 
 ### ২.৩ Bijoy (Ananda Computers)
 
@@ -58,7 +58,7 @@ input-language মডেলের ভেতর দিয়ে কাজ কর�
 
 ### ২.৫ তুলনা টেবিল
 
-| বৈশিষ্ট্য | Bijoy | Avro | Borno | Suborno TSF (আগে) | Suborno Standalone (এখন) |
+| বৈশিষ্ট্য | বৈশিষ্ট্য | Bijoy | রেফারেন্স ফনেটিক | রিটেইল রেফারেন্স | Suborno TSF (আগে) | Suborno Standalone (এখন) |
 | --- | --- | --- | --- | --- | --- |
 | ভাষা প্যাক লাগে? | না | না | না | **হ্যাঁ (ভাষা কার্ড)** | **না** |
 | Win+Space লাগে? | না (লেআউট সুইচ) | না (F12) | না (F10) | **হ্যাঁ** | **না (Ctrl+Alt+B)** |
@@ -80,7 +80,7 @@ transliteration প্রায় অসম্ভব; (২) আমাদের 
 layout ড্রাইভার লেখা ও সাইন করা আলাদা বড় প্রকল্প; (৪) বাংলা ডিজিট/যতি ইত্যাদির
 ম্যাপিং সীমিত।
 
-### রাস্তা C: standalone host — হুক + SendInput (Avro/Borno মডেল) — **নির্বাচিত**
+### রাস্তা C: standalone host — হুক + SendInput (Smart/Classic মডেল) — **নির্বাচিত**
 
 একটি স্বতন্ত্র `SubornoStandalone.exe`:
 `WH_KEYBOARD_LL` হুক → একই portable ইঞ্জিন (`suborno_core`) দিয়ে ট্রান্সলিটারেট
@@ -92,7 +92,7 @@ layout ড্রাইভার লেখা ও সাইন করা আল�
 1. **একই ইঞ্জিন, দুটি শেল** — TSF IME-র সব বুদ্ধি (suborno_core: layouts,
    candidate engine, dictionary, learning) অবিকৃত থেকে পুনঃব্যবহৃত হয়; আমরা
    শুধু "ড্রাইভিং লেয়ার" বদলাই।
-2. **ব্যবহারকারীর মানসিক মডেল** — Avro/Borno ব্যবহারকারী শূন্য শেখায় চালাতে পারবে।
+2. **ব্যবহারকারীর মানসিক মডেল** — Smart/Classic ব্যবহারকারী শূন্য শেখায় চালাতে পারবে।
 3. **ঝুঁকি বিচ্ছিন্নকরণ** — TSF পাইপলাইন (MSVC-WARNINGS-REPAIR-02 সহ) এক মিলিমিটারও
    বদলায় না; নতুন কোড পুরোপুরি additive।
 4. **একই settings.ini + dictionary** — TSF শেল ও standalone শেল এক কনফিগ শেয়ার
@@ -101,10 +101,10 @@ layout ড্রাইভার লেখা ও সাইন করা আল�
 **ট্রেড-অফ (সৎ স্বীকারকরণ):** elevated (admin) অ্যাপে non-admin হুক-প্রসেস UIPI-র
 কারণে টাইপ করতে পারে না; RAW INPUT-নির্ভর কিছু গেমে SendInput কাজ নাও করতে পারে;
 UWP অ্যাপে WM_CHAR আচরণ ভিন্ন হতে পারে। এই ক্ষেত্রে TSF IME mode-ই উত্তর — তাই
-দুই mode-ই রাখা হয়েছে (Avro-ও তার "System Keyboard/compatibility" পথ রাখে)।
+দুই mode-ই রাখা হয়েছে (রেফারেন্স ফনেটিক কিবোর্ডও তার "System Keyboard/compatibility" পথ রাখে)।
 
 **Win+Space কি থাকবে?** TSF IME mode-এ থাকবে (ওটা Windows-এর মডেল), standalone
-mode-এ দরকারই নেই — টগল হটকি (ডিফল্ট Ctrl+Alt+B; Avro-র F12 ব্রাউজার devtools-এর
+mode-এ দরকারই নেই — টগল হটকি (ডিফল্ট Ctrl+Alt+B; F12 ব্রাউজার devtools-এর
 সাথে, Ctrl+Space VS IntelliSense-এর সাথে সংঘর্ষের ঝুঁকিতে এটি বেছে নেওয়া হয়েছে,
 `standalone.ini`-তে বদলানো যায়)।
 
@@ -136,7 +136,7 @@ Win32 এক্সিকিউশন
 3. `space` → গিলে ফেলা হয় → ৩টি backspace ইনজেক্ট → "আমি" ইনজেক্ট →
    VK_SPACE আবার ইনজেক্ট → স্ক্রিনে ফলাফল: "আমি "।
 
-**কেন retroactive replacement (Avro-স্টাইল) বেছে নিলাম, "সব কী গিলে ফেলা" নয়:**
+**কেন retroactive replacement (রেট্রোঅ্যাকটিভ স্টাইল) বেছে নিলাম, "সব কী গিলে ফেলা" নয়:**
 কী-গিলে-ফেলা মডেলে টাইপ করার সময় স্ক্রিনে কিছুই দেখা যায় না (টাইপিং অন্ধ হয়ে
 যায়), আর যতিচিহ্ন/মিক্সড ইনপুটে ভঙ্গুর। Retroactive মডেলে ইউজার সবসময় তার
 কীস্ট্রোক দেখে; বাংলা রূপ প্রিভিউ উইন্ডোতে থাকে; কমিটে একবারে বসে যায়।
@@ -181,6 +181,6 @@ Win32 এক্সিকিউশন
   প্রতি-অ্যাপ নীরব তালিকা (exclude list), UIAccess ম্যানিফেস্ট দিয়ে elevated
   সাপোর্ট, সেটিংস অ্যাপে "Standalone" পাতা।
 
-সূত্র: omicronlab.com/avro-keyboard.html · codepotro.com/borno ·
+সূত্র: en.wikipedia.org/wiki/Bengali_input_methods ·
 en.wikipedia.org/wiki/Bengali_input_methods ·
 support.microsoft.com (manage language and keyboard/input layout settings)

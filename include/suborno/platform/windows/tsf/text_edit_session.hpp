@@ -36,7 +36,7 @@ class TextCompositionEditSession final : public ITfEditSession {
 
     // range's GUID_PROP_ATTRIBUTE property to that guid atom inside the same
 
-    // edit session — the BornoTSF parity behaviour
+    // edit session — the legacy reference IME parity behaviour
 
     /// (_SetCompositionDisplayAttributes in display/DisplayAttribute.cpp).
 
@@ -58,7 +58,7 @@ class TextCompositionEditSession final : public ITfEditSession {
                                       bool clear_display_attribute = false);
     // Ends the composition without touching its text: clears the display
 
-    // attribute on the composition range, then EndComposition. The BornoTSF
+    // attribute on the composition range, then EndComposition. The legacy reference IME
 
     // parity behaviour of _TerminateComposition/_EndComposition
 

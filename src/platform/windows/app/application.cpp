@@ -149,8 +149,8 @@ struct LayoutOption {
 constexpr std::array<LayoutOption, 7> layouts{{
     {"english", L"English"},
     {"suborno-phonetic", L"বাংলা (Suborno)"},
-    {"borno-phonetic", L"বাংলা (Borno)"},
-    {"avro-phonetic", L"Avro"},
+    {"suborno-classic", L"বাংলা (Suborno Classic)"},
+    {"suborno-smart", L"Suborno Smart"},
     {"khipro", L"Khipro"},
     {"probhat", L"Probhat"},
     {"national", L"National"},
@@ -2556,9 +2556,9 @@ class Application final : public ui_access::ElementSource {
                           staged_.input.disable_encoding_shortcut));
         input.push_back(make_section(
             536,
-            ui::text("settings.section.borno_compatibility", L"BornoTSF Compatibility"),
-            ui::text("settings.hint.borno_compatibility",
-                     L"Typing behaviour shared with the BornoTSF keyboard.")));
+            ui::text("settings.section.compatibility", L"legacy reference IME Compatibility"),
+            ui::text("settings.hint.compatibility",
+                     L"Typing behaviour shared with the legacy reference IME keyboard.")));
         input.push_back(make_checkbox(
             action_phonetic_correction,
             562,
@@ -3569,7 +3569,7 @@ class Application final : public ui_access::ElementSource {
 
     // Global shortcut: advance to the next layout in the visible order
 
-    // (English → বাংলা (Suborno) → বাংলা (Borno) → …).
+    // (English → বাংলা (Suborno) → বাংলা (Suborno Classic) → …).
 
     void cycle_layout() {
         const std::string active = engine_->active_layout_id();

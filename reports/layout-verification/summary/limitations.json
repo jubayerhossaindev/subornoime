@@ -21,8 +21,8 @@
       "resolution_evidence": "reports/layout-fixes/KHIPRO_PROBHAT_BDS_FIX_REPORT.md, reports/layout-fixes/KHIPRO_PROBHAT_REGRESSION_RESULTS.csv, docs/specifications/probhat-keymap.md"
     },
     {
-      "id": "LIM-BORNO-AVRO-STANDALONE-NUKTA",
-      "layout": "borno-phonetic, avro-phonetic",
+      "id": "LIM-CLASSIC-SMART-STANDALONE-NUKTA",
+      "layout": "suborno-classic, suborno-smart",
       "item": "standalone ় and generic ক়",
       "classification": "capability note (nukta only via dedicated য়/ড়/ঢ় tokens)",
       "impact": "minor; not covered by brief-mandated tests",
@@ -30,15 +30,15 @@
     },
     {
       "id": "LIM-BRIEF-CONVENTION-MISMATCH",
-      "layout": "borno-phonetic, avro-phonetic",
-      "item": "brief sequences Ta;i / mo;i (Borno) and t'' (Avro) do not match implementation conventions",
+      "layout": "suborno-classic, suborno-smart",
+      "item": "brief sequences Ta;i / mo;i (Classic) and t'' (Smart) do not match implementation conventions",
       "classification": "brief-vs-implementation convention difference; NOT an engine defect",
       "engine_correct": {
-        "borno-phonetic": {
+        "suborno-classic": {
           "Tai": "টাই",
           "moi": "মই"
         },
-        "avro-phonetic": {
+        "suborno-smart": {
           "t``": "ৎ"
         }
       },

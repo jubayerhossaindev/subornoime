@@ -10,7 +10,7 @@
 
 // exist in Settings, and Win+Space (or the language bar) switches to it. The
 
-// tools this project competes with — Avro Keyboard (hook + SendInput +
+// tools this project competes with — legacy standalone keyboards (hook + SendInput +
 
 // floating preview), instant-switch hook-based IMEs, keyboard-layout
 

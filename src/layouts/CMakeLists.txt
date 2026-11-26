@@ -12,7 +12,7 @@ target_link_libraries(suborno_layout_sessions PUBLIC
 )
 suborno_configure_target(suborno_layout_sessions)
 
-add_subdirectory(borno_compat)
+add_subdirectory(compat)
 add_subdirectory(phonetic)
 add_subdirectory(english)
 add_subdirectory(khipro)

@@ -147,31 +147,31 @@ Running main() from /tmp/googletest-1.15.2/googletest/src/gtest_main.cc
 [       OK ] KeyEventTest.DistinguishesUnavailableLogicalTextFromAnEmptyTranslation (0 ms)
 [----------] 11 tests from KeyEventTest (0 ms total)
 
-[----------] 5 tests from BornoPhoneticLayoutTest
-[ RUN      ] BornoPhoneticLayoutTest.ConvertsIndependentAndDependentVowels
-[       OK ] BornoPhoneticLayoutTest.ConvertsIndependentAndDependentVowels (0 ms)
-[ RUN      ] BornoPhoneticLayoutTest.PreservesCaseSensitiveConsonantTokens
-[       OK ] BornoPhoneticLayoutTest.PreservesCaseSensitiveConsonantTokens (0 ms)
-[ RUN      ] BornoPhoneticLayoutTest.ComposesConsonantRunsAndExplicitControls
-[       OK ] BornoPhoneticLayoutTest.ComposesConsonantRunsAndExplicitControls (0 ms)
-[ RUN      ] BornoPhoneticLayoutTest.EscapesLiteralGraphemesAndPreservesUnknownText
-[       OK ] BornoPhoneticLayoutTest.EscapesLiteralGraphemesAndPreservesUnknownText (0 ms)
-[ RUN      ] BornoPhoneticLayoutTest.ExposesIndependentCandidateIdentity
-[       OK ] BornoPhoneticLayoutTest.ExposesIndependentCandidateIdentity (0 ms)
-[----------] 5 tests from BornoPhoneticLayoutTest (0 ms total)
+[----------] 5 tests from SubornoClassicLayoutTest
+[ RUN      ] SubornoClassicLayoutTest.ConvertsIndependentAndDependentVowels
+[       OK ] SubornoClassicLayoutTest.ConvertsIndependentAndDependentVowels (0 ms)
+[ RUN      ] SubornoClassicLayoutTest.PreservesCaseSensitiveConsonantTokens
+[       OK ] SubornoClassicLayoutTest.PreservesCaseSensitiveConsonantTokens (0 ms)
+[ RUN      ] SubornoClassicLayoutTest.ComposesConsonantRunsAndExplicitControls
+[       OK ] SubornoClassicLayoutTest.ComposesConsonantRunsAndExplicitControls (0 ms)
+[ RUN      ] SubornoClassicLayoutTest.EscapesLiteralGraphemesAndPreservesUnknownText
+[       OK ] SubornoClassicLayoutTest.EscapesLiteralGraphemesAndPreservesUnknownText (0 ms)
+[ RUN      ] SubornoClassicLayoutTest.ExposesIndependentCandidateIdentity
+[       OK ] SubornoClassicLayoutTest.ExposesIndependentCandidateIdentity (0 ms)
+[----------] 5 tests from SubornoClassicLayoutTest (0 ms total)
 
-[----------] 5 tests from AvroPhoneticLayoutTest
-[ RUN      ] AvroPhoneticLayoutTest.ConvertsIndependentAndDependentVowels
-[       OK ] AvroPhoneticLayoutTest.ConvertsIndependentAndDependentVowels (0 ms)
-[ RUN      ] AvroPhoneticLayoutTest.PreservesCaseSensitiveConsonantTokens
-[       OK ] AvroPhoneticLayoutTest.PreservesCaseSensitiveConsonantTokens (0 ms)
-[ RUN      ] AvroPhoneticLayoutTest.HandlesAccentKeyOverrides
-[       OK ] AvroPhoneticLayoutTest.HandlesAccentKeyOverrides (0 ms)
-[ RUN      ] AvroPhoneticLayoutTest.SupportsRephPhalaAndSpecialSigns
-[       OK ] AvroPhoneticLayoutTest.SupportsRephPhalaAndSpecialSigns (0 ms)
-[ RUN      ] AvroPhoneticLayoutTest.PreservesLiteralAndUnknownUnicodeText
-[       OK ] AvroPhoneticLayoutTest.PreservesLiteralAndUnknownUnicodeText (0 ms)
-[----------] 5 tests from AvroPhoneticLayoutTest (0 ms total)
+[----------] 5 tests from SubornoSmartLayoutTest
+[ RUN      ] SubornoSmartLayoutTest.ConvertsIndependentAndDependentVowels
+[       OK ] SubornoSmartLayoutTest.ConvertsIndependentAndDependentVowels (0 ms)
+[ RUN      ] SubornoSmartLayoutTest.PreservesCaseSensitiveConsonantTokens
+[       OK ] SubornoSmartLayoutTest.PreservesCaseSensitiveConsonantTokens (0 ms)
+[ RUN      ] SubornoSmartLayoutTest.HandlesAccentKeyOverrides
+[       OK ] SubornoSmartLayoutTest.HandlesAccentKeyOverrides (0 ms)
+[ RUN      ] SubornoSmartLayoutTest.SupportsRephPhalaAndSpecialSigns
+[       OK ] SubornoSmartLayoutTest.SupportsRephPhalaAndSpecialSigns (0 ms)
+[ RUN      ] SubornoSmartLayoutTest.PreservesLiteralAndUnknownUnicodeText
+[       OK ] SubornoSmartLayoutTest.PreservesLiteralAndUnknownUnicodeText (0 ms)
+[----------] 5 tests from SubornoSmartLayoutTest (0 ms total)
 
 [----------] 6 tests from KhiproLayoutTest
 [ RUN      ] KhiproLayoutTest.BasicConsonantAndVowelComposition
@@ -287,12 +287,12 @@ Running main() from /tmp/googletest-1.15.2/googletest/src/gtest_main.cc
 [       OK ] EngineTest.RegistersAndSwitchesLayouts (0 ms)
 [ RUN      ] EngineTest.CreatesSessionsThroughStatelessInputLayoutFactory
 [       OK ] EngineTest.CreatesSessionsThroughStatelessInputLayoutFactory (0 ms)
-[ RUN      ] EngineTest.RegistersAndCreatesBornoPhoneticSessions
-[       OK ] EngineTest.RegistersAndCreatesBornoPhoneticSessions (0 ms)
+[ RUN      ] EngineTest.RegistersAndCreatesSubornoClassicSessions
+[       OK ] EngineTest.RegistersAndCreatesSubornoClassicSessions (0 ms)
 [ RUN      ] EngineTest.RegistersAndCreatesKhiproCompositionalSessions
 [       OK ] EngineTest.RegistersAndCreatesKhiproCompositionalSessions (0 ms)
-[ RUN      ] EngineTest.RegistersAndCreatesAvroPhoneticSessions
-[       OK ] EngineTest.RegistersAndCreatesAvroPhoneticSessions (0 ms)
+[ RUN      ] EngineTest.RegistersAndCreatesSubornoSmartSessions
+[       OK ] EngineTest.RegistersAndCreatesSubornoSmartSessions (0 ms)
 [ RUN      ] EngineTest.CandidateEngineAddsDictionaryExactMatches
 [       OK ] EngineTest.CandidateEngineAddsDictionaryExactMatches (1 ms)
 [ RUN      ] EngineTest.CandidateEngineDeduplicatesCanonicalText
@@ -422,12 +422,12 @@ Running main() from /tmp/googletest-1.15.2/googletest/src/gtest_main.cc
 [       OK ] LayoutTypingRegressionTest.KhiproNuktaKeepsTheConsonantRunAlive (0 ms)
 [ RUN      ] LayoutTypingRegressionTest.KhiproDigitsAndHeadlines
 [       OK ] LayoutTypingRegressionTest.KhiproDigitsAndHeadlines (0 ms)
-[ RUN      ] LayoutTypingRegressionTest.BornoAccentKeyBreaksVowelCollisions
-[       OK ] LayoutTypingRegressionTest.BornoAccentKeyBreaksVowelCollisions (0 ms)
+[ RUN      ] LayoutTypingRegressionTest.ClassicAccentKeyBreaksVowelCollisions
+[       OK ] LayoutTypingRegressionTest.ClassicAccentKeyBreaksVowelCollisions (0 ms)
 [ RUN      ] LayoutTypingRegressionTest.ProbhatSessionCommitMatchesTransliterateEncoding
 [       OK ] LayoutTypingRegressionTest.ProbhatSessionCommitMatchesTransliterateEncoding (0 ms)
-[ RUN      ] LayoutTypingRegressionTest.AvroUnchangedHeadlines
-[       OK ] LayoutTypingRegressionTest.AvroUnchangedHeadlines (0 ms)
+[ RUN      ] LayoutTypingRegressionTest.SmartUnchangedHeadlines
+[       OK ] LayoutTypingRegressionTest.SmartUnchangedHeadlines (0 ms)
 [----------] 14 tests from LayoutTypingRegressionTest (0 ms total)
 
 [----------] 12 tests from ProbhatLayoutTest
@@ -1209,10 +1209,10 @@ Running main() from /tmp/googletest-1.15.2/googletest/src/gtest_main.cc
 [       OK ] CoverageFinalGapsTest.SubornoGenerateCandidatesOnEmptyInputYieldsThePrimaryCandidate (0 ms)
 [ RUN      ] CoverageFinalGapsTest.SubornoGenerateCandidatesChAlternatesYieldMultipleCandidates
 [       OK ] CoverageFinalGapsTest.SubornoGenerateCandidatesChAlternatesYieldMultipleCandidates (0 ms)
-[ RUN      ] CoverageFinalGapsTest.BornoTransliterateBackslashEscapesAndTrailingBackslashIsLiteral
-[       OK ] CoverageFinalGapsTest.BornoTransliterateBackslashEscapesAndTrailingBackslashIsLiteral (0 ms)
-[ RUN      ] CoverageFinalGapsTest.BornoTransliterateHandlesTwoThreeAndFourByteUtf8Sequences
-[       OK ] CoverageFinalGapsTest.BornoTransliterateHandlesTwoThreeAndFourByteUtf8Sequences (0 ms)
+[ RUN      ] CoverageFinalGapsTest.ClassicTransliterateBackslashEscapesAndTrailingBackslashIsLiteral
+[       OK ] CoverageFinalGapsTest.ClassicTransliterateBackslashEscapesAndTrailingBackslashIsLiteral (0 ms)
+[ RUN      ] CoverageFinalGapsTest.ClassicTransliterateHandlesTwoThreeAndFourByteUtf8Sequences
+[       OK ] CoverageFinalGapsTest.ClassicTransliterateHandlesTwoThreeAndFourByteUtf8Sequences (0 ms)
 [ RUN      ] CoverageFinalGapsTest.RuleBasedLayoutConstructorRejectsInvalidTokenTables
 [       OK ] CoverageFinalGapsTest.RuleBasedLayoutConstructorRejectsInvalidTokenTables (0 ms)
 [ RUN      ] CoverageFinalGapsTest.NationalLayoutPassesUnmappedBytesAndDecodesBengaliOutput

@@ -10,7 +10,7 @@
   <description>
     <p>
       Suborno is a native Bengali (Bangla) input method built with modern
-      C++20. It provides phonetic composition (Suborno, Borno, Avro mapping
+      C++20. It provides phonetic composition (Suborno, Classic, Smart mapping
       families), the Probhat, Khipro and Bangladesh national keyboard
       layouts, Unicode-aware candidate ranking, spell correction and a
       SQLite-backed personal dictionary that learns from committed text.

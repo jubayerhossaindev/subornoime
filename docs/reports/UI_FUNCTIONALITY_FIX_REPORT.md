@@ -16,7 +16,7 @@ functional on Windows (reserved system chords), it is not offered in the UI.
 |---|---|
 | Double-clicking the desktop icon opened the Settings window directly | Launch now honors the stored `start_mode`: topbar / system tray / settings window / last state (`apply_start_mode()` in `application.cpp`). Default (`last-state`) shows the floating topbar — the main UI. A second instance (double-click while running) posts `kSecondInstanceShowTopbar`, revealing the topbar instead of resurrecting the settings window. |
 | Topbar menu options not reliably working | Topbar zones re-anchored to the right edge of an auto-sized pill; mode zone opens the layout list, wrench opens Settings / Change Font / About, close opens System Tray / Exit. Every path calls a real handler (`handle_click`, `topbar.cpp`). |
-| Topbar label truncation ("Suborno Phon…") | The pill now measures its label with `GetTextExtentPoint32W` and resizes itself (`measure_width` / `update_window_width`), so long names like বাংলা (Bornো) fit. Tray left-click reveals the topbar (`show_topbar()`). |
+| Topbar label truncation ("Suborno Phon…") | The pill now measures its label with `GetTextExtentPoint32W` and resizes itself (`measure_width` / `update_window_width`), so long names like বাংলা (Suborno Classic) fit. Tray left-click reveals the topbar (`show_topbar()`). |
 
 ## 2. Settings dropdown & close options (Requirement 2)
 
@@ -68,7 +68,7 @@ functional on Windows (reserved system chords), it is not offered in the UI.
 ## 5. Simple layout naming (Requirement 5)
 
 - The word **"Phonetic" is gone from every user-visible layout name**:
-  English, বাংলা (Suborno), বাংলা (Bornো), Avro, Khipro, Probhat, National.
+  English, বাংলা (Suborno), বাংলা (Suborno Classic), Suborno Smart, Khipro, Probhat, National.
 - Engine metadata (`engine.cpp`) and the shell's layout list
   (`kLayouts` in `application.cpp`) are kept in sync; the topbar label, tray
   submenu, settings dropdown, and hotkey cycling all render these names.

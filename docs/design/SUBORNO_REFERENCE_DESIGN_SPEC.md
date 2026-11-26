@@ -1,8 +1,8 @@
-# Suborno Reference Design Spec — Borno-style Dark UI
+# Suborno Reference Design Spec — Reference Dark UI
 
 Date: 2026-11-21
 Basis: measured values from the 24 reference screenshots (see
-`docs/research/BORNOTSF_UI_UX_REFERENCE_ANALYSIS.md` §3). Items marked
+`docs/research/UI_UX_REFERENCE_ANALYSIS.md` §3). Items marked
 **[M]** are measured; **[I]** are the smallest reasonable visual
 inference where the screenshots do not allow exact extraction.
 

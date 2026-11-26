@@ -27,7 +27,7 @@ the type obvious to a new developer.
 6. **Pimpl / internal state types** carry the owning concept:
    `Dictionary::DictionaryStorage`, `OskWindow::OskWindowState`,
    `Topbar::TopbarWindowState`, `ToastWindow::ToastWindowState`,
-   `BornoPhoneticLayout::PhoneticEngineState` — never a bare `Impl`.
+   `SubornoClassicLayout::PhoneticEngineState` — never a bare `Impl`.
 7. **Enum classes only** (`enum class`); no unscoped enums in new code.
 8. **Templates** use descriptive parameters:
    `template <typename ElementType, typename AllocatorType>`,

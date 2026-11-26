@@ -1,7 +1,7 @@
 #pragma once
 
 // Caret-following floating preview for the standalone typing host — the same
-// UX Avro Keyboard's "Floating Preview Window" popularised: while the user
+// UX legacy standalone keyboards' "Floating Preview Window" popularised: while the user
 // types latin letters, the live Bangla conversion appears right at the text
 // caret before the commit key is pressed. The window never steals focus
 // (WS_EX_NOACTIVATE), so typing flow is uninterrupted.

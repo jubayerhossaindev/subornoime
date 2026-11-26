@@ -1,9 +1,9 @@
-# Phonetic layout family: Suborno/Borno/Avro mappings, parser, tokenizer
+# Phonetic layout family: Suborno/Classic/Smart mappings, parser, tokenizer
 # and the phonetic input session.
 add_library(suborno_phonetic STATIC
     suborno_phonetic_layout.cpp
-    borno_phonetic_layout.cpp
-    avro_phonetic_layout.cpp
+    suborno_classic_layout.cpp
+    suborno_smart_layout.cpp
     rule_based_phonetic_layout.cpp
     phonetic_input_session.cpp
     phonetic_parser.cpp
@@ -16,6 +16,6 @@ target_link_libraries(suborno_phonetic PUBLIC
     suborno_unicode
     suborno_layout_sessions
     suborno_candidates
-    suborno_borno_compat
+    suborno_compat
 )
 suborno_configure_target(suborno_phonetic)

@@ -23,7 +23,7 @@ tests/windows/        Windows-only build/runtime smoke tests
 3. **Sanitizer runs**: ASan + UBSan builds (`SUBORNO_ENABLE_SANITIZERS=ON`).
 4. **Fuzzing**: phonetic-pipeline fuzz target with the committed corpus;
    regression-triggered runs (`fuzz.yml`).
-5. **Parity regression**: `tests/unit/borno_compat_parity_test.cpp` pins the
+5. **Parity regression**: `tests/unit/compat_parity_test.cpp` pins the
    compatibility engines byte-for-byte against the reference output goldens
    (836-input corpus basis) — renaming or refactoring engine internals must
    keep this suite green, and it did during the naming migration.

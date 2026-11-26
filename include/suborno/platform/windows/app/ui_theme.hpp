@@ -4,7 +4,7 @@
 
 // about dialog, floating topbar, on-screen keyboard, menus, candidate
 
-// window). The dark values are the measured Borno-reference palette
+// window). The dark values are the measured reference palette
 
 // documented in docs/design/SUBORNO_REFERENCE_DESIGN_SPEC.md; the
 
@@ -112,7 +112,7 @@ struct ThemePalette {
     COLORREF information = 0;  ///< informational accents (alias of accent)
 };
 
-// Measured dark palette (docs/research/BORNOTSF_UI_UX_REFERENCE_ANALYSIS.md §3).
+// Measured dark palette (docs/research/UI_UX_REFERENCE_ANALYSIS.md §3).
 
 /// New state/semantic tokens extend the measured set without changing it.
 

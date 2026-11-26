@@ -45,7 +45,7 @@ BLOCKED item below into evidence on a Windows machine.
   paint, hit-test, tab order and UIA rects.
 - General-page checkbox overlap (Phase-01 fix) still correct: y=118/148 distinct rows.
 - Menu popup width 240 with `DT_END_ELLIPSIS` for long Bangla family names.
-- Topbar auto-width clamped 150–360 design px so long labels (বাংলা (Bornো)) fit.
+- Topbar auto-width clamped 150–360 design px so long labels (বাংলা (Suborno Classic)) fit.
 
 ## 4. Delivered runtime protocol (converts BLOCKED → evidence)
 

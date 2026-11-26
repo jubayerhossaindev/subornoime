@@ -10,7 +10,7 @@ element count ≥ 37), executed by the workflow job.
   page and asserts ≥ 37.
 - Key→output mapping is owned by the portable layout engine — every layout's
   full key mapping is already regression-tested on Linux:
-  - Phonetic/Borno/Avro/Khipro: phonetic pipeline tests + BDS-1520 official
+  - Phonetic/Classic/Smart/Khipro: phonetic pipeline tests + BDS-1520 official
     corpus + linguistic regressions (686-test suite, green).
   - Probhat/National: dedicated layout suites (59 tests) + typing
     regressions (17).

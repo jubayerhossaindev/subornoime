@@ -1,6 +1,6 @@
 # BDS Keyboard Mapping Verification Report
 
-> **PHASE 3 (2026-11-24)**: National layout REWRITTEN from the phonetic prototype to the positional Jatiyo layout (official diagram L2/19-079 Figure 4 + BornoTSF factual reference; 121/121 engine evidence rows; Assamese ৰ/ৱ excluded; GPL facts-only clean-room). Full details: BDS_NATIONAL_LAYOUT_DISCREPANCY_REPORT.md; spec: docs/specifications/national-keymap.md. Clause-level BDS binding stays BLOCKED (GAP-01).
+> **PHASE 3 (2026-11-24)**: National layout REWRITTEN from the phonetic prototype to the positional Jatiyo layout (official diagram L2/19-079 Figure 4 + legacy reference IME factual reference; 121/121 engine evidence rows; Assamese ৰ/ৱ excluded; GPL facts-only clean-room). Full details: BDS_NATIONAL_LAYOUT_DISCREPANCY_REPORT.md; spec: docs/specifications/national-keymap.md. Clause-level BDS binding stays BLOCKED (GAP-01).
 >
 > **PHASE 2 (2026-11-24)**: no change to any layout mapping. The BDS 1738
 > official keymap remains unavailable (BCC row 24 has no PDF; store-only),
@@ -33,7 +33,7 @@ report.
 
 - Only the `National` layout is the candidate conformance target for the
   national mapping.
-- Khipro, Probhat, Suborno, Borno, Avro, English are alternative layouts and
+- Khipro, Probhat, Suborno, Classic, Smart, English are alternative layouts and
   were **not** forced into the national mapping.
 - The National layout currently implements this project's own documented
   national-style conventions (explicit halant `X`, `Y` → য়, backtick → ়,
@@ -59,7 +59,7 @@ tests):
 | Bengali digits | ০-৯ | U+09E6..U+09EF | National (0-9), Probhat (number row) | PASS |
 | Signs | ঁ ং ঃ | U+0981..U+0983 | all Bengali layouts | PASS |
 | Punctuation | । | U+0964 | Probhat, National, Khipro (`.`) | PASS |
-| Currency | ৳ | U+09F3 | Khipro, Avro (`$`), Probhat (Shift+0x05) | PASS |
+| Currency | ৳ | U+09F3 | Khipro, Smart (`$`), Probhat (Shift+0x05) | PASS |
 | Conjunct composition | ক্ + ক | U+0995 U+09CD U+0995 | Khipro, National | PASS |
 
 ## 4. The two protected mission fixes (preserved and re-verified)

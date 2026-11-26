@@ -11,7 +11,7 @@ nightly (`fuzz.yml`).
 | C API input / lifecycle | `tests/fuzz/c_api_fuzz.cpp` (`run_c_api_target`) | active (libFuzzer + smoke) |
 | Unicode converter | exercised inside both targets (append/commit paths drive it with arbitrary bytes) | covered via pipeline |
 | Dictionary parser | import tool is an offline, trusted-CLI path with transactional rollback; fuzzing it is evaluated, not yet a standing target | documented decision |
-| Layout/config parsers | layout tables are compiled code; legacy-import parsing is bounded by `borno_compat` validation | documented decision |
+| Layout/config parsers | layout tables are compiled code; legacy-import parsing is bounded by `compat` validation | documented decision |
 
 Adding a target = shared body in `tests/fuzz/fuzz_targets.hpp` + a libFuzzer
 driver + a smoke hook; both run everywhere automatically.

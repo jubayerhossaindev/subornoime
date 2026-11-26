@@ -28,8 +28,8 @@ re-runs (128/128, 7/7, 12/12) + corpus verifier ALL CHECKS PASS.
 |---|---|---|
 | Suborno (phonetic) | Chandrabindu, ঙ, র+ই-কার, hasanta behaviours | PASS (harness rows; sources untouched) |
 | English | passthrough integrity | PASS |
-| Borno (phonetic) | full inventory | PASS (untouched) |
-| Avro (phonetic) | full inventory | PASS (untouched) |
+| Suborno Classic (phonetic) | full inventory | PASS (untouched) |
+| Suborno Smart (phonetic) | full inventory | PASS (untouched) |
 | Khipro | `kqq` trailing virama + all 74-item inventory + auto-join preservation | PASS (fix preserved: `KhiproTrailingViramaFixPreservedU0995U09CD`, `KhiproExplicitJoinAfterViramaStillComposes`) |
 | Probhat | AltGr+0x34 nukta + full scan probe + digit row | PASS (fix preserved: `ProbhatStandaloneNuktaFixPreservedU09BC`, `ProbhatDigitRowProducesU09E7ToU09EF`) |
 | National | explicit halant, য়, nukta, conjuncts, digit row | PASS (incl. new `NationalLayoutBengaliDigitRowProducesU09E6ToU09EF`) |

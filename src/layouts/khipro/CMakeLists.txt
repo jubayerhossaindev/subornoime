@@ -7,6 +7,6 @@ target_link_libraries(suborno_khipro PUBLIC
     suborno_layout_api
     suborno_unicode
     suborno_layout_sessions
-    suborno_borno_compat
+    suborno_compat
 )
 suborno_configure_target(suborno_khipro)

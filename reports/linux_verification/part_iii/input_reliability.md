@@ -27,11 +27,11 @@ Every path that can receive a `KeyEvent` was inspected:
 
 Consistency verdict: all four paths enforce one append per repeat, an atomic
 reject above 256 repeats, and identical suppression rules (key-up, Ctrl, Alt,
-Win). National/Probhat/Borno-compat difference: national and probhat override
+Win). National/Probhat/classic-compat difference: national and probhat override
 `append_key` because they compose fixed-layout output per key; the semantics
 match the base default's. `grep repeat_count` across
-`src/layouts/borno_compat/` finds no key-level repeat logic — the
-BornoTSF-compatibility engines are fed text (`append_utf8`), not keys, so
+`src/layouts/compat/` finds no key-level repeat logic — the
+legacy reference IME-compatibility engines are fed text (`append_utf8`), not keys, so
 repeat handling belongs to the TSF layer there; no gap.
 
 Historical defect (found in the v20 wave, fixed there, re-verified here): the

@@ -32,7 +32,7 @@ constexpr std::array tokens{
     Definition{.input = "ee", .kind = Kind::vowel, .output = "ঈ", .dependent_output = "ী"},
     Definition{.input = "uu", .kind = Kind::vowel, .output = "ঊ", .dependent_output = "ূ"},
     Definition{.input = "oo", .kind = Kind::vowel, .output = "ঊ", .dependent_output = "ূ"},
-    // "rri" (not "ri") per the Avro convention shared by the Avro and Borno
+    // "rri" (not "ri") per the legacy convention shared by the Smart and Classic
 
     // phonetic layouts: "ri" must remain র + ি-kar (করি, প্রিয়); "rri" types
 

@@ -1,5 +1,5 @@
 # libFuzzer dictionary for suborno_phonetic_fuzz
-# Tokens mirror the phonetic key inventory used by the Avro/Borno/Probhat
+# Tokens mirror the phonetic key inventory used by the Smart/Classic/Probhat
 # profiles (see docs/specifications/phonetic-mapping-spec.md). libFuzzer
 # mutates around these tokens instead of random bytes, reaching deep parser
 # states (conjuncts, vowel signs, case mixes) far faster.

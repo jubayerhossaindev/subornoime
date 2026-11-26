@@ -11,7 +11,7 @@
 | Windows TSF data | edit sessions, compartments | HRESULT checks, cookie range, compartment value validation |
 | Dictionary files | `dictionary_import_main.cpp` | file size, entry count, line format, transaction rollback |
 | User settings | settings loader | schema/enum/range validation before state mutation |
-| Layout definitions | layout tables (code) + legacy import (`borno_compat`) | token table validation (`tokens_.empty()` → `std::invalid_argument`) |
+| Layout definitions | layout tables (code) + legacy import (`compat`) | token table validation (`tokens_.empty()` → `std::invalid_argument`) |
 | Configuration | settings persistence | `AtomicFile` with rollback; partial writes never activate |
 | External C API | every `suborno_*` function | pointer/nullability/bounds/status contract (`API_ABI_SAFETY.md`) |
 | Windows API output | UI/platform helpers | return value + `GetLastError()` handling, buffer length checks |

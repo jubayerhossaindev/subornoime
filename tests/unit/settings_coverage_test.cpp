@@ -210,7 +210,7 @@ TEST(SettingsCoverage, RoundTripPreservesThemesFontsAndUiModes) {
         "Nirmala UI", "Noto Sans Bengali (Local)", "Fixed.Sys_9.5", "Bengali-UI_One"};
     const std::vector<std::string> ui_modes{"topbar", "tray", "window"};
     const std::vector<std::string> layouts{
-        "suborno-phonetic", "avro-phonetic", "probhat", "khipro"};
+        "suborno-phonetic", "suborno-smart", "probhat", "khipro"};
     std::size_t iteration = 0;
     for (const std::string& theme : themes) {
         for (const std::string& font : fonts) {

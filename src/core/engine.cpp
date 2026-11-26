@@ -2,14 +2,14 @@
 
 #include <string>
 
-#include "borno_compat_dictionary_loader.hpp"
-#include "borno_compat_settings.hpp"
+#include "compat_dictionary_loader.hpp"
+#include "compat_settings.hpp"
 #include "suborno/dictionary/dictionary.hpp"
 #include "suborno/layouts/english/english_layout.hpp"
 #include "suborno/layouts/khipro/khipro_layout.hpp"
 #include "suborno/layouts/national/national_layout.hpp"
-#include "suborno/layouts/phonetic/avro_phonetic_layout.hpp"
-#include "suborno/layouts/phonetic/borno_phonetic_layout.hpp"
+#include "suborno/layouts/phonetic/suborno_smart_layout.hpp"
+#include "suborno/layouts/phonetic/suborno_classic_layout.hpp"
 #include "suborno/layouts/phonetic/suborno_phonetic_layout.hpp"
 #include "suborno/layouts/probhat/probhat_layout.hpp"
 #include "suborno/settings/settings.hpp"
@@ -18,14 +18,14 @@
 namespace suborno::core {
 namespace {
 
-// Keeps the legacy-layout compatibility engines (src/layouts/borno_compat)
+// Keeps the legacy-layout compatibility engines (src/layouts/compat)
 
 // in sync with the settings store: the phonetic-correction switch is shared
 
 // between the settings snapshot and the engines' process-global flag.
 
-void sync_borno_compat_settings(const settings::EngineSettings& settings) {
-    borno_compat::set_phonetic_correction(settings.phonetic_correction);
+void sync_compat_settings(const settings::EngineSettings& settings) {
+    compat::set_phonetic_correction(settings.phonetic_correction);
 }
 
 }  // namespace
@@ -49,12 +49,12 @@ Engine::Engine() {
 
     // "Phonetic" — the topbar, tray, and settings menus all render these.
 
-    layouts_.register_layout("borno-phonetic",
-                             std::make_unique<layouts::BornoPhoneticLayout>(),
-                             layout::LayoutMetadata{"borno-phonetic", "বাংলা (Borno)", "1"});
-    layouts_.register_layout("avro-phonetic",
-                             std::make_unique<layouts::AvroPhoneticLayout>(),
-                             layout::LayoutMetadata{"avro-phonetic", "Avro", "1"});
+    layouts_.register_layout("suborno-classic",
+                             std::make_unique<layouts::SubornoClassicLayout>(),
+                             layout::LayoutMetadata{"suborno-classic", "বাংলা (Suborno Classic)", "1"});
+    layouts_.register_layout("suborno-smart",
+                             std::make_unique<layouts::SubornoSmartLayout>(),
+                             layout::LayoutMetadata{"suborno-smart", "Suborno Smart", "1"});
     layouts_.register_layout("khipro",
                              std::make_unique<layouts::KhiproLayout>(),
                              layout::LayoutMetadata{"khipro", "Khipro", "1"});
@@ -73,7 +73,7 @@ Engine::Engine(const EngineConfig& config)
         const settings::SettingsLoadResult result = settings_store_->load();
         if (result.status == settings::SettingsStatus::ok) {
             current_settings_ = result.settings;
-            sync_borno_compat_settings(current_settings_);
+            sync_compat_settings(current_settings_);
             const std::string_view restored_layout =
                 current_settings_.general.remember_last_input_layout
                     ? std::string_view(current_settings_.active_layout_id)
@@ -91,7 +91,7 @@ Engine::Engine(const EngineConfig& config)
             reinterpret_cast<const char*>(dictionary_path.data()), dictionary_path.size()));
     }
     if (!config.assets_path.empty()) {
-        // Point the BornoTSF compatibility engines at the bundled asset
+        // Point the legacy reference IME compatibility engines at the bundled asset
 
         // copies when they exist. The overrides are process-global and
 
@@ -106,7 +106,7 @@ Engine::Engine(const EngineConfig& config)
             DictionaryLoader::set_override_path(ac_json.wstring());
         }
         if (std::filesystem::exists(khipro_mim, ec)) {
-            borno_compat::set_khipro_spec_override(khipro_mim.wstring());
+            compat::set_khipro_spec_override(khipro_mim.wstring());
         }
     }
 }
@@ -257,7 +257,7 @@ settings::SettingsStatus Engine::save_settings(const settings::EngineSettings& s
     const settings::SettingsStatus status = settings_store_->save(settings);
     if (status == settings::SettingsStatus::ok) {
         current_settings_ = settings;
-        sync_borno_compat_settings(current_settings_);
+        sync_compat_settings(current_settings_);
         layouts_.set_active(settings.active_layout_id);
     }
     return status;
@@ -288,7 +288,7 @@ settings::SettingsLoadResult Engine::reload_settings() {
         result.settings.active_layout_id = std::string(layouts_.active_id());
     }
     current_settings_ = result.settings;
-    sync_borno_compat_settings(current_settings_);
+    sync_compat_settings(current_settings_);
     if (settings_store_ != nullptr) {
         settings_file_stamp_ = settings_store_->file_stamp();
     }

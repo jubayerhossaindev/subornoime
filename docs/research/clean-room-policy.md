@@ -5,7 +5,7 @@ SUBORNO is designed as an independently authored Bangla input system. The produc
 The implementation follows these rules:
 
 1. Public reference projects are used only for product research and user expectation analysis.
-2. No source code from Avro, Borno, or related projects is incorporated into the repository.
+2. No source code from Smart, Classic, or related projects is incorporated into the repository.
 3. No mapping tables are copied verbatim.
 4. No GPL/MPL-licensed code is imported into the project.
 5. No dictionaries are bundled without provenance and licensing review.

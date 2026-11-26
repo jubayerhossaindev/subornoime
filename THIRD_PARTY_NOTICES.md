@@ -72,6 +72,32 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
+## Compatibility components (GPL-3.0-or-later)
+
+The compatibility engine directory `src/layouts/compat/` (classic phonetic,
+smart phonetic and Khipro .mim engines), the TSF parity ports
+`src/platform/windows/tsf/compartment.hpp/.cpp` and
+`src/platform/windows/tsf/display_attribute_info.hpp/.cpp`, the autocorrect
+data layer `assets/dictionaries/ac.json` and the Khipro keymap data
+`assets/layouts/bn-khipro.mim` implement the behaviour of the BornoTSF
+project (https://github.com/JayedAhsan/BornoTSF), Copyright (c) Jayed Ahsan
+Saad and BornoTSF contributors, licensed under GPL-3.0-or-later.
+
+- The engines are Suborno's own re-authored implementation, pinned
+  byte-identical to the upstream behaviour contract by
+  `tests/unit/compat_parity_test.cpp` (836 inputs x 3 engines).
+- The TSF port files adapt upstream Compartment/DisplayAttributeInfo code
+  and carry the full attribution in their header comments.
+- Behavioural provenance of the smart engine: cppAvroPhonetic,
+  (c) 2014-2015 Muhammad Mominul Huque, GPL-3.0-or-later.
+- Khipro layout data (`bn-khipro.mim`): (c) 2024 rank_coder, MIT; the
+  canonical file is a format-normalized re-emission, AST-identical to
+  upstream.
+
+Because these components are GPL-3.0-or-later, redistribution of the
+combined work is governed by GPL-3 with respect to those components (see
+LICENSE). Every other file in the repository is MIT.
+
 ## License review
 
 The listed licenses are permissive or public-domain-style. The ICU License

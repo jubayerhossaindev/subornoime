@@ -271,7 +271,7 @@ HRESULT SubornoTextService::_EnsureSession(ITfContext* context, ContextState& st
         state.session_layout_id = layout_id;
         state.session_needs_refresh = false;
     }
-    // BornoTSF parity: every context this service types into carries an
+    // legacy reference IME parity: every context this service types into carries an
 
     // ITfTextEditSink advice (upstream advises the focused context's top
 
@@ -527,11 +527,11 @@ STDMETHODIMP SubornoTextService::Activate(ITfThreadMgr* pThreadMgr, TfClientId c
 
         m_indicator_layout_id = std::string(m_engine->active_layout_id());
 
-        // BornoTSF parity: register the display-attribute GUIDs with the category
+        // legacy reference IME parity: register the display-attribute GUIDs with the category
 
         // manager (upstream Activate fails when this fails — _InitDisplayAttributeGuidAtom
 
-        // gates BornoTSF::Activate the same way).
+        // gates legacy reference IME::Activate the same way).
 
         hr = _InitDisplayAttributeGuidAtom();
         if (FAILED(hr)) {
@@ -549,7 +549,7 @@ STDMETHODIMP SubornoTextService::Activate(ITfThreadMgr* pThreadMgr, TfClientId c
             return hr;
         }
 
-        // BornoTSF parity: advise the thread focus sink (upstream Activate fails
+        // legacy reference IME parity: advise the thread focus sink (upstream Activate fails
 
         // when this fails).
 
@@ -569,7 +569,7 @@ STDMETHODIMP SubornoTextService::Activate(ITfThreadMgr* pThreadMgr, TfClientId c
             return hr;
         }
 
-        // BornoTSF parity: advise compartment event sinks on the same two
+        // legacy reference IME parity: advise compartment event sinks on the same two
 
         // compartments as CCompositionProcessorEngine::SetupLanguageBar. Best
 
@@ -638,7 +638,7 @@ STDMETHODIMP SubornoTextService::Deactivate() {
         }
         m_keystrokeMgr.reset();
         m_uiElementMgr.reset();
-        // BornoTSF parity: release the compartment event sinks (upstream deletes
+        // legacy reference IME parity: release the compartment event sinks (upstream deletes
 
         // them after _Unadvise in CCompositionProcessorEngine cleanup).
 
@@ -650,7 +650,7 @@ STDMETHODIMP SubornoTextService::Deactivate() {
             static_cast<void>(m_compartmentConversionSink->Unadvise());
             m_compartmentConversionSink.reset();
         }
-        // BornoTSF parity: unadvise the thread focus sink.
+        // legacy reference IME parity: unadvise the thread focus sink.
 
         _UninitThreadFocusSink();
         if (m_threadMgr != nullptr && m_threadMgrSinkCookie != TF_INVALID_COOKIE) {
@@ -1182,7 +1182,7 @@ STDMETHODIMP SubornoTextService::OnCompositionTerminated(TfEditCookie edit_cooki
         for (auto& [context, state] : m_contexts) {
             if (state.composition.get() == composition) {
                 _EndCandidateUI(state);
-                // BornoTSF parity: the host just force-terminated the
+                // legacy reference IME parity: the host just force-terminated the
 
                 // composition — clear the display attribute with the write
 
@@ -1234,7 +1234,7 @@ STDMETHODIMP SubornoTextService::OnEndEdit(ITfContext* pContext,
         if (SUCCEEDED(state.composition->GetRange(composition_range.put()))
             && composition_range != nullptr) {
             if (!_IsRangeCovered(ecReadOnly, selection.range, composition_range.get())) {
-                // BornoTSF parity (_EndComposition → _TerminateComposition):
+                // legacy reference IME parity (_EndComposition → _TerminateComposition):
 
                 // keep the composed text exactly as it is on screen, clear the
 
@@ -1260,7 +1260,7 @@ STDMETHODIMP SubornoTextService::OnEndEdit(ITfContext* pContext,
 
 STDMETHODIMP SubornoTextService::OnSetThreadFocus() {
     return run_inside_com_boundary([&]() -> HRESULT {
-        // BornoTSF parity: upstream's handlers are intentionally empty.
+        // legacy reference IME parity: upstream's handlers are intentionally empty.
 
         return S_OK;
     });
@@ -1268,7 +1268,7 @@ STDMETHODIMP SubornoTextService::OnSetThreadFocus() {
 
 STDMETHODIMP SubornoTextService::OnKillThreadFocus() {
     return run_inside_com_boundary([&]() -> HRESULT {
-        // BornoTSF parity: upstream's handlers are intentionally empty.
+        // legacy reference IME parity: upstream's handlers are intentionally empty.
 
         return S_OK;
     });
@@ -1468,7 +1468,7 @@ HRESULT SubornoTextService::_AbortCandidate(ITfContext* context) {
 HRESULT SubornoTextService::_UpdateComposition(ITfContext* context,
                                                ContextState& state,
                                                const std::wstring& text) {
-    // BornoTSF parity: the composition text carries the Input display
+    // legacy reference IME parity: the composition text carries the Input display
 
     // attribute while composing (_SetCompositionDisplayAttributes in
 
@@ -1533,10 +1533,10 @@ HRESULT SubornoTextService::CreateInstance(REFIID riid, void** ppv) {
     return hr;
 }
 
-// ---- BornoTSF parity: the four V16-audit-gap behaviours ----
+// ---- legacy reference IME parity: the four V16-audit-gap behaviours ----
 
 HRESULT SubornoTextService::_InitDisplayAttributeGuidAtom() {
-    // BornoTSF _InitDisplayAttributeGuidAtom (display/DisplayAttribute.cpp:54-79):
+    // legacy reference IME _InitDisplayAttributeGuidAtom (display/DisplayAttribute.cpp:54-79):
 
     // CoCreateInstance(CLSID_TF_CategoryMgr) then RegisterGUID for both
 
@@ -1564,7 +1564,7 @@ HRESULT SubornoTextService::_InitDisplayAttributeGuidAtom() {
 HRESULT SubornoTextService::_ClearCompositionDisplayAttributes(TfEditCookie edit_cookie,
                                                                ITfContext* context,
                                                                ITfComposition* composition) {
-    // BornoTSF _ClearCompositionDisplayAttributes (display/DisplayAttribute.cpp:7-24).
+    // legacy reference IME _ClearCompositionDisplayAttributes (display/DisplayAttribute.cpp:7-24).
 
     if (context == nullptr || composition == nullptr) {
         return E_INVALIDARG;
@@ -1583,7 +1583,7 @@ HRESULT SubornoTextService::_ClearCompositionDisplayAttributes(TfEditCookie edit
 }
 
 BOOL SubornoTextService::_InitTextEditSink(ITfContext* context, ContextState& state) {
-    // BornoTSF _InitTextEditSink (infra/TextEditSink.cpp:49-103), adapted to
+    // legacy reference IME _InitTextEditSink (infra/TextEditSink.cpp:49-103), adapted to
 
     // the per-context state model: unadvise the previous advice first, then
 
@@ -1647,7 +1647,7 @@ void SubornoTextService::_ShutdownTextEditSink(ContextState& state) {
 BOOL SubornoTextService::_IsRangeCovered(TfEditCookie edit_cookie,
                                          ITfRange* range_test,
                                          ITfRange* range_cover) const {
-    // BornoTSF _IsRangeCovered (composition/KeyHandler.cpp:8-23).
+    // legacy reference IME _IsRangeCovered (composition/KeyHandler.cpp:8-23).
 
     if (range_test == nullptr || range_cover == nullptr) {
         return FALSE;
@@ -1666,7 +1666,7 @@ BOOL SubornoTextService::_IsRangeCovered(TfEditCookie edit_cookie,
 }
 
 HRESULT SubornoTextService::_InitThreadFocusSink() {
-    // BornoTSF _InitThreadFocusSink (infra/ThreadFocusSink.cpp:16-33).
+    // legacy reference IME _InitThreadFocusSink (infra/ThreadFocusSink.cpp:16-33).
 
     if (m_threadMgr == nullptr) {
         return E_UNEXPECTED;
@@ -1686,7 +1686,7 @@ HRESULT SubornoTextService::_InitThreadFocusSink() {
 }
 
 void SubornoTextService::_UninitThreadFocusSink() {
-    // BornoTSF _UninitThreadFocusSink (infra/ThreadFocusSink.cpp:35-51).
+    // legacy reference IME _UninitThreadFocusSink (infra/ThreadFocusSink.cpp:35-51).
 
     if (m_threadMgr == nullptr || m_threadFocusSinkCookie == TF_INVALID_COOKIE) {
         m_threadFocusSinkCookie = TF_INVALID_COOKIE;
@@ -1701,7 +1701,7 @@ void SubornoTextService::_UninitThreadFocusSink() {
 
 HRESULT SubornoTextService::CompartmentChangeCallback(void* context, REFGUID guid_compartment) {
     (void)guid_compartment;
-    // BornoTSF's CompartmentCallback body is empty; Suborno uses the same
+    // legacy reference IME's CompartmentCallback body is empty; Suborno uses the same
 
     // notification to re-sync the input indicator, so an externally driven
 

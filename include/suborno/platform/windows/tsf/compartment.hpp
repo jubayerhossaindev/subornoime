@@ -1,17 +1,17 @@
 #pragma once
 
-// BornoTSF parity components (GPL-3.0-or-later): ported from BornoTSF
-// infra/Compartment.{h,cpp} (c) Jayed Ahsan Saad, BornoTSF contributors.
+// legacy reference IME parity components (GPL-3.0-or-later): ported from legacy reference IME
+// infra/Compartment.{h,cpp} (c) Jayed Ahsan Saad, legacy reference IME contributors.
 //
 // Two pieces:
 //   1. Compartment — typed get/set helpers over an ITfCompartmentMgr owner
-//      (thread manager or context). Mirrors BornoTSF CCompartment:
+//      (thread manager or context). Mirrors upstream CCompartment:
 //      _GetCompartmentBOOL / _SetCompartmentBOOL / _GetCompartmentDWORD /
 //      _SetCompartmentDWORD / _ClearCompartment, including the upstream
 //      guard that refuses to clear GUID_COMPARTMENT_KEYBOARD_OPENCLOSE.
 //   2. CompartmentEventSink — ITfCompartmentEventSink with a callback+
 //      context pair (upstream CESCALLBACK), plus _Advise/_Unadvise.
-//      BornoTSF advises this sink on GUID_COMPARTMENT_KEYBOARD_OPENCLOSE and
+//      The upstream IME advises this sink on GUID_COMPARTMENT_KEYBOARD_OPENCLOSE and
 //      GUID_COMPARTMENT_KEYBOARD_INPUTMODE_CONVERSION from
 //      CCompositionProcessorEngine::SetupLanguageBar; its callback body is
 //      an empty stub. Suborno wires the same advise sites but routes the

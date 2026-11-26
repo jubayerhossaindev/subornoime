@@ -149,7 +149,7 @@ function Assert-ServiceDeployment {
 
 function Assert-SharedResourceDirectories {
     foreach ($resourceDirectory in @(
-        'assets\fonts', 'assets\themes', 'assets\layout-icons\borno', 'dictionaries', 'layouts'
+        'assets\fonts', 'assets\themes', 'assets\layout-icons\layouts', 'dictionaries', 'layouts'
     )) {
         if (-not (Test-Path -LiteralPath (Join-Path $programDataDirectory $resourceDirectory) -PathType Container)) {
             throw "Machine-wide resource directory is missing: $resourceDirectory"

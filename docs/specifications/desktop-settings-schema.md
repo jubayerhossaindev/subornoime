@@ -96,9 +96,9 @@ thread whenever a Bangla layout becomes active.
 
 ## Keyboard layouts
 
-The visible layout list is `english`, `suborno-phonetic`, `borno-phonetic`,
-`avro-phonetic`, `khipro`, `probhat`, `national`, shown as English,
-বাংলা (Suborno), বাংলা (Bornো), Avro, Khipro, Probhat, National — user-facing
+The visible layout list is `english`, `suborno-phonetic`, `suborno-classic`,
+`suborno-smart`, `khipro`, `probhat`, `national`, shown as English,
+বাংলা (Suborno), বাংলা (Suborno Classic), Suborno Smart, Khipro, Probhat, National — user-facing
 names never contain the implementation term "Phonetic". The `english` layout
 is a passthrough mode: the text service does not eat keys, so typing produces
 plain Latin text.

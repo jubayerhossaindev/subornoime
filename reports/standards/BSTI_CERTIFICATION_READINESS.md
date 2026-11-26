@@ -15,7 +15,7 @@ blocked. This dossier is NOT a certificate and claims none.
 | Technology | C++20, Win32, TSF, COM, MSVC v143, CMake, Windows SDK |
 | License | MIT (source) |
 | Version / commit | repository `main`, evidence commit `533b3e2` |
-| Layouts | 7: Suborno, English, Borno, Avro, Khipro, Probhat, National |
+| Layouts | 7: Suborno, English, Classic, Smart, Khipro, Probhat, National |
 | Character pipeline | UTF-8 internal; UTF-16 at TSF boundary; NFC at commit; ICU-based normalization |
 
 ## 2. Intended use

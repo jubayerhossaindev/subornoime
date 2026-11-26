@@ -9,7 +9,7 @@ TEST(KhiproLayoutTest, BasicConsonantAndVowelComposition) {
     EXPECT_EQ(layout.kind(), suborno::layout::LayoutKind::compositional);
     EXPECT_EQ(layout.transliterate("ami"), "আমি");
     EXPECT_EQ(layout.transliterate("kaka"), "কাকা");
-    // bn-khipro.mim spec: n before a consonant becomes ঙ (BornoTSF Khipro
+    // bn-khipro.mim spec: n before a consonant becomes ঙ (legacy reference IME Khipro
 
     // behaviour) — বাঙলা, not বাংলা.
 

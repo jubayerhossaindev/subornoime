@@ -34,7 +34,7 @@ class PreviewWindow;
 struct KeyboardHookConfig final {
     // Default Ctrl+Alt+B — chosen to avoid the classic conflicts: F12 is the
 
-    // Avro default but collides with browser dev tools, Ctrl+Space collides
+    // legacy default but collides with browser dev tools, Ctrl+Space collides
 
     // with editor autocomplete (VS IntelliSense), Alt+Shift/Win+Space are
 

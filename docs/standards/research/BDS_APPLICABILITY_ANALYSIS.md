@@ -12,7 +12,7 @@
 **Product**: SubornoIME — native Windows 10/11 x64 Bengali IME (C++20, Win32,
 TSF, COM, MSVC, CMake). Unicode-based; UTF-8 internal, UTF-16 at the TSF
 boundary, NFC normalization at commit.
-**Layouts**: 7 — Suborno (phonetic), English, Borno (phonetic), Avro
+**Layouts**: 7 — Suborno (phonetic), English, Suborno Classic (phonetic), Suborno Smart
 (phonetic), Khipro (compositional), Probhat (fixed physical), National.
 
 ## 1. Applicability decision table
@@ -27,7 +27,7 @@ boundary, NFC normalization at commit.
 
 ## 2. Standards Applicability Matrix (mission-required format)
 
-| Standard | Scope | Khipro | Probhat | National | Suborno/Borno/Avro phonetic | English |
+| Standard | Scope | Khipro | Probhat | National | Suborno/Classic/Smart phonetic | English |
 |---|---|---|---|---|---|---|
 | BDS 1520:2018 | Character repertoire/encoding | Applicable — character level (virama U+09CD, nukta U+09BC verified) | Applicable — character level (nukta U+09BC verified) | Applicable | Applicable | Applicable (ASCII passthrough only) |
 | BDS 1738:2018 | National keyboard layout | Reference only — MUST NOT absorb national mapping | Reference only | **Conformance target** (mapping implemented; clause verification BLOCKED) | Not applicable (alternative phonetic layouts, own identity) | Not applicable |

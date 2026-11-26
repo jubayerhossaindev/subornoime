@@ -1,6 +1,6 @@
 #pragma once
 
-// On-Screen Keyboard window (Borno reference: a floating clickable keyboard
+// On-Screen Keyboard window (Reference design: a floating clickable keyboard
 // with an English/Bangla mode pair). Clean-room Win32 implementation:
 // clicking a key injects the REAL virtual key via SendInput, so the TSF
 // text service processes it exactly like a physical keystroke —

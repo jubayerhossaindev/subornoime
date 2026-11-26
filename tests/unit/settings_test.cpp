@@ -96,7 +96,7 @@ TEST(SettingsTest, SavesAndLoadsFontPositionAndUiModeKeys) {
     settings.topbar.position_x = 320;
     settings.topbar.position_y = 40;
     settings.general.last_ui_mode = "tray";
-    settings.general.last_bangla_layout_id = "avro-phonetic";
+    settings.general.last_bangla_layout_id = "suborno-smart";
     settings.general.start_mode = suborno::settings::StartMode::last_state;
 
     ASSERT_EQ(store.save(settings), suborno::settings::SettingsStatus::ok);
@@ -108,7 +108,7 @@ TEST(SettingsTest, SavesAndLoadsFontPositionAndUiModeKeys) {
     EXPECT_EQ(loaded.settings.topbar.position_x, 320);
     EXPECT_EQ(loaded.settings.topbar.position_y, 40);
     EXPECT_EQ(loaded.settings.general.last_ui_mode, "tray");
-    EXPECT_EQ(loaded.settings.general.last_bangla_layout_id, "avro-phonetic");
+    EXPECT_EQ(loaded.settings.general.last_bangla_layout_id, "suborno-smart");
 
     // A file written before the key existed loads with the default (the
     // English↔বাংলা toggle falls back to the Suborno layout).
@@ -429,7 +429,7 @@ TEST(SettingsTest, SettingsPersistAcrossStoreRestarts) {
     std::filesystem::remove(path);
 
     suborno::settings::EngineSettings written;
-    written.active_layout_id = "avro-phonetic";
+    written.active_layout_id = "suborno-smart";
     written.candidate_limit = 33;
     written.learning_enabled = false;
     written.ui.show_candidate_window = false;
@@ -445,7 +445,7 @@ TEST(SettingsTest, SettingsPersistAcrossStoreRestarts) {
         const suborno::settings::SettingsStore store(path);
         const auto loaded = store.load();
         ASSERT_EQ(loaded.status, suborno::settings::SettingsStatus::ok);
-        EXPECT_EQ(loaded.settings.active_layout_id, "avro-phonetic");
+        EXPECT_EQ(loaded.settings.active_layout_id, "suborno-smart");
         EXPECT_EQ(loaded.settings.candidate_limit, 33U);
         EXPECT_FALSE(loaded.settings.learning_enabled);
         EXPECT_FALSE(loaded.settings.ui.show_candidate_window);

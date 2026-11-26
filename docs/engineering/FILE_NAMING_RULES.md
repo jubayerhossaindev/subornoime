@@ -48,7 +48,7 @@ docs/engineering/           engineering standards and reports
    `scripts/validate_naming.py`.
 2. A header's name matches the primary type it declares
    (`candidate_engine.hpp` declares `CandidateEngine`).
-3. Test files mirror the unit under test (`borno_phonetic_layout_test.cpp`).
+3. Test files mirror the unit under test (`suborno_classic_layout_test.cpp`).
 4. Public headers under `include/` may only be renamed together with their
    include sites — they are part of the public API surface.
 5. Generated files (build outputs, Doxygen HTML) never land in source

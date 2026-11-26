@@ -32,7 +32,7 @@ Source of truth: `src/platform/windows/app/application.cpp` (settings pages,
 |---|---|---|---|---|
 | 1 | remember_layout | checkbox | persisted; layout remembered across restart | BLOCKED |
 | 2 | start_with_windows | checkbox | registry Run key toggled | BLOCKED |
-| 3 | layout_dropdown | dropdown (7 options: English, বাংলা Suborno/Borno, Avro, Khipro, Probhat, National) | subsequent typing uses selected layout | BLOCKED |
+| 3 | layout_dropdown | dropdown (7 options: English, বাংলা Suborno/Classic, Smart, Khipro, Probhat, National) | subsequent typing uses selected layout | BLOCKED |
 | 4 | show_candidate_window | checkbox | candidate window appears during composition | BLOCKED |
 | 5 | idle_dimming | checkbox | topbar dims when idle | BLOCKED |
 | 6 | idle_opacity | slider | topbar opacity actually changes | BLOCKED |

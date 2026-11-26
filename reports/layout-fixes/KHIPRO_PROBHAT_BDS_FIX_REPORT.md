@@ -28,7 +28,7 @@ Verdict matrix:
 |---|---|---|
 | Khipro | **ENGINE VERIFIED (fix applied)** | BLOCKED |
 | Probhat | **ENGINE VERIFIED (fix applied)** | BLOCKED |
-| অন্য পাঁচ (suborno/english/borno/avro/national) | ENGINE VERIFIED (অপরিবর্তিত — পুনঃযাচাইকৃত) | BLOCKED |
+| অন্য পাঁচ (suborno/english/classic/smart/national) | ENGINE VERIFIED (অপরিবর্তিত — পুনঃযাচাইকৃত) | BLOCKED |
 
 ---
 
@@ -144,7 +144,7 @@ Probhat test-গুলো **সবই scan-code event path** (append_key + modif
 | Group | Rows | Result |
 |---|---|---|
 | inventory (67×6 committed CSV re-run) | 402 | INV-064 khipro ক্ এখন PASS (kqq); suborno I/U derivation-column নোট; বাকি সব PASS/PASS-EQUIV |
-| brief (compositional sequences re-run) | 70 | PASS/PASS-EQUIV; 3 documented CONVENTION-DIFF (borno Ta;i/mo;i, avro t'') — LIM-BRIEF-CONVENTION-MISMATCH, engine defect নয় |
+| brief (compositional sequences re-run) | 70 | PASS/PASS-EQUIV; 3 documented CONVENTION-DIFF (classic Ta;i/mo;i, smart t'') — LIM-BRIEF-CONVENTION-MISMATCH, engine defect নয় |
 | brief-scan (Probhat physical probes) | 62 | PASS সব; BRIEF-060 equivalent (় via scan=0x34 altgr=1) এখন PASS |
 | khipro-trailing-virama | 26 | PASS সব (basic/terminal/parser/editing/edge) |
 | probhat-standalone-nukta | 13 | PASS সব (scan events, key-up, ctrl-alone, repeat, backspace, NFC, space boundary) |

@@ -92,8 +92,8 @@
   "verdicts": {
     "suborno-phonetic": "ENGINE VERIFIED — WINDOWS RUNTIME BLOCKED",
     "english": "ENGINE VERIFIED (passthrough identity) — WINDOWS RUNTIME BLOCKED",
-    "borno-phonetic": "ENGINE VERIFIED — WINDOWS RUNTIME BLOCKED",
-    "avro-phonetic": "ENGINE VERIFIED — WINDOWS RUNTIME BLOCKED",
+    "suborno-classic": "ENGINE VERIFIED — WINDOWS RUNTIME BLOCKED",
+    "suborno-smart": "ENGINE VERIFIED — WINDOWS RUNTIME BLOCKED",
     "khipro": "PARTIALLY VERIFIED — WINDOWS RUNTIME BLOCKED",
     "probhat": "PARTIALLY VERIFIED — WINDOWS RUNTIME BLOCKED",
     "national": "ENGINE VERIFIED — WINDOWS RUNTIME BLOCKED"
@@ -195,37 +195,37 @@
       "bytes": 1291
     },
     {
-      "path": "reports/layout-verification/layouts/borno-phonetic/REPORT.md",
+      "path": "reports/layout-verification/layouts/suborno-classic/REPORT.md",
       "sha256": "0dbd19bcaa12962a6e091fd5b3a67ee0a5982816fae449d9abae1bad6806b179",
       "bytes": 3668
     },
     {
-      "path": "reports/layout-verification/layouts/borno-phonetic/brief-results.csv",
+      "path": "reports/layout-verification/layouts/suborno-classic/brief-results.csv",
       "sha256": "8f2e7598a95ffe759e32d0fcc671ab9d67db487442fd3af89bd62ba9f8717dfa",
       "bytes": 1728
     },
     {
-      "path": "reports/layout-verification/layouts/borno-phonetic/engine-results.csv",
+      "path": "reports/layout-verification/layouts/suborno-classic/engine-results.csv",
       "sha256": "55bcd693defd6d9ec0cccfe408b7192deb6b2c3f8186dcfe47d91d7c74cf0f70",
       "bytes": 10881
     },
     {
-      "path": "reports/layout-verification/layouts/borno-phonetic/findings.md",
+      "path": "reports/layout-verification/layouts/suborno-classic/findings.md",
       "sha256": "929c6046107d374c4b9da514563553b51c9425b30dee58a1d65d6a6238a00274",
       "bytes": 968
     },
     {
-      "path": "reports/layout-verification/layouts/borno-phonetic/inventory-results.csv",
+      "path": "reports/layout-verification/layouts/suborno-classic/inventory-results.csv",
       "sha256": "ce09122dca416491f64f4cfeb5eb946b65998de6648befbfb22545cef4a13f25",
       "bytes": 5128
     },
     {
-      "path": "reports/layout-verification/layouts/borno-phonetic/regression-results.csv",
+      "path": "reports/layout-verification/layouts/suborno-classic/regression-results.csv",
       "sha256": "fbba50f6b5b5785a336746fefab021051db4a43fffcf1045a2548c034a294c02",
       "bytes": 977
     },
     {
-      "path": "reports/layout-verification/layouts/borno-phonetic/windows-results.csv",
+      "path": "reports/layout-verification/layouts/suborno-classic/windows-results.csv",
       "sha256": "ffefde6ca037c3722f4829426d53f1f489702d784b4ee74bc78bac8c1f12f6fe",
       "bytes": 1291
     },
@@ -320,37 +320,37 @@
       "bytes": 1291
     },
     {
-      "path": "reports/layout-verification/layouts/avro-phonetic/REPORT.md",
+      "path": "reports/layout-verification/layouts/suborno-smart/REPORT.md",
       "sha256": "eec1c68f3bc76c308e497b58d2f39d44a94d5efe32ad912d258fdecbdb6fedbb",
       "bytes": 3187
     },
     {
-      "path": "reports/layout-verification/layouts/avro-phonetic/brief-results.csv",
+      "path": "reports/layout-verification/layouts/suborno-smart/brief-results.csv",
       "sha256": "ca8b907c2499a361dd9a5f4c5e364d6f8d24883fd8eec56152827ed11dc5eeee",
       "bytes": 1450
     },
     {
-      "path": "reports/layout-verification/layouts/avro-phonetic/engine-results.csv",
+      "path": "reports/layout-verification/layouts/suborno-smart/engine-results.csv",
       "sha256": "0d107f0b8898bde02a0db702e250be72497b032c0c2fb1b46af22d22139caa1a",
       "bytes": 11067
     },
     {
-      "path": "reports/layout-verification/layouts/avro-phonetic/findings.md",
+      "path": "reports/layout-verification/layouts/suborno-smart/findings.md",
       "sha256": "255a242e8beb9693b04f57d400a8e723d800c8e5d6642bf24da5a7acb5f3b721",
       "bytes": 539
     },
     {
-      "path": "reports/layout-verification/layouts/avro-phonetic/inventory-results.csv",
+      "path": "reports/layout-verification/layouts/suborno-smart/inventory-results.csv",
       "sha256": "768192d7cdaf9b558b4f3301d6dd207b8f1961dc6bc186138476f8cf4f1bfc43",
       "bytes": 5063
     },
     {
-      "path": "reports/layout-verification/layouts/avro-phonetic/regression-results.csv",
+      "path": "reports/layout-verification/layouts/suborno-smart/regression-results.csv",
       "sha256": "176e1d0386a7ad4cd74e55e1dc16b3a702759b5d93cb439da88ea74707b821f4",
       "bytes": 799
     },
     {
-      "path": "reports/layout-verification/layouts/avro-phonetic/windows-results.csv",
+      "path": "reports/layout-verification/layouts/suborno-smart/windows-results.csv",
       "sha256": "ffefde6ca037c3722f4829426d53f1f489702d784b4ee74bc78bac8c1f12f6fe",
       "bytes": 1291
     },

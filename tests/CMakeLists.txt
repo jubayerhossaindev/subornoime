@@ -6,8 +6,8 @@ find_package(GTest CONFIG REQUIRED)
 
 add_executable(suborno_unit_tests
     unit/atomic_file_test.cpp
-    unit/borno_compat_env.cpp
-    unit/borno_compat_parity_test.cpp
+    unit/compat_env.cpp
+    unit/compat_parity_test.cpp
     unit/bds_conformance_test.cpp
     unit/bds1520_official_corpus_test.cpp
     unit/project_smoke_test.cpp
@@ -17,8 +17,8 @@ add_executable(suborno_unit_tests
     unit/phonetic_input_session_test.cpp
     unit/layout_input_session_test.cpp
     unit/key_event_test.cpp
-    unit/borno_phonetic_layout_test.cpp
-    unit/avro_phonetic_layout_test.cpp
+    unit/suborno_classic_layout_test.cpp
+    unit/suborno_smart_layout_test.cpp
     unit/khipro_layout_test.cpp
     unit/phonetic_candidate_test.cpp
     unit/phonetic_tokenizer_test.cpp
@@ -55,7 +55,7 @@ add_executable(suborno_unit_tests
 )
 target_include_directories(suborno_unit_tests PRIVATE "${PROJECT_SOURCE_DIR}/src")
 target_link_libraries(suborno_unit_tests PRIVATE suborno_core GTest::gtest_main suborno_spell)
-# The BornoTSF compatibility engines resolve their data (ac.json,
+# The legacy reference IME compatibility engines resolve their data (ac.json,
 # bn-khipro.mim) from the repository assets tree in tests.
 target_compile_definitions(suborno_unit_tests PRIVATE
     SUBORNO_TEST_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")

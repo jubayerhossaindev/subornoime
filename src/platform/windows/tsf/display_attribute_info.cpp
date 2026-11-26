@@ -1,8 +1,8 @@
-// BornoTSF parity components (GPL-3.0-or-later): ported from BornoTSF
+// legacy reference IME parity components (GPL-3.0-or-later): ported from legacy reference IME
 
 // display/DisplayAttributeInfo.cpp and display/EnumDisplayAttributeInfo.cpp
 
-// (c) Jayed Ahsan Saad, BornoTSF contributors.
+// (c) Jayed Ahsan Saad, legacy reference IME contributors.
 
 //
 

@@ -21,19 +21,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 --------------------------------------------------------------------------------
-BornoTSF compatibility components (GPL-3.0-or-later)
+Compatibility components (GPL-3.0-or-later)
 
-The directory src/layouts/borno_compat/ (the Borno Phonetic, Avro Phonetic
-and Khipro .mim engines) together with assets/dictionaries/ac.json, the
-canonical assets/layouts/bn-khipro.mim and the layout icons under
-assets/layout-icons/borno/ implement the behaviour of the BornoTSF project
-(https://github.com/JayedAhsan/BornoTSF), Copyright (c) Jayed Ahsan Saad and
-BornoTSF contributors, licensed under the GNU General Public License version
-3 or later (GPL-3.0-or-later). The engines were re-authored for Suborno
-(V18) while preserving the upstream behaviour; output parity with the
-original BornoTSF engines is pinned by the regression suite in
-tests/unit/borno_compat_parity_test.cpp (836 inputs x 3 engines,
-byte-identical). The behavioural provenance is
+The directory src/layouts/compat/ (the classic phonetic, smart phonetic and
+Khipro .mim engines) together with the TSF parity ports
+src/platform/windows/tsf/compartment.hpp/.cpp and
+src/platform/windows/tsf/display_attribute_info.hpp/.cpp,
+assets/dictionaries/ac.json and assets/layouts/bn-khipro.mim implement the
+behaviour of the BornoTSF project (https://github.com/JayedAhsan/BornoTSF),
+Copyright (c) Jayed Ahsan Saad and BornoTSF contributors, licensed under the
+GNU General Public License version 3 or later (GPL-3.0-or-later). The
+engines were re-authored for Suborno while preserving the upstream
+behaviour; output parity with the original engines is pinned by the
+regression suite in tests/unit/compat_parity_test.cpp (836 inputs x 3
+engines, byte-identical). The behavioural provenance of the smart engine is
 cppAvroPhonetic, Copyright (c) 2014-2015 Muhammad Mominul Huque, likewise
 GPL-3.0-or-later, and the Khipro layout data is Copyright (c) 2024
 rank_coder, licensed under the MIT license.
@@ -42,5 +43,6 @@ Because these components are licensed under GPL-3.0-or-later, DISTRIBUTING
 this project (in source or binary form, including the Windows installer)
 conveys the whole combination under GPL-3.0-or-later with respect to those
 components and, per GPL-3 section 5, the combined work must be distributed
-under GPL-3 terms. The SPDX headers inside src/layouts/borno_compat/ mark the
-exact file set. Everything outside that directory remains MIT as above.
+under GPL-3 terms. The SPDX headers inside src/layouts/compat/ and the
+attribution headers of the TSF parity ports mark the exact file set.
+Everything outside those files remains MIT as above.

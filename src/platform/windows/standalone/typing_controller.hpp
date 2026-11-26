@@ -165,7 +165,7 @@ class TypingController final {
     }
 
     // v1 policy: digits never enter the composition. While a composition is
-    // live a digit commits the word (Avro-style "type digit = finish word"),
+    // live a digit commits the word (legacy "type digit = finish word" style),
     // the Win32 layer re-injects the digit itself afterwards.
     [[nodiscard]] ControllerCommands on_digit(char /*character*/) {
         if (!composing_) {

@@ -41,8 +41,8 @@ is explicitly listed as BLOCKED, never simulated.
 | EV-T-07 | Test run (PHASE 3) | Integration **2/2 PASS**; ASan/UBSan (GCC) **609 + 2 PASS, zero diagnostics** | console | sanitizer build with `-DSUBORNO_ENABLE_SANITIZERS=ON` |
 | EV-R-05 | Engine evidence (PHASE 3) | National positional 4-layer engine rows **121/121 PASS** (independently transcribed expected table vs real engine: base/shift/Link/Link+Shift + sequences) | reports/standards/evidence-raw/bds_national_positional_engine_rows.csv | build+run `scripts/layout_verify/national_positional_verify.cpp` (build command in file header) |
 | EV-D-05 | Reference document (PHASE 3) | Official National Keyboard of Bangladesh (BDS 1738:2018) diagram — Unicode Consortium public document L2/19-079, Figure 4 (page 4), fetched 2026-11-24 | unicode.org/L2/L2019/19079-bangla-letters.pdf | fetch URL on access date |
-| EV-D-06 | Reference source (PHASE 3) | BornoTSF National.cpp/.h factual mapping (GPL-3.0) — facts only, no code copied; README status “Tested (WIP)” recorded | github.com/JayedAhsan/BornoTSF | fetch on access date |
-| EV-R-06 | Report (PHASE 3) | Three-way key-by-key discrepancy report (official diagram vs BornoTSF vs SubornoIME before/after) | reports/standards/BDS_NATIONAL_LAYOUT_DISCREPANCY_REPORT.md | n/a (report) |
+| EV-D-06 | Reference source (PHASE 3) | legacy reference National.cpp/.h factual mapping (GPL-3.0) — facts only, no code copied; README status “Tested (WIP)” recorded | the public reference repository | fetch on access date |
+| EV-R-06 | Report (PHASE 3) | Three-way key-by-key discrepancy report (official diagram vs legacy reference IME vs SubornoIME before/after) | reports/standards/BDS_NATIONAL_LAYOUT_DISCREPANCY_REPORT.md | n/a (report) |
 | EV-D-01..04 | Officially DEAD/blocked access | bstibds.com record links 404 (SRC-04/05); store API token-gated (SRC-18); BCC/BSTI pages body-empty (SRC-06/09/10) | source register | fetch on access date |
 
 ## 2. Evidence → matrix traceability

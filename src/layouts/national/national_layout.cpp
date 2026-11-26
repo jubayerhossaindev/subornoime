@@ -35,7 +35,7 @@ struct NationalKeyMapping {
 
 // Keyboard of Bangladesh (BDS 1738:2018)") and cross-checked against the
 
-// BornoTSF National mapping facts. Clean-room transcription: key->character
+// legacy reference IME National mapping facts. Clean-room transcription: key->character
 
 // facts only, no GPL code.
 

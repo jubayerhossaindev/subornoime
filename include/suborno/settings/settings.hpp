@@ -90,13 +90,13 @@ struct EngineSettings {
     std::string active_layout_id = "suborno-phonetic";
     std::size_t candidate_limit = 16;
     bool learning_enabled = true;
-    /// BornoTSF compatibility switches (src/layouts/borno_compat):
+    /// legacy compatibility switches (src/layouts/compat):
     /// phonetic_correction toggles the ac.json autocorrect/pass-through layer
-    /// for the Borno/Avro phonetic layouts (BornoTSF registry value
-    /// PhoneticCorrection; default enabled, exactly like BornoTSF).
+    /// for the Classic/Smart phonetic layouts (legacy compatibility registry value
+    /// PhoneticCorrection; default enabled, exactly like the legacy reference IME).
     bool phonetic_correction = true;
-    /// BornoTSF registry value TypingStyle ("normal" | "traditional"). The
-    /// BornoTSF regex layouts used it to pick the matra-before/matra-after
+    /// legacy compatibility registry value TypingStyle ("normal" | "traditional"). The
+    /// legacy reference IME regex layouts used it to pick the matra-before/matra-after
     /// rule branch; Suborno's keystroke-level National/Probhat engines accept
     /// both matra orders natively, so the value is stored for configuration
     /// parity and surfaced in the settings UI.

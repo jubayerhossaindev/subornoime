@@ -99,15 +99,15 @@ Source: "..\..\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\data\i18n\en\ui.json"; DestDir: "{app}\data\i18n\en"; Flags: ignoreversion
 Source: "..\..\data\i18n\bn\ui.json"; DestDir: "{app}\data\i18n\bn"; Flags: ignoreversion
 Source: "{#MyBuildDir}\Release\suborno_windows_tsf.dll"; DestDir: "{commonappdata}\Suborno\components\tsf\{#MyArchitecture}"; Flags: ignoreversion
-; BornoTSF compatibility data: the phonetic autocorrect dictionary and the
+; legacy reference IME compatibility data: the phonetic autocorrect dictionary and the
 ; Khipro mim layout specification. The engines load them from the shared
 ; data tree first (then the per-user override paths, then these bundled
-; copies), mirroring BornoTSF's own install layout.
+; copies), mirroring legacy reference IME's own install layout.
 Source: "..\..\assets\dictionaries\ac.json"; DestDir: "{commonappdata}\Suborno\dictionaries"; Flags: ignoreversion
 Source: "..\..\assets\layouts\bn-khipro.mim"; DestDir: "{commonappdata}\Suborno\layouts"; Flags: ignoreversion
-; Per-layout icons ported from BornoTSF (Borno Phonetic, Avro, Khipro,
+; Per-layout icons (Suborno Classic, Suborno Smart, Khipro,
 ; Jatiyo, Probhat plus the application icon set).
-Source: "..\..\assets\layout-icons\borno\*.ico"; DestDir: "{commonappdata}\Suborno\assets\layout-icons\borno"; Flags: ignoreversion
+Source: "..\..\assets\layout-icons\layouts\*.ico"; DestDir: "{commonappdata}\Suborno\assets\layout-icons\layouts"; Flags: ignoreversion
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription: "Additional icons:"; Flags: checkedonce
@@ -119,7 +119,7 @@ Name: "{commonappdata}\Suborno\assets"; Permissions: users-readexec
 Name: "{commonappdata}\Suborno\assets\fonts"; Permissions: users-readexec
 Name: "{commonappdata}\Suborno\assets\themes"; Permissions: users-readexec
 Name: "{commonappdata}\Suborno\assets\layout-icons"; Permissions: users-readexec
-Name: "{commonappdata}\Suborno\assets\layout-icons\borno"; Permissions: users-readexec
+Name: "{commonappdata}\Suborno\assets\layout-icons\layouts"; Permissions: users-readexec
 Name: "{commonappdata}\Suborno\dictionaries"; Permissions: users-readexec
 Name: "{commonappdata}\Suborno\layouts"; Permissions: users-readexec
 Name: "{commonappdata}\Suborno\components"; Permissions: users-readexec
@@ -440,7 +440,7 @@ begin
 
       RemoveDirectoryIfEmpty(SharedDirectory + '\layouts');
       RemoveDirectoryIfEmpty(SharedDirectory + '\dictionaries');
-      RemoveDirectoryIfEmpty(SharedDirectory + '\assets\layout-icons\borno');
+      RemoveDirectoryIfEmpty(SharedDirectory + '\assets\layout-icons\layouts');
       RemoveDirectoryIfEmpty(SharedDirectory + '\assets\layout-icons');
       RemoveDirectoryIfEmpty(SharedDirectory + '\assets\fonts');
       RemoveDirectoryIfEmpty(SharedDirectory + '\assets\themes');

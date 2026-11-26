@@ -220,7 +220,7 @@ TEST(CoverageKhiproTest, InvalidUtf8AndEmptyInputYieldNoOutputAndNoCandidates) {
     EXPECT_EQ(candidates.front().stable_id, "layout:khipro:আমি");
     EXPECT_EQ(candidates.front().source, CandidateSource::layout);
     EXPECT_DOUBLE_EQ(candidates.front().score, 1.0);
-    EXPECT_EQ(candidates.front().rationale, "Khipro compositional output (BornoTSF mim engine)");
+    EXPECT_EQ(candidates.front().rationale, "Khipro compositional output (legacy reference IME mim engine)");
 }
 
 // Covers khipro_layout.cpp — characters with no mapping fall through byte

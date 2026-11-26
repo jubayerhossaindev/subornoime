@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-সাতটি layout-এর মধ্যে **পাঁচটি ENGINE VERIFIED** (`suborno-phonetic`, `english`, `borno-phonetic`, `avro-phonetic`, `national`) এবং **দুটি এখন ENGINE VERIFIED (fix applied)** (`khipro` — trailing virama ক্ 2026-11-24-এ `qq` token দিয়ে ঠিক; `probhat` — standalone ় 2026-11-24-এ AltGr+0x34 extension দিয়ে ঠিক)। সাতটির Windows Runtime সবগুলোই **BLOCKED** — sandbox-এ Windows 10 x64 + MSVC v143 নেই। কোনো layout-এ FAIL-বাহ্যিক engine defect নেই; তিনটি brief-convention mismatch (Borno `Ta;i`/`mo;i`, Avro `t''`) ব্রিফের কনভেনশন ও implementation কনভেনশনের পার্থক্য মাত্র — প্রতিটির engine-সঠিক সিকোয়েন্স যাচাই করে PASS করানো হয়েছে।
+সাতটি layout-এর মধ্যে **পাঁচটি ENGINE VERIFIED** (`suborno-phonetic`, `english`, `suborno-classic`, `suborno-smart`, `national`) এবং **দুটি এখন ENGINE VERIFIED (fix applied)** (`khipro` — trailing virama ক্ 2026-11-24-এ `qq` token দিয়ে ঠিক; `probhat` — standalone ় 2026-11-24-এ AltGr+0x34 extension দিয়ে ঠিক)। সাতটির Windows Runtime সবগুলোই **BLOCKED** — sandbox-এ Windows 10 x64 + MSVC v143 নেই। কোনো layout-এ FAIL-বাহ্যিক engine defect নেই; তিনটি brief-convention mismatch (Classic `Ta;i`/`mo;i`, Smart `t''`) ব্রিফের কনভেনশন ও implementation কনভেনশনের পার্থক্য মাত্র — প্রতিটির engine-সঠিক সিকোয়েন্স যাচাই করে PASS করানো হয়েছে।
 
 মোট তাজা execution: unit 557/557 + integration 2/2; corpus 294/294; paragraph 18/18; inventory 401 PASS + 1 NOT_DERIVABLE; chandrabindu/nga probe 36/36 (+ dict 4/4); brief sequences 163/167 (+1 NOT_TYPEABLE); convention probe 20/23; digits/punctuation 13/13; switch-chain 7/7; editing engine-level 19 PASS + 9 BLOCKED (host-app); composition 7 PASS + 2 NOT_APPLICABLE; switching 4/4; stress 11 PASS + 4 BLOCKED।
 
@@ -16,8 +16,8 @@
 |---|---|---|---|---|---|---|---|---|---|---|
 | 1 | Suborno | PASS | PASS 49/49 | PASS 67/67 | PASS 3/3 | PASS (engine) / BLOCKED (host-app) | PASS (NFC) | PASS (BUG-06, F-3, F-4) | BLOCKED | নেই |
 | 2 | English | PASS (identity) | N/A | N/A | N/A | PASS (engine) / BLOCKED (host-app) | PASS (ASCII identity) | N/A | BLOCKED | নেই |
-| 3 | Borno | PASS | PASS 49/49 | PASS 67/67 | PASS 3/3 | PASS (engine) / BLOCKED (host-app) | PASS (NFC) | PASS (BUG-05, accent-key) | BLOCKED | standalone ় / ক় টাইপ করা যায় না (minor) |
-| 4 | Avro | PASS | PASS 49/49 | PASS 67/67 | PASS 3/3 | PASS (engine) / BLOCKED (host-app) | PASS (NFC) | PASS (AvroUnchangedHeadlines) | BLOCKED | standalone ় / ক় টাইপ করা যায় না (minor) |
+| 3 | Suborno Classic | PASS | PASS 49/49 | PASS 67/67 | PASS 3/3 | PASS (engine) / BLOCKED (host-app) | PASS (NFC) | PASS (BUG-05, accent-key) | BLOCKED | standalone ় / ক় টাইপ করা যায় না (minor) |
+| 4 | Suborno Smart | PASS | PASS 49/49 | PASS 67/67 | PASS 3/3 | PASS (engine) / BLOCKED (host-app) | PASS (NFC) | PASS (SmartUnchangedHeadlines) | BLOCKED | standalone ় / ক় টাইপ করা যায় না (minor) |
 | 5 | Khipro | PASS | PASS 49/49 | PASS 74/74 (ক্ fixed 2026-11-24, +7 extension rows) | PASS 3/3 | PASS (engine) / BLOCKED (host-app) | PASS (NFC) | PASS (F-5 + mission) | BLOCKED | নেই (trailing virama `qq` token দিয়ে সমাধান) |
 | 6 | Probhat | PASS (scan-code) | PASS 49/49 | PASS 69/69 (় fixed 2026-11-24 via AltGr+0x34, +2 rows) | PASS 3/3 | PASS (engine) / BLOCKED (host-app) | PASS (NFC parity, য় decomposed) | PASS (NFC parity test + mission) | BLOCKED | নেই (standalone ় Compatibility Extension দিয়ে সমাধান) |
 | 7 | National | PASS | PASS 49/49 | PASS 67/67 | PASS 3/3 | PASS (engine) / BLOCKED (host-app) | PASS (NFC) | PASS (F-1/F-2) | BLOCKED | নেই |
@@ -28,8 +28,8 @@
 |---|---|---|---|
 | Suborno | ENGINE VERIFIED | BLOCKED | ENGINE VERIFIED — WINDOWS RUNTIME BLOCKED |
 | English | ENGINE VERIFIED (passthrough identity) | BLOCKED | ENGINE VERIFIED (passthrough identity) — WINDOWS RUNTIME BLOCKED |
-| Borno | ENGINE VERIFIED | BLOCKED | ENGINE VERIFIED — WINDOWS RUNTIME BLOCKED |
-| Avro | ENGINE VERIFIED | BLOCKED | ENGINE VERIFIED — WINDOWS RUNTIME BLOCKED |
+| Suborno Classic | ENGINE VERIFIED | BLOCKED | ENGINE VERIFIED — WINDOWS RUNTIME BLOCKED |
+| Suborno Smart | ENGINE VERIFIED | BLOCKED | ENGINE VERIFIED — WINDOWS RUNTIME BLOCKED |
 | Khipro | ENGINE VERIFIED (fix applied) | BLOCKED | ENGINE VERIFIED (fix applied) — WINDOWS RUNTIME BLOCKED |
 | Probhat | ENGINE VERIFIED (fix applied) | BLOCKED | ENGINE VERIFIED (fix applied) — WINDOWS RUNTIME BLOCKED |
 | National | ENGINE VERIFIED | BLOCKED | ENGINE VERIFIED — WINDOWS RUNTIME BLOCKED |
@@ -52,7 +52,7 @@ Overall Verdict-এ engine ও Windows উভয় স্তর বিবেচ
 
 ## 4. Layout ধরন ও Mapping তুলনা
 
-| Feature | Suborno | Borno | Avro | Khipro | Probhat | National |
+| Feature | Suborno | Suborno Classic | Suborno Smart | Khipro | Probhat | National |
 |---|---|---|---|---|---|---|
 | Chandrabindu ঁ | `^` | `^` | `^` | `/` | physical (Shift+0x34) | `^` |
 | ঙ | `ng` | `Ng` | `Ng` | `Ng` | physical (Shift+0x32) | `ng` |
@@ -91,7 +91,7 @@ Overall Verdict-এ engine ও Windows উভয় স্তর বিবেচ
 
 | ID | Layout | Issue | বর্তমান Status | Evidence (এই রান) |
 |---|---|---|---|---|
-| BUG-05 | Borno | Display-name mixed-script corruption | **Fixed** (`cf2a0ca`) | `EngineTest.LayoutDisplayNamesAreCorrectAndScriptClean` OK; layout_inventory সব নাম নির্মল |
+| BUG-05 | Suborno Classic | Display-name mixed-script corruption | **Fixed** (`cf2a0ca`) | `EngineTest.LayoutDisplayNamesAreCorrectAndScriptClean` OK; layout_inventory সব নাম নির্মল |
 | BUG-06 | Suborno | Chandrabindu dropping | **Fixed** (`c1462f4`) | `SubornoChandrabinduIsTyped` OK; probe pa^c/ka^c/a^sh/sa^ko 6-layout PASS |
 | F-3 | Suborno | `ri` token shadowing | **Fixed** (`c1462f4`) | `SubornoRiNoLongerShadowsRaPlusIKar` OK; brief `pri`→প্রি, `krripa`→কৃপা PASS |
 | F-4 | Suborno | ঙ contextual handling | **Fixed** (`c1462f4`) | `SubornoNgaBeforeVelarFinalAndStandalone` OK; `ngk`/`ngg`/`Ongk` PASS |
@@ -100,30 +100,30 @@ Overall Verdict-এ engine ও Windows উভয় স্তর বিবেচ
 | — | Khipro | Trailing/displaced virama ক্ | **Known Limitation** (intentional design) | inventory NOT_DERIVABLE 1/402; docs/reports/FINAL_UI_FUNCTIONAL_VERIFICATION.md:22 |
 | — | Probhat | Standalone ় key নেই | **Known Limitation** (upstream KLC faithful) | brief probe NOT_TYPEABLE; nukta_probe_stdout.txt |
 | — | Probhat | NFC commit parity | **Fixed/OK** | `ProbhatSessionCommitMatchesTransliterateEncoding` OK; য় = U+09AF U+09BC |
-| — | Borno/Avro | Standalone ় ও সাধারণ ক+় টাইপ করা যায় না | **Capability note** (minor; য়/ড়/ঢ় dedicated token আছে) | nukta_probe_stdout.txt |
-| — | (brief) | Borno `Ta;i`/`mo;i`, Avro `t''` ব্রিফ-কনভেনশন mismatch | **Documented** — engine defect নয় | convention_sequences.csv: সঠিক সিকোয়েন্স PASS |
+| — | Classic/Smart | Standalone ় ও সাধারণ ক+় টাইপ করা যায় না | **Capability note** (minor; য়/ড়/ঢ় dedicated token আছে) | nukta_probe_stdout.txt |
+| — | (brief) | Classic `Ta;i`/`mo;i`, Smart `t''` ব্রিফ-কনভেনশন mismatch | **Documented** — engine defect নয় | convention_sequences.csv: সঠিক সিকোয়েন্স PASS |
 
 **Open Bug: 0** — এই রানে কোনো নতুন engine defect ধরা পড়েনি।
 
 ## 8. তুলনামূলক মূল্যায়ন (র‍্যাঙ্কিং ছাড়া)
 
-1. **Rule-based**: Suborno (stateful parser + pending control)। 2. **Token-table**: Borno, Avro, National (Ridmik-style)। 3. **Compositional**: Khipro (auto-virama)। 4. **Fixed physical**: Probhat (scan-code, MIT KLC)। 5. **Passthrough**: English।
-6. **Explicit hasanta**: Borno `,,`, Avro `,,`, National `X`, Probhat 0x35, Suborno `:halant:` — Khipro-তে নেই (auto-join only)।
-7. **Automatic virama**: Khipro (design-এই); Borno/Avro/Suborno/National conjunct গঠনে halant/virama mechanism ব্যবহার করে; Probhat-এ ব্যবহারকারী ্ key চাপেন।
-8. **Accent key**: Borno + Avro (backtick — dependent vowel form); অন্যরা নেই।
+1. **Rule-based**: Suborno (stateful parser + pending control)। 2. **Token-table**: Classic, Smart, National (Ridmik-style)। 3. **Compositional**: Khipro (auto-virama)। 4. **Fixed physical**: Probhat (scan-code, MIT KLC)। 5. **Passthrough**: English।
+6. **Explicit hasanta**: Suborno Classic `,,`, Suborno Smart `,,`, National `X`, Probhat 0x35, Suborno `:halant:` — Khipro-তে নেই (auto-join only)।
+7. **Automatic virama**: Khipro (design-এই); Classic/Smart/Suborno/National conjunct গঠনে halant/virama mechanism ব্যবহার করে; Probhat-এ ব্যবহারকারী ্ key চাপেন।
+8. **Accent key**: Classic + Smart (backtick — dependent vowel form); অন্যরা নেই।
 9. **Special mapping আলাদা**: Probhat (physical), Suborno (`:control:` tokens), Khipro (`;` `,` `/` `.`), National (`` ` `` nukta)।
-10. **Known limitation**: Khipro (ক্), Probhat (় standalone), Borno/Avro (়/ক় minor)।
+10. **Known limitation**: Khipro (ক্), Probhat (় standalone), Classic/Smart (়/ক় minor)।
 
 কোনো layout-কে অন্যটির চেয়ে ভালো/খারাপ ঘোষণা করা হয়নি — প্রতিটির নিজস্ব কনভেনশন ও design constraint আলাদা, এবং প্রমাণ আলাদাভাবে সংরক্ষিত।
 
 ## 9. চূড়ান্ত প্রশ্নোত্তর
 
-1. **কয়টি Engine-Level Verified?** — পাঁচটি (Suborno, English passthrough, Borno, Avro, National); আরও দুটি PARTIALLY VERIFIED (Khipro, Probhat) — সবগুলোর engine টাইপিং কাজ করে।
+1. **কয়টি Engine-Level Verified?** — পাঁচটি (Suborno, English passthrough, Classic, Smart, National); আরও দুটি PARTIALLY VERIFIED (Khipro, Probhat) — সবগুলোর engine টাইপিং কাজ করে।
 2. **কয়টি Windows Runtime Verified?** — শূন্য (0)।
 3. **কয়টি Windows Runtime Blocked?** — সাতটিরই (7/7)।
 4. **ছয়টি বাংলা Layout-এর Corpus Result?** — প্রতিটি 49/49 (মোট 294/294 PASS)।
-5. **Character Inventory Result?** — 402 case-এ 401 PASS; 1 NOT_DERIVABLE (khipro ক্ trailing virama — design limitation)। per-layout: suborno/borno/avro/probhat/national 67/67, khipro 66/67।
-6. **কোন Layout-এ Known Limitation?** — Khipro (trailing virama ক্), Probhat (standalone ় key নেই), Borno/Avro (standalone ় / ক় minor note)।
+5. **Character Inventory Result?** — 402 case-এ 401 PASS; 1 NOT_DERIVABLE (khipro ক্ trailing virama — design limitation)। per-layout: suborno/classic/smart/probhat/national 67/67, khipro 66/67।
+6. **কোন Layout-এ Known Limitation?** — Khipro (trailing virama ক্), Probhat (standalone ় key নেই), Classic/Smart (standalone ় / ক় minor note)।
 7. **কোন Layout-এ Open Bug?** — কোনোটিতে নেই (0 open engine bug)।
 8. **প্রতিটি Layout-এর বিশেষ Mapping?** — Section 4-এর তুলনা টেবিল + per-layout REPORT।
 9. **English Passthrough সঠিক কি?** — Engine-স্তরে হ্যাঁ: identity 6/6 + backspace PASS; TSF never-intercept সোর্স-নিশ্চিত; চূড়ান্ত প্রমাণ Windows runtime-এ (BLOCKED)।
@@ -132,5 +132,5 @@ Overall Verdict-এ engine ও Windows উভয় স্তর বিবেচ
 
 ## Final Executive Statement
 
-Engine-level typing সফল হওয়া এবং Windows runtime সফল হওয়া এক বিষয় নয়। ছয়টি বাংলা layout-এর engine-স্তরের ফলাফল পৃথকভাবে এখানে উল্লেখ করা হয়েছে: Suborno/Borno/Avro/National সম্পূর্ণ PASS; Khipro-এর trailing-virama limitation লুকানো হয়নি (66/67, বাকি সব PASS); Probhat-এর standalone ়-হীনতা upstream KLC-এর বিশ্বস্ত অনুলিপি মাত্র। English passthrough বাংলা corpus-এর সাথে মেশানো হয়নি — এটি identity দিয়ে পৃথকভাবে যাচাই। Windows runtime যাচাই না হওয়া পর্যন্ত Windows-ready দাবি করা যায় না; তাই সাতটি layout-এর সঠিক মর্যাদা হলো **ENGINE VERIFIED / PARTIALLY VERIFIED — WINDOWS RUNTIME BLOCKED**।
+Engine-level typing সফল হওয়া এবং Windows runtime সফল হওয়া এক বিষয় নয়। ছয়টি বাংলা layout-এর engine-স্তরের ফলাফল পৃথকভাবে এখানে উল্লেখ করা হয়েছে: Suborno/Classic/Smart/National সম্পূর্ণ PASS; Khipro-এর trailing-virama limitation লুকানো হয়নি (66/67, বাকি সব PASS); Probhat-এর standalone ়-হীনতা upstream KLC-এর বিশ্বস্ত অনুলিপি মাত্র। English passthrough বাংলা corpus-এর সাথে মেশানো হয়নি — এটি identity দিয়ে পৃথকভাবে যাচাই। Windows runtime যাচাই না হওয়া পর্যন্ত Windows-ready দাবি করা যায় না; তাই সাতটি layout-এর সঠিক মর্যাদা হলো **ENGINE VERIFIED / PARTIALLY VERIFIED — WINDOWS RUNTIME BLOCKED**।
 

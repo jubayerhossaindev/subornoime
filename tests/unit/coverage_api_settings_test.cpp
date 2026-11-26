@@ -504,7 +504,7 @@ TEST(CoverageApiSettings, SettingsEveryKeyAcceptsAValidNonDefaultValue) {
 
     std::vector<std::pair<std::string, std::string>> entries = mandatory_settings_entries();
     const std::vector<std::pair<std::string, std::string>> overrides{
-        {"active_layout", "avro-phonetic"},
+        {"active_layout", "suborno-smart"},
         {"candidate_limit", "100"},
         {"learning_enabled", "false"},
         {"remember_last_input_layout", "false"},
@@ -562,7 +562,7 @@ TEST(CoverageApiSettings, SettingsEveryKeyAcceptsAValidNonDefaultValue) {
 
     ASSERT_EQ(result.status, SettingsStatus::ok) << result.error;
     EngineSettings expected;
-    expected.active_layout_id = "avro-phonetic";
+    expected.active_layout_id = "suborno-smart";
     expected.candidate_limit = 100;
     expected.learning_enabled = false;
     expected.general.remember_last_input_layout = false;
@@ -595,7 +595,7 @@ TEST(CoverageApiSettings, SettingsEveryKeyAcceptsAValidNonDefaultValue) {
     expected.input.select_candidate_using_number_keys = false;
     expected.input.preferred_encoding = TextEncoding::ansi;
 
-    EXPECT_EQ(result.settings.active_layout_id, "avro-phonetic");
+    EXPECT_EQ(result.settings.active_layout_id, "suborno-smart");
     EXPECT_EQ(result.settings.candidate_limit, expected.candidate_limit);
     EXPECT_EQ(result.settings.learning_enabled, expected.learning_enabled);
     EXPECT_EQ(result.settings.general.remember_last_input_layout,

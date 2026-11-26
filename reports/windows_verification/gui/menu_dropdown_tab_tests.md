@@ -7,7 +7,7 @@ workflow job.
 
 ## Dropdowns (10, source inventory rows 3, 11, 12, 15, 16, 18, 23, 24, 25, 29)
 
-- layout (7 options: English, বাংলা Suborno, বাংলা Borno, Avro, Khipro,
+- layout (7 options: English, বাংলা Suborno, বাংলা Classic, Smart, Khipro,
   Probhat, National), start_mode, font, layout_shortcut, theme,
   orientation, switching_mode, locale, encoding, ui_language.
 - Harness: open via ExpandCollapse → **enumerate and count visible options

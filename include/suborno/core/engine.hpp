@@ -19,7 +19,7 @@ struct EngineConfig {
     std::filesystem::path settings_path;
     std::filesystem::path dictionary_path;
     /// Bundled assets directory (contains dictionaries/ac.json and
-    /// layouts/bn-khipro.mim). When set and the files exist, the BornoTSF
+    /// layouts/bn-khipro.mim). When set and the files exist, the legacy reference IME
     /// compatibility engines load their data from here before falling back
     /// to the per-user / program-data search order. Empty = standard search.
     std::filesystem::path assets_path;

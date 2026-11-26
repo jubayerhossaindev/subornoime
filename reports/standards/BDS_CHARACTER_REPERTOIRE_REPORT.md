@@ -59,7 +59,7 @@ Evidence: `reports/standards/evidence-raw/bds_repertoire_inventory.csv`,
 | ঢ় | U+09A2 U+09BC | Probhat ঢ+nukta; Khipro `rff` | KEY-06/07 |
 | য় | U+09AF U+09BC | Probhat 0x2C; national `Y`; Khipro | KEY-08/09 |
 | Bengali digits ০-৯ | U+09E6..U+09EF | National `0-9`; Probhat number row | digit tests, FP-122/141 |
-| Currency ৳ | U+09F3 | Khipro; Avro `$`; Probhat Shift+0x05 | source + harness |
+| Currency ৳ | U+09F3 | Khipro; Smart `$`; Probhat Shift+0x05 | source + harness |
 | Dari । | U+0964 | Probhat 0x34; National `..`; Khipro `.` | source + harness |
 | Candrabindu ঁ / anusvara ং / visarga ঃ | U+0981..U+0983 | all Bengali layouts | harness rows |
 | Reserved positions (e.g. U+0984, U+0991, U+0992, U+09E4, U+09E5) | — | never emitted; safe handling | `ReservedBengaliCodePointsDoNotCorruptEngine` |

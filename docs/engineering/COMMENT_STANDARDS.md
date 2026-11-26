@@ -35,12 +35,11 @@ applies?
 ## Provenance and legal notes
 
 Third-party-derived behaviour keeps an explicit provenance header, for example
-in `src/layouts/borno_compat/*`:
+in `src/layouts/compat/*`:
 
 ```text
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Behaviour provenance: BornoTSF BornoPhonetic (GPL-3, c) Jayed Ahsan Saad
-// and BornoTSF contributors).
+// Behaviour provenance: the legacy reference behaviour contract; see LICENSE and THIRD_PARTY_NOTICES.md..
 ```
 
 These lines are attribution obligations, not implementation comments — they

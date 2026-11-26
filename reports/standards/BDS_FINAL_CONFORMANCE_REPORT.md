@@ -24,7 +24,7 @@ PHASE 2 commit (এই রিপোর্টের কমিট)
 > **PHASE 3 হালনাগাদ (২০২৬-১১-২৪, এই রিপোর্টের কমিট)**: National layout-কে
 > phonetic prototype থেকে **পূর্ণ positional Jatiyo layout**-এ rewrite করা
 > হয়েছে — official **National Keyboard of Bangladesh (BDS 1738:2018)**
-> diagram (Unicode public document L2/19-079, Figure 4) + BornoTSF factual
+> diagram (Unicode public document L2/19-079, Figure 4) + legacy reference IME factual
 > reference অনুযায়ী। স্বাধীন engine evidence **121/121 row PASS**; unit suite
 > **609/609 PASS**; Assamese ৰ/ৱ user directive অনুযায়ী excluded; GPL source
 > থেকে শুধু key→character facts নেওয়া হয়েছে (clean-room MIT)। clause-level

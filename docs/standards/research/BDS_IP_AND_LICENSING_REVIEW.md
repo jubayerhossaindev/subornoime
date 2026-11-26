@@ -35,8 +35,8 @@ claim under BDS/Bijoy/Unicode/third-party rights?
 | Layout | Source basis | IP posture |
 |---|---|---|
 | Suborno (phonetic) | Project's own design | Clean-room |
-| Borno (phonetic) | Project's own design | Clean-room |
-| Avro (phonetic) | Project's own rule set written from public behaviour; no upstream source copied | Clean-room implementation; naming may be nominative — trademark care applied (no branding claims beyond compatibility description) |
+| Suborno Classic (phonetic) | Project's own design | Clean-room |
+| Suborno Smart (phonetic) | Project's own rule set written from public behaviour; no upstream source copied | Clean-room implementation; naming may be nominative — trademark care applied (no branding claims beyond compatibility description) |
 | Khipro | Project's own compositional engine; the new `qq` explicit-hasanta token follows the **documented public convention** of Khipro Classic (khipro.khiproteam.com quickstart) — convention referenced, no code copied | Clean-room |
 | Probhat | Upstream MIT-licensed `probhat-layout-windows` KLC (princebillygk, commit debc8310, re-verified 2026-11-24, sha256 210a62fb…) | MIT licensed — compatible with MIT distribution; attribution in THIRD_PARTY_NOTICES.md |
 | English | Trivial passthrough | Clean-room |

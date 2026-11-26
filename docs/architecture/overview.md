@@ -3,7 +3,7 @@
 ## Current status
 
 The repository contains a portable C++20 engine, a generic InputLayout and
-InputSession contract, Suborno and initial Borno phonetic profiles, Probhat and
+InputSession contract, Suborno and initial classic phonetic profiles, Probhat and
 National layout implementations, versioned settings persistence, SQLite
 dictionary/candidate integration, and a native Windows COM/TSF text service.
 The generic session contract separates phonetic parsing from stateless layout

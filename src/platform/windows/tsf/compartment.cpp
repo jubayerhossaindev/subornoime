@@ -1,5 +1,5 @@
-// BornoTSF parity components (GPL-3.0-or-later): ported from BornoTSF
-// infra/Compartment.cpp (c) Jayed Ahsan Saad, BornoTSF contributors.
+// legacy reference IME parity components (GPL-3.0-or-later): ported from legacy reference IME
+// infra/Compartment.cpp (c) Jayed Ahsan Saad, legacy reference IME contributors.
 // See compartment.hpp for the port notes.
 
 #include "suborno/platform/windows/tsf/compartment.hpp"

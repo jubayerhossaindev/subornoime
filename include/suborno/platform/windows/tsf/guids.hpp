@@ -10,8 +10,8 @@ extern const CLSID CLSID_SubornoTextService;
 /// {4B3E70D4-ED21-4C03-A909-920D404DF6EF}
 extern const GUID GUID_LANGUAGE_PROFILE_SUBORNO_BENGALI;
 
-/// Display attributes for composition text (BornoTSF parity: upstream
-/// Global::BornoTSFGuidDisplayAttribute{Input,Converted}). Fresh GUIDs —
+/// Display attributes for composition text (legacy reference IME parity: upstream
+/// display-attribute GUID pair {Input, Converted}). Fresh GUIDs —
 /// display-attribute GUIDs are globally registered via ITfCategoryMgr, so
 /// sharing upstream's GUIDs would collide when both IMEs are installed.
 /// {7A0D52E1-8C4B-4F36-9E2A-B1D3C5E7F901}

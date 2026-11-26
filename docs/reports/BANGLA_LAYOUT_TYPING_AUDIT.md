@@ -13,14 +13,14 @@ Project: SubornoIME · Date: 2026-11-22 (**updated 2026-11-24 — fix campaign `
 
 ## 1. Complete layout inventory (acceptance criterion 21)
 
-Derived from `LayoutRegistry` registrations in `src/core/engine.cpp` (lines 19–46) and enumerated at runtime by `verify::collect_layout_inventory()` from a real `Engine()` instance. **Avro-style and Borno-style phonetic layouts are confirmed to exist** (not assumed from names):
+Derived from `LayoutRegistry` registrations in `src/core/engine.cpp` (lines 19–46) and enumerated at runtime by `verify::collect_layout_inventory()` from a real `Engine()` instance. **Smart-style and Classic-style phonetic layouts are confirmed to exist** (not assumed from names):
 
 | Layout ID | Display name | Type | Availability | Activation | Mapping source | Expected output |
 |---|---|---|---|---|---|---|
 | `suborno-phonetic` | বাংলা (Suborno) | Phonetic (rule parser, stateful session) | Available (default) | Settings Input page, tray menu, Ctrl+Shift cycle | `src/layouts/phonetic/suborno_phonetic_layout.cpp` + rule parser | Corpus 49/49 PASS (BUG-06 + ri-shadowing + nga fixed, `c1462f4`) |
 | `english` | English | Passthrough | Available | Same activation surface | `src/layouts/english/english_layout.cpp` | Raw Latin passthrough; IME never intercepts |
-| `borno-phonetic` | বাংলা (Borno) *(fixed BUG-05, commit `cf2a0ca`)* | Phonetic (token table, stateless session) | Available | Same | `src/layouts/phonetic/borno_phonetic_layout.cpp` (`kBornoTokens`) | Corpus 49/49 PASS at engine level |
-| `avro-phonetic` | Avro | Phonetic (token table, accent key enabled) | Available | Same | `src/layouts/phonetic/avro_phonetic_layout.cpp` (`kAvroTokens`) | Corpus 49/49 PASS at engine level |
+| `suborno-classic` | বাংলা (Suborno Classic) *(fixed BUG-05, commit `cf2a0ca`)* | Phonetic (token table, stateless session) | Available | Same | `src/layouts/phonetic/suborno_classic_layout.cpp` (`kClassicTokens`) | Corpus 49/49 PASS at engine level |
+| `suborno-smart` | Suborno Smart | Phonetic (token table, accent key enabled) | Available | Same | `src/layouts/phonetic/suborno_smart_layout.cpp` (`kSmartTokens`) | Corpus 49/49 PASS at engine level |
 | `khipro` | Khipro | Compositional (auto-virama between consonants) | Available | Same | `src/layouts/khipro/khipro_layout.cpp` | Corpus 49/49 PASS; inventory **74/74** (trailing virama ক্ fixed 2026-11-24 via `qq` token; +7 extension rows) |
 | `probhat` | Probhat | Fixed (physical scan-code mapping, MIT Probhat KLC) | Available | Same | `src/layouts/probhat/probhat_layout.cpp` (`kProbhatMappings`) | Corpus 49/49 PASS at engine level |
 | `national` | National | Phonetic (National/Ridmik-style token table, explicit hasanta key `X`) | Available | Same | `src/layouts/national/national_layout.cpp` (`kNationalTokens`) | Corpus 49/49 PASS (virama + full missing inventory added, `c1462f4`) |
@@ -38,7 +38,7 @@ Kar signs are tested attached to a base consonant (ক+া ি ী ু ূ ৃ �
 
 ### 2.1 Engine-level results per layout
 
-| Suite | suborno-phonetic | borno-phonetic | avro-phonetic | khipro | probhat | national |
+| Suite | suborno-phonetic | suborno-classic | suborno-smart | khipro | probhat | national |
 |---|---|---|---|---|---|---|
 | Corpus (294) | 49 P / 0 F / 0 ND | 49 P / 0 F / 0 ND | 49 P / 0 F / 0 ND | 49 P / 0 F / 0 ND | 49 P / 0 F / 0 ND | 49 P / 0 F / 0 ND |
 | Inventory ext. (402) | 67 P | 67 P | 67 P | 66 P / **1 ND** (ক্ trailing virama) | 67 P (ড় ঢ় য় are the layout's own composed NFC forms) | 67 P |
@@ -80,10 +80,10 @@ Engine-level editing suite (28 cases, re-run 2026-11-24): **19 PASS** — backsp
 |---|---|---|---|---|
 | **BUG-06** | **High (default layout)** | `suborno-phonetic` | Chandrabindu (ঁ U+0981) silently dropped: পাঁচ→পাচ, কাঁচ→কাচ, আঁশ→আশ, সাঁকো→সাকো | **FIXED** — `^` token in phonetic_tokenizer.cpp; probe 36/36 PASS; regression tests SubornoChandrabinduIsTyped; dict=ON path matched |
 | F-1/F-2 | **Critical** | `national` | No virama mechanism; ঙ ঞ ৃ য় ৎ । digits untypeable | **FIXED** — explicit hasanta key `X`, contextual ng/ny, `Y`, `tw`, `..`, `^`, `` ` ``, digits; corpus 49/49 PASS |
-| F-3 | High | `suborno-phonetic` | `ri` token shadows র+i-kar (করি→কঋ) | **FIXED** — `rri` vowel (Avro convention), `ri` now র+ি; করি/পারি/প্রিয়/জনপ্রিয় PASS |
+| F-3 | High | `suborno-phonetic` | `ri` token shadows র+i-kar (করি→কঋ) | **FIXED** — `rri` vowel (legacy convention), `ri` now র+ি; করি/পারি/প্রিয়/জনপ্রিয় PASS |
 | F-4 | Medium | `suborno-phonetic` | ঙ before consonant unreachable (ঙ্ক→ংক); standalone ঙ→ং | **FIXED** — state-aware nasal_ng: ঙ before vowel/velar conjunct + word-final after boundary; ং attached to runs/vowels and before other consonants |
 | F-5 | Medium | `khipro` | ঙ untypeable; conjunct after nukta blocked | **FIXED** — `Ng` mapping; `,,' keeps the run alive (idempotent); ঙ্ক/ঙ্গ/বাঙালি/সফটওয়্যার PASS |
-| (new) | Medium | `borno-phonetic` | kar + independent vowel collision (টাই) | **FIXED** — accent key enabled (`Ta\`i` PASS) |
+| (new) | Medium | `suborno-classic` | kar + independent vowel collision (টাই) | **FIXED** — accent key enabled (`Ta\`i` PASS) |
 | (new) | Low | `probhat` | session commit non-NFC | **FIXED** — commit() normalizes; parity test PASS |
 | (new) | Low | `khipro`;`national` | Latin digits passed through literally | **FIXED** — both map 0-9 → ০-৯ |
 | (new) | Medium | `national` | `b+h` merged into ভ (ব্যবহারকারী untypeable) | **FIXED** — `B` alternate for ব added, duplicate `Bh` token removed |
@@ -97,7 +97,7 @@ Executed on a Windows 10 22H2 machine by `layout_verification/windows-typing-har
 
 Legend: E-PASS/E-FAIL = engine-level executed result; R = Windows runtime row (all R cells BLOCKED).
 
-| # | Test category | suborno | borno | avro | khipro | probhat | national |
+| # | Test category | suborno | classic | smart | khipro | probhat | national |
 |---|---|---|---|---|---|---|---|
 | 1 | Common words | E-PASS | E-PASS | E-PASS | E-PASS | E-PASS | E-PASS |
 | 2 | Vowel inventory | E-PASS | E-PASS | E-PASS | E-PASS | E-PASS | E-PASS |
@@ -115,4 +115,4 @@ Legend: E-PASS/E-FAIL = engine-level executed result; R = Windows runtime row (a
 | 14 | Unicode code points | E-PASS | E-PASS | E-PASS | E-PASS (ক্ displaced-virama headwords excepted) | E-PASS | E-PASS |
 | — | Windows SendInput runtime | R-BLOCKED | R-BLOCKED | R-BLOCKED | R-BLOCKED | R-BLOCKED | R-BLOCKED |
 
-**Bottom line (2026-11-24, fix mission #2):** at engine level, **all six Bangla layouts now type the complete corpus AND the full extended inventory correctly** — 294/294 core cases, **444/444** extended-inventory cases (khipro 74/74 incl. ক্, probhat 69/69 incl. ়), 579-row fresh harness with 0 FAIL, 576/576 unit tests, ASan+UBSan clean. The two historical engine limitations are gone; the only remaining gaps are Windows-runtime rows (BLOCKED — no Windows environment) and the documented brief-convention differences (Borno `;`, Avro `` t`` ``, not engine defects). **None of this is a Windows-runtime proof**: the SendInput row stays R-BLOCKED on purpose, and per the Final Rule no layout may be declared Fully Functional until `Run-BanglaTypingTests.ps1` is executed on a real Windows 10 22H2 machine (criterion 22/30).
+**Bottom line (2026-11-24, fix mission #2):** at engine level, **all six Bangla layouts now type the complete corpus AND the full extended inventory correctly** — 294/294 core cases, **444/444** extended-inventory cases (khipro 74/74 incl. ক্, probhat 69/69 incl. ়), 579-row fresh harness with 0 FAIL, 576/576 unit tests, ASan+UBSan clean. The two historical engine limitations are gone; the only remaining gaps are Windows-runtime rows (BLOCKED — no Windows environment) and the documented brief-convention differences (Suborno Classic `;`, Suborno Smart `` t`` ``, not engine defects). **None of this is a Windows-runtime proof**: the SendInput row stays R-BLOCKED on purpose, and per the Final Rule no layout may be declared Fully Functional until `Run-BanglaTypingTests.ps1` is executed on a real Windows 10 22H2 machine (criterion 22/30).

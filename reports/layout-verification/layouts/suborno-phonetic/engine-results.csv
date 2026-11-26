@@ -7,7 +7,7 @@ ENG-CORP-005,suborno-phonetic,corpus,sub:boundary:rN,সুবর্ণ,সু�
 ENG-CORP-006,suborno-phonetic,corpus,k:boundary:mpiuTar,কম্পিউটার,কম্পিউটার,PASS,cps=U+0995 U+09AE U+09CD U+09AA U+09BF U+0989 U+099F U+09BE U+09B0; dict_top=কম্পিউটার
 ENG-CORP-007,suborno-phonetic,corpus,pr:boundary:yukti,প্রযুক্তি,প্রযুক্তি,PASS,cps=U+09AA U+09CD U+09B0 U+09AF U+09C1 U+0995 U+09CD U+09A4 U+09BF; dict_top=প্রযুক্তি
 ENG-CORP-008,suborno-phonetic,corpus,kiiborD,কীবোর্ড,কীবোর্ড,PASS,cps=U+0995 U+09C0 U+09AC U+09CB U+09B0 U+09CD U+09A1; dict_top=কিবোর্ড
-ENG-CORP-009,suborno-phonetic,corpus,Ovr,অভ্র,অভ্র,PASS,cps=U+0985 U+09AD U+09CD U+09B0; dict_top=অভ্র
+ENG-CORP-009,suborno-phonetic,corpus,Ovr,সুবর্ণ স্মার্ট,সুবর্ণ স্মার্ট,PASS,cps=U+0985 U+09AD U+09CD U+09B0; dict_top=সুবর্ণ স্মার্ট
 ENG-CORP-010,suborno-phonetic,corpus,b:boundary:rN,বর্ণ,বর্ণ,PASS,cps=U+09AC U+09B0 U+09CD U+09A3; dict_top=বর্ণ
 ENG-CORP-011,suborno-phonetic,corpus,sbadhiin:boundary:ta,স্বাধীনতা,স্বাধীনতা,PASS,cps=U+09B8 U+09CD U+09AC U+09BE U+09A7 U+09C0 U+09A8 U+09A4 U+09BE; dict_top=স্বাধিনতা
 ENG-CORP-012,suborno-phonetic,corpus,bidyal:boundary:y:nukta:,বিদ্যালয়,বিদ্যালয়,PASS,cps=U+09AC U+09BF U+09A6 U+09CD U+09AF U+09BE U+09B2 U+09AF U+09BC; dict_top=বিদ্যালয়
@@ -63,12 +63,12 @@ ENG-COMP-05,suborno-phonetic,composition,escape_cancels_composition,,,PASS,reset
 ENG-COMP-06,suborno-phonetic->probhat,composition,switch_mid_composition,,,PASS,old composition had 'am'; new layout session starts empty; TSF _ApplyLayoutChange replaces the session (text_service.cpp:266)
 ENG-STR-01,suborno-phonetic,stress,input_limit_300cp,input_limit,input_limit,PASS,300 sequential single-char appends; 257th+ rejected with input_limit; composition capped at 256 code points
 ENG-STR-02,suborno-phonetic,stress,invalid_utf8_rejected,invalid_utf8,invalid_utf8,PASS,malformed byte sequence 0xFF 0xFE
-ENG-STR-03,suborno-phonetic,stress,numbers_in_bangla_text,২০২৬,২০২৬,PASS,Latin digits map to Bengali numerals in suborno/avro/borno
+ENG-STR-03,suborno-phonetic,stress,numbers_in_bangla_text,২০২৬,২০২৬,PASS,Latin digits map to Bengali numerals in suborno/smart/classic
 ENG-STR-04,suborno-phonetic,stress,capital_shift_key,টা,টা,PASS,"Shift+T -> ট (retroflex), lowercase t -> ত"
 ENG-STR-05,suborno-phonetic,stress,long_conjunct_chain,ক্ষত্র,ক্ষত্র,PASS,ক্ষ cluster + run break + ত্র cluster (ksh :boundary: tr)
 ENG-STR-06,suborno-phonetic,stress,repeated_character,ল্ল্ল্ল্ল্ল,ল্ল্ল্ল্ল্ল,PASS,6x l -> conjunct chain
 ENG-STR-07,suborno-phonetic,stress,rapid_snapshot_stability,non-empty,বাংলা,PASS,20 consecutive snapshot() calls during composition
-ENG-SW-01,all-6,switching,layout_cycle_no_contamination,,,PASS,"[""suborno-phonetic->আমি ok"",""probhat->বাংলা ok"",""national->তুমি ok"",""khipro->আমি ok"",""avro-phonetic->তুমি ok"",""borno-phonetic->বাংলা ok""]"
+ENG-SW-01,all-6,switching,layout_cycle_no_contamination,,,PASS,"[""suborno-phonetic->আমি ok"",""probhat->বাংলা ok"",""national->তুমি ok"",""khipro->আমি ok"",""suborno-smart->তুমি ok"",""suborno-classic->বাংলা ok""]"
 ENG-SW-02,engine,switching,engine_set_active_layout,"probhat,national","probhat,national",PASS,unknown id rejected: true
 ENG-SW-03,engine,switching,restart_layout_persistence,probhat,probhat,PASS,settings.ini saved with active_layout_id=probhat; a NEW Engine instance (simulated restart) restores it
 ENG-SW-04,suborno+probhat,switching,per_window_session_independence,আমি,আমি | আমি,PASS,switching_mode=per_application_window mirror

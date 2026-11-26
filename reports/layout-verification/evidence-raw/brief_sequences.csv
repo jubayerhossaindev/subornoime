@@ -14,30 +14,30 @@ suborno-phonetic,brief-sequence,rri,ঋ,ঋ,U+098B,U+098B,PASS,
 suborno-phonetic,brief-sequence,krripa,কৃপা,কৃপা,U+0995 U+09C3 U+09AA U+09BE,U+0995 U+09C3 U+09AA U+09BE,PASS,
 suborno-phonetic,brief-sequence,pri,প্রি,প্রি,U+09AA U+09CD U+09B0 U+09BF,U+09AA U+09CD U+09B0 U+09BF,PASS,
 suborno-phonetic,brief-sequence,manuSh,মানুষ,মানুষ,U+09AE U+09BE U+09A8 U+09C1 U+09B7,U+09AE U+09BE U+09A8 U+09C1 U+09B7,PASS,
-borno-phonetic,brief-sequence,ami,আমি,আমি,U+0986 U+09AE U+09BF,U+0986 U+09AE U+09BF,PASS,
-borno-phonetic,brief-sequence,sbadhInota,স্বাধীনতা,স্বাধীনতা,U+09B8 U+09CD U+09AC U+09BE U+09A7 U+09C0 U+09A8 U+09A4 U+09BE,U+09B8 U+09CD U+09AC U+09BE U+09A7 U+09C0 U+09A8 U+09A4 U+09BE,PASS,
-borno-phonetic,brief-sequence,kompiuTar,কম্পিউটার,কম্পিউটার,U+0995 U+09AE U+09CD U+09AA U+09BF U+0989 U+099F U+09BE U+09B0,U+0995 U+09AE U+09CD U+09AA U+09BF U+0989 U+099F U+09BE U+09B0,PASS,
-borno-phonetic,brief-sequence,gurutbopUrN,গুরুত্বপূর্ণ,গুরুত্বপূর্ণ,U+0997 U+09C1 U+09B0 U+09C1 U+09A4 U+09CD U+09AC U+09AA U+09C2 U+09B0 U+09CD U+09A3,U+0997 U+09C1 U+09B0 U+09C1 U+09A4 U+09CD U+09AC U+09AA U+09C2 U+09B0 U+09CD U+09A3,PASS,
-borno-phonetic,brief-sequence,rri,ঋ,ঋ,U+098B,U+098B,PASS,
-borno-phonetic,brief-sequence,R,ড়,ড়,U+09DC,U+09A1 U+09BC,PASS,
-borno-phonetic,brief-sequence,Rh,ঢ়,ঢ়,U+09DD,U+09A2 U+09BC,PASS,
-borno-phonetic,brief-sequence,X,ৎ,ৎ,U+09CE,U+09CE,PASS,
-borno-phonetic,brief-sequence,^,ঁ,ঁ,U+0981,U+0981,PASS,
-borno-phonetic,brief-sequence,Ng,ঙ,ঙ,U+0999,U+0999,PASS,
-borno-phonetic,brief-sequence,"k,,",ক্,ক্,U+0995 U+09CD,U+0995 U+09CD,PASS,
-borno-phonetic,brief-sequence,Ta;i,টাই,টা;ই,U+099F U+09BE U+0987,U+099F U+09BE U+003B U+0987,FAIL,
-borno-phonetic,brief-sequence,mo;i,মই,ম;ই,U+09AE U+0987,U+09AE U+003B U+0987,FAIL,
-avro-phonetic,brief-sequence,ami,আমি,আমি,U+0986 U+09AE U+09BF,U+0986 U+09AE U+09BF,PASS,
-avro-phonetic,brief-sequence,sbadhInota,স্বাধীনতা,স্বাধীনতা,U+09B8 U+09CD U+09AC U+09BE U+09A7 U+09C0 U+09A8 U+09A4 U+09BE,U+09B8 U+09CD U+09AC U+09BE U+09A7 U+09C0 U+09A8 U+09A4 U+09BE,PASS,
-avro-phonetic,brief-sequence,kompiuTar,কম্পিউটার,কম্পিউটার,U+0995 U+09AE U+09CD U+09AA U+09BF U+0989 U+099F U+09BE U+09B0,U+0995 U+09AE U+09CD U+09AA U+09BF U+0989 U+099F U+09BE U+09B0,PASS,
-avro-phonetic,brief-sequence,jonopriy,জনপ্রিয়,জনপ্রিয়,U+099C U+09A8 U+09AA U+09CD U+09B0 U+09BF U+09AF U+09BC,U+099C U+09A8 U+09AA U+09CD U+09B0 U+09BF U+09AF U+09BC,PASS,
-avro-phonetic,brief-sequence,rri,ঋ,ঋ,U+098B,U+098B,PASS,
-avro-phonetic,brief-sequence,Ng,ঙ,ঙ,U+0999,U+0999,PASS,
-avro-phonetic,brief-sequence,R,ড়,ড়,U+09DC,U+09A1 U+09BC,PASS,
-avro-phonetic,brief-sequence,Rh,ঢ়,ঢ়,U+09DD,U+09A2 U+09BC,PASS,
-avro-phonetic,brief-sequence,y,য়,য়,U+09AF U+09BC,U+09AF U+09BC,PASS,
-avro-phonetic,brief-sequence,"k,,",ক্,ক্,U+0995 U+09CD,U+0995 U+09CD,PASS,
-avro-phonetic,brief-sequence,t'',ৎ,ত'',U+09CE,U+09A4 U+0027 U+0027,FAIL,
+suborno-classic,brief-sequence,ami,আমি,আমি,U+0986 U+09AE U+09BF,U+0986 U+09AE U+09BF,PASS,
+suborno-classic,brief-sequence,sbadhInota,স্বাধীনতা,স্বাধীনতা,U+09B8 U+09CD U+09AC U+09BE U+09A7 U+09C0 U+09A8 U+09A4 U+09BE,U+09B8 U+09CD U+09AC U+09BE U+09A7 U+09C0 U+09A8 U+09A4 U+09BE,PASS,
+suborno-classic,brief-sequence,kompiuTar,কম্পিউটার,কম্পিউটার,U+0995 U+09AE U+09CD U+09AA U+09BF U+0989 U+099F U+09BE U+09B0,U+0995 U+09AE U+09CD U+09AA U+09BF U+0989 U+099F U+09BE U+09B0,PASS,
+suborno-classic,brief-sequence,gurutbopUrN,গুরুত্বপূর্ণ,গুরুত্বপূর্ণ,U+0997 U+09C1 U+09B0 U+09C1 U+09A4 U+09CD U+09AC U+09AA U+09C2 U+09B0 U+09CD U+09A3,U+0997 U+09C1 U+09B0 U+09C1 U+09A4 U+09CD U+09AC U+09AA U+09C2 U+09B0 U+09CD U+09A3,PASS,
+suborno-classic,brief-sequence,rri,ঋ,ঋ,U+098B,U+098B,PASS,
+suborno-classic,brief-sequence,R,ড়,ড়,U+09DC,U+09A1 U+09BC,PASS,
+suborno-classic,brief-sequence,Rh,ঢ়,ঢ়,U+09DD,U+09A2 U+09BC,PASS,
+suborno-classic,brief-sequence,X,ৎ,ৎ,U+09CE,U+09CE,PASS,
+suborno-classic,brief-sequence,^,ঁ,ঁ,U+0981,U+0981,PASS,
+suborno-classic,brief-sequence,Ng,ঙ,ঙ,U+0999,U+0999,PASS,
+suborno-classic,brief-sequence,"k,,",ক্,ক্,U+0995 U+09CD,U+0995 U+09CD,PASS,
+suborno-classic,brief-sequence,Ta;i,টাই,টা;ই,U+099F U+09BE U+0987,U+099F U+09BE U+003B U+0987,FAIL,
+suborno-classic,brief-sequence,mo;i,মই,ম;ই,U+09AE U+0987,U+09AE U+003B U+0987,FAIL,
+suborno-smart,brief-sequence,ami,আমি,আমি,U+0986 U+09AE U+09BF,U+0986 U+09AE U+09BF,PASS,
+suborno-smart,brief-sequence,sbadhInota,স্বাধীনতা,স্বাধীনতা,U+09B8 U+09CD U+09AC U+09BE U+09A7 U+09C0 U+09A8 U+09A4 U+09BE,U+09B8 U+09CD U+09AC U+09BE U+09A7 U+09C0 U+09A8 U+09A4 U+09BE,PASS,
+suborno-smart,brief-sequence,kompiuTar,কম্পিউটার,কম্পিউটার,U+0995 U+09AE U+09CD U+09AA U+09BF U+0989 U+099F U+09BE U+09B0,U+0995 U+09AE U+09CD U+09AA U+09BF U+0989 U+099F U+09BE U+09B0,PASS,
+suborno-smart,brief-sequence,jonopriy,জনপ্রিয়,জনপ্রিয়,U+099C U+09A8 U+09AA U+09CD U+09B0 U+09BF U+09AF U+09BC,U+099C U+09A8 U+09AA U+09CD U+09B0 U+09BF U+09AF U+09BC,PASS,
+suborno-smart,brief-sequence,rri,ঋ,ঋ,U+098B,U+098B,PASS,
+suborno-smart,brief-sequence,Ng,ঙ,ঙ,U+0999,U+0999,PASS,
+suborno-smart,brief-sequence,R,ড়,ড়,U+09DC,U+09A1 U+09BC,PASS,
+suborno-smart,brief-sequence,Rh,ঢ়,ঢ়,U+09DD,U+09A2 U+09BC,PASS,
+suborno-smart,brief-sequence,y,য়,য়,U+09AF U+09BC,U+09AF U+09BC,PASS,
+suborno-smart,brief-sequence,"k,,",ক্,ক্,U+0995 U+09CD,U+0995 U+09CD,PASS,
+suborno-smart,brief-sequence,t'',ৎ,ত'',U+09CE,U+09A4 U+0027 U+0027,FAIL,
 khipro,brief-sequence,ami,আমি,আমি,U+0986 U+09AE U+09BF,U+0986 U+09AE U+09BF,PASS,
 khipro,brief-sequence,baNgali,বাঙালি,বাঙালি,U+09AC U+09BE U+0999 U+09BE U+09B2 U+09BF,U+09AC U+09BE U+0999 U+09BE U+09B2 U+09BF,PASS,
 khipro,brief-sequence,Ngk,ঙ্ক,ঙ্ক,U+0999 U+09CD U+0995,U+0999 U+09CD U+0995,PASS,
@@ -159,10 +159,10 @@ english,passthrough-identity,Hello 2026!,Hello 2026!,Hello 2026!,U+0048 U+0065 U
 english,passthrough-identity,MiXeD CaSe 123 !@#,MiXeD CaSe 123 !@#,MiXeD CaSe 123 !@#,U+004D U+0069 U+0058 U+0065 U+0044 U+0020 U+0043 U+0061 U+0053 U+0065 U+0020 U+0031 U+0032 U+0033 U+0020 U+0021 U+0040 U+0023,U+004D U+0069 U+0058 U+0065 U+0044 U+0020 U+0043 U+0061 U+0053 U+0065 U+0020 U+0031 U+0032 U+0033 U+0020 U+0021 U+0040 U+0023,PASS,"identity_output=true; engine-fallback session internals: preedit_empty=false candidates_empty=false; TSF service never intercepts keys for passthrough kind (text_service.cpp:325,597,678)"
 english,passthrough-identity,bangla.amar.desk,bangla.amar.desk,bangla.amar.desk,U+0062 U+0061 U+006E U+0067 U+006C U+0061 U+002E U+0061 U+006D U+0061 U+0072 U+002E U+0064 U+0065 U+0073 U+006B,U+0062 U+0061 U+006E U+0067 U+006C U+0061 U+002E U+0061 U+006D U+0061 U+0072 U+002E U+0064 U+0065 U+0073 U+006B,PASS,"identity_output=true; engine-fallback session internals: preedit_empty=false candidates_empty=false; TSF service never intercepts keys for passthrough kind (text_service.cpp:325,597,678)"
 english,passthrough-editing,helo + VK_BACK + lo,hello,hello,U+0068 U+0065 U+006C U+006C U+006F,U+0068 U+0065 U+006C U+006C U+006F,PASS,backspace removes one Latin char before commit
-suborno-phonetic->avro-phonetic,switch-chain,ami | tumi,আমি | তুমি,আমি | তুমি,U+0986 U+09AE U+09BF U+0020 U+007C U+0020 U+09A4 U+09C1 U+09AE U+09BF,U+0986 U+09AE U+09BF U+0020 U+007C U+0020 U+09A4 U+09C1 U+09AE U+09BF,PASS,set_active_layout(suborno-phonetic)=true id=suborno-phonetic; set_active_layout(avro-phonetic)=true id=avro-phonetic; fresh session per window mirrors TSF per-thread session model
-avro-phonetic->probhat,switch-chain,ami | আমি,আমি | আমি,আমি | আমি,U+0986 U+09AE U+09BF U+0020 U+007C U+0020 U+0986 U+09AE U+09BF,U+0986 U+09AE U+09BF U+0020 U+007C U+0020 U+0986 U+09AE U+09BF,PASS,set_active_layout(avro-phonetic)=true id=avro-phonetic; set_active_layout(probhat)=true id=probhat; fresh session per window mirrors TSF per-thread session model
+suborno-phonetic->suborno-smart,switch-chain,ami | tumi,আমি | তুমি,আমি | তুমি,U+0986 U+09AE U+09BF U+0020 U+007C U+0020 U+09A4 U+09C1 U+09AE U+09BF,U+0986 U+09AE U+09BF U+0020 U+007C U+0020 U+09A4 U+09C1 U+09AE U+09BF,PASS,set_active_layout(suborno-phonetic)=true id=suborno-phonetic; set_active_layout(suborno-smart)=true id=suborno-smart; fresh session per window mirrors TSF per-thread session model
+suborno-smart->probhat,switch-chain,ami | আমি,আমি | আমি,আমি | আমি,U+0986 U+09AE U+09BF U+0020 U+007C U+0020 U+0986 U+09AE U+09BF,U+0986 U+09AE U+09BF U+0020 U+007C U+0020 U+0986 U+09AE U+09BF,PASS,set_active_layout(suborno-smart)=true id=suborno-smart; set_active_layout(probhat)=true id=probhat; fresh session per window mirrors TSF per-thread session model
 probhat->national,switch-chain,আমি | ami,আমি | আমি,আমি | আমি,U+0986 U+09AE U+09BF U+0020 U+007C U+0020 U+0986 U+09AE U+09BF,U+0986 U+09AE U+09BF U+0020 U+007C U+0020 U+0986 U+09AE U+09BF,PASS,set_active_layout(probhat)=true id=probhat; set_active_layout(national)=true id=national; fresh session per window mirrors TSF per-thread session model
-national->borno-phonetic,switch-chain,ami | ami,আমি | আমি,আমি | আমি,U+0986 U+09AE U+09BF U+0020 U+007C U+0020 U+0986 U+09AE U+09BF,U+0986 U+09AE U+09BF U+0020 U+007C U+0020 U+0986 U+09AE U+09BF,PASS,set_active_layout(national)=true id=national; set_active_layout(borno-phonetic)=true id=borno-phonetic; fresh session per window mirrors TSF per-thread session model
-borno-phonetic->khipro,switch-chain,ami | ami,আমি | আমি,আমি | আমি,U+0986 U+09AE U+09BF U+0020 U+007C U+0020 U+0986 U+09AE U+09BF,U+0986 U+09AE U+09BF U+0020 U+007C U+0020 U+0986 U+09AE U+09BF,PASS,set_active_layout(borno-phonetic)=true id=borno-phonetic; set_active_layout(khipro)=true id=khipro; fresh session per window mirrors TSF per-thread session model
+national->suborno-classic,switch-chain,ami | ami,আমি | আমি,আমি | আমি,U+0986 U+09AE U+09BF U+0020 U+007C U+0020 U+0986 U+09AE U+09BF,U+0986 U+09AE U+09BF U+0020 U+007C U+0020 U+0986 U+09AE U+09BF,PASS,set_active_layout(national)=true id=national; set_active_layout(suborno-classic)=true id=suborno-classic; fresh session per window mirrors TSF per-thread session model
+suborno-classic->khipro,switch-chain,ami | ami,আমি | আমি,আমি | আমি,U+0986 U+09AE U+09BF U+0020 U+007C U+0020 U+0986 U+09AE U+09BF,U+0986 U+09AE U+09BF U+0020 U+007C U+0020 U+0986 U+09AE U+09BF,PASS,set_active_layout(suborno-classic)=true id=suborno-classic; set_active_layout(khipro)=true id=khipro; fresh session per window mirrors TSF per-thread session model
 khipro->english,switch-chain,ami | hello,আমি | hello,আমি | hello,U+0986 U+09AE U+09BF U+0020 U+007C U+0020 U+0068 U+0065 U+006C U+006C U+006F,U+0986 U+09AE U+09BF U+0020 U+007C U+0020 U+0068 U+0065 U+006C U+006C U+006F,PASS,set_active_layout(khipro)=true id=khipro; set_active_layout(english)=true id=english; fresh session per window mirrors TSF per-thread session model
 english->suborno-phonetic,switch-chain,hello | ami,hello | আমি,hello | আমি,U+0068 U+0065 U+006C U+006C U+006F U+0020 U+007C U+0020 U+0986 U+09AE U+09BF,U+0068 U+0065 U+006C U+006C U+006F U+0020 U+007C U+0020 U+0986 U+09AE U+09BF,PASS,set_active_layout(english)=true id=english; set_active_layout(suborno-phonetic)=true id=suborno-phonetic; fresh session per window mirrors TSF per-thread session model

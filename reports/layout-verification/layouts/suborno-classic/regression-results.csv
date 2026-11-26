@@ -1,0 +1,8 @@
+test_id,bug_or_fix,gtest_id,layout,verdict,run
+REG-01,BUG-05,EngineTest.LayoutDisplayNamesAreCorrectAndScriptClean,suborno-classic,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-02,—,LayoutTypingRegressionTest.ClassicAccentKeyBreaksVowelCollisions,suborno-classic,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-03,—,SubornoClassicLayoutTest.ConvertsIndependentAndDependentVowels,suborno-classic,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-04,—,SubornoClassicLayoutTest.PreservesCaseSensitiveConsonantTokens,suborno-classic,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-05,—,SubornoClassicLayoutTest.ComposesConsonantRunsAndExplicitControls,suborno-classic,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-06,—,SubornoClassicLayoutTest.EscapesLiteralGraphemesAndPreservesUnknownText,suborno-classic,PASS,unit run 2026-11-23 (build/ubuntu-dev)
+REG-07,—,SubornoClassicLayoutTest.ExposesIndependentCandidateIdentity,suborno-classic,PASS,unit run 2026-11-23 (build/ubuntu-dev)

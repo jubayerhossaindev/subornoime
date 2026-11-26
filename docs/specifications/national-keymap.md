@@ -14,7 +14,7 @@ from unicode.org on 2026-11-24), with the layer legend of that diagram:
 - **লিংক শিফট বাংলা** — Link+Shift layer, keycap top-left
 - **ইংরেজি** — the English glyph printed at key centre
 
-The **BornoTSF** project (`JayedAhsan/BornoTSF`, `layoutParsers/Layouts/
+The **legacy reference IME** project (`layoutParsers/Layouts/
 National.cpp`, GPL-3.0-or-later) was used as an independent factual
 cross-reference for the same diagram; its README marks the National layout
 "Tested (WIP)", so its mapping was **not** treated as an independently

@@ -13,7 +13,7 @@ namespace suborno::layouts {
 /// Key->character facts follow the National Keyboard of Bangladesh diagram
 /// published as Figure 4 of public Unicode Consortium document L2/19-079
 /// (captioned "National Keyboard of Bangladesh (BDS 1738:2018)"), with the
-/// BornoTSF project's National mapping used as an independent factual
+/// legacy reference IME project's National mapping used as an independent factual
 /// cross-reference. This is a clean-room MIT implementation: only the factual
 /// key assignments were taken from the GPL-3.0 reference; no GPL code was
 /// copied. See docs/specifications/national-keymap.md and

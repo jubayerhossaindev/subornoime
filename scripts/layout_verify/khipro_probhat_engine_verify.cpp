@@ -56,8 +56,8 @@
 #include "suborno/layouts/english/english_layout.hpp"
 #include "suborno/layouts/khipro/khipro_layout.hpp"
 #include "suborno/layouts/national/national_layout.hpp"
-#include "suborno/layouts/phonetic/avro_phonetic_layout.hpp"
-#include "suborno/layouts/phonetic/borno_phonetic_layout.hpp"
+#include "suborno/layouts/phonetic/suborno_smart_layout.hpp"
+#include "suborno/layouts/phonetic/suborno_classic_layout.hpp"
 #include "suborno/layouts/phonetic/suborno_phonetic_layout.hpp"
 #include "suborno/layouts/probhat/probhat_layout.hpp"
 #include "suborno/unicode/bengali.hpp"
@@ -342,8 +342,8 @@ std::string type_probhat(suborno::layouts::ProbhatLayout& layout,
 
 struct EngineContext {
     std::unique_ptr<suborno::layouts::SubornoPhoneticLayout> suborno;
-    std::unique_ptr<suborno::layouts::BornoPhoneticLayout> borno;
-    std::unique_ptr<suborno::layouts::AvroPhoneticLayout> avro;
+    std::unique_ptr<suborno::layouts::SubornoClassicLayout> classic;
+    std::unique_ptr<suborno::layouts::SubornoSmartLayout> smart;
     std::unique_ptr<suborno::layouts::KhiproLayout> khipro;
     std::unique_ptr<suborno::layouts::ProbhatLayout> probhat;
     std::unique_ptr<suborno::layouts::NationalLayout> national;
@@ -351,8 +351,8 @@ struct EngineContext {
 
     EngineContext()
         : suborno(std::make_unique<suborno::layouts::SubornoPhoneticLayout>()),
-          borno(std::make_unique<suborno::layouts::BornoPhoneticLayout>()),
-          avro(std::make_unique<suborno::layouts::AvroPhoneticLayout>()),
+          classic(std::make_unique<suborno::layouts::SubornoClassicLayout>()),
+          smart(std::make_unique<suborno::layouts::SubornoSmartLayout>()),
           khipro(std::make_unique<suborno::layouts::KhiproLayout>()),
           probhat(std::make_unique<suborno::layouts::ProbhatLayout>()),
           national(std::make_unique<suborno::layouts::NationalLayout>()),
@@ -362,11 +362,11 @@ struct EngineContext {
         if (id == "suborno-phonetic") {
             return *suborno;
         }
-        if (id == "borno-phonetic") {
-            return *borno;
+        if (id == "suborno-classic") {
+            return *classic;
         }
-        if (id == "avro-phonetic") {
-            return *avro;
+        if (id == "suborno-smart") {
+            return *smart;
         }
         if (id == "khipro") {
             return *khipro;
@@ -584,7 +584,7 @@ int main(int argc, char** argv) {
 
                 // (limitations.json LIM-BRIEF-CONVENTION-MISMATCH): ';' is not
 
-                // a break key in the Borno phonetic layout, and the Avro khanda
+                // a break key in the classic phonetic layout, and the smart khanda
                 // token is
 
                 // t`` not t''. Reproduced here as expected-FAIL rows.

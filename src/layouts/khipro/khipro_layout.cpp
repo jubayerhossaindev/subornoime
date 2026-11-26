@@ -6,7 +6,7 @@
 #include <utility>
 #include <vector>
 
-#include "borno_compat_layouts.hpp"
+#include "compat_layouts.hpp"
 #include "suborno/candidates/candidate_engine.hpp"
 #include "suborno/dictionary/dictionary.hpp"
 #include "suborno/layouts/layout_input_session.hpp"
@@ -16,14 +16,14 @@ namespace suborno::layouts {
 namespace {
 
 // Khipro typing delegates to the Khipro compatibility engine
-// (src/layouts/borno_compat: Suborno implementation of the GPL-3.0-or-later
+// (src/layouts/compat: Suborno implementation of the GPL-3.0-or-later
 // Khipro .mim S-expression interpreter over the canonical bn-khipro.mim
 // spec shipped at assets/layouts/bn-khipro.mim). The engine lazily loads
 // the spec using the Suborno path search (Suborno user/program-data paths
-// first, the legacy BornoTSF paths second, the bundled asset last) and
+// first, the legacy legacy reference IME paths second, the bundled asset last) and
 // falls back to pass-through when no spec file can be found.
-borno_compat::KhiproCompatEngine& khipro_compat_engine() {
-    static borno_compat::KhiproCompatEngine engine;
+compat::KhiproCompatEngine& khipro_compat_engine() {
+    static compat::KhiproCompatEngine engine;
     return engine;
 }
 
@@ -89,7 +89,7 @@ std::string KhiproLayout::transliterate(const std::string& input) const {
 }
 
 std::vector<layout::Candidate> KhiproLayout::generate_candidates(const std::string& input) const {
-    // BornoTSF keeps the candidate window off for the Khipro layout (fixed
+    // legacy reference IME keeps the candidate window off for the Khipro layout (fixed
     // compositional output); a single candidate keeps Suborno's session
     // contract while preserving that behaviour.
     const std::string output = transliterate(input);
@@ -102,7 +102,7 @@ std::vector<layout::Candidate> KhiproLayout::generate_candidates(const std::stri
         .stable_id = "layout:khipro:" + output,
         .source = layout::CandidateSource::layout,
         .score = 1.0,
-        .rationale = "Khipro compositional output (BornoTSF mim engine)",
+        .rationale = "Khipro compositional output (legacy reference IME mim engine)",
     }};
 }
 

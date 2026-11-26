@@ -14,7 +14,7 @@
 - CI: configuration validation, C++20 compliance scan, comment audit, cppcheck,
   Doxygen build, license/dependency review, CodeQL, portable fuzz smoke.
 - 16 new engineering documents (memory safety, ownership, lifetime, buffers,
-  COM/TSF, Unicode, input validation, ABI, sanitizers, fuzzing, Borno migration record).
+  COM/TSF, Unicode, input validation, ABI, sanitizers, fuzzing, legacy comment migration record).
 
 
 All notable changes to SubornoIME are documented in this file.
@@ -114,7 +114,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   National Keyboard of Bangladesh layout with four Bangla layers per key
   (base / Shift / Link-AltGr / Link+Shift) following the official diagram
   published in Unicode document L2/19-079 (Figure 4) and cross-checked
-  key-by-key against the BornoTSF factual mapping (GPL source used for facts
+  key-by-key against the legacy reference IME factual mapping (GPL source used for facts
   only — clean-room MIT, no code copied; upstream "Tested (WIP)" status
   respected). National hallmarks now typeable: Shift+4 → ৳, Shift+7 → ঁ,
   `\` → ৎ, `|` → ঃ, Link digit row ৴ ৵ ৶ ৷ ৸ ৹, Link independent vowels
@@ -377,7 +377,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Full Borno-parity feature set** (every remaining recommendation from the
+- **Full legacy-parity feature set** (every remaining recommendation from the
   13-point feature analysis, all with real backend behavior — no display-only
   options):
   - **English↔বাংলা quick mode toggle**: the topbar mode icon now shows the
@@ -393,7 +393,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     Bangla mode renders each key with the glyph the ACTIVE layout produces
     (Engine::layout_preview), Shift works, and the [English]/[বাংলা] buttons
     switch layouts.
-  - **Topbar right-click context menu** (Borno F-06): the full menu — Show
+  - **Topbar right-click context menu** (feature F-06): the full menu — Show
     Topbar, Keyboard Layout ›, Font ›, On-Screen Keyboard…, Settings…,
     Enable/Disable, Check for Updates…, Documentation, Clear Learnt Words…,
     Uninstall Suborno, Exit — shared with the tray menu.
@@ -466,7 +466,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Layout names shown to users no longer contain the word "Phonetic":
-  English, বাংলা (Suborno), বাংলা (Bornো), Avro, Khipro, Probhat, National.
+  English, বাংলা (Suborno), বাংলা (Suborno Classic), Suborno Smart, Khipro, Probhat, National.
 - The floating topbar auto-sizes to its label (long Bangla layout names no
   longer truncate) and its wrench/close menus are right-anchored.
 - The topbar close (×) dropdown now reads "System Tray" and "Exit" and both
@@ -516,8 +516,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     Google Benchmark run with JSON archive), plus the `ubuntu-bench`
     CMake preset (`SUBORNO_BUILD_BENCHMARKS=ON` over the ubuntu-ci base).
   - `scripts/README.md` — tooling inventory and naming conventions.
-- Borno-reference dark shell (clean-room implementation from the supplied
-  reference screenshots; see `docs/research/BORNOTSF_UI_UX_REFERENCE_ANALYSIS.md`
+- Reference dark shell (clean-room implementation from the supplied
+  reference screenshots; see `docs/research/UI_UX_REFERENCE_ANALYSIS.md`
   and `docs/design/SUBORNO_REFERENCE_DESIGN_SPEC.md`):
   - The desktop settings window is now a frameless, custom-drawn dark
     dialog (#2C2C2C measured palette, rounded corners, custom title row)
@@ -720,7 +720,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Portable Bengali input core: phonetic (Suborno/Borno/Avro), Probhat,
+- Portable Bengali input core: phonetic (Suborno/Classic/Smart), Probhat,
   Khipro and national keyboard layouts, candidate ranking, spell correction,
   SQLite-backed personal dictionary and settings persistence.
 - C API (`include/suborno/suborno.h`) for external embedding.

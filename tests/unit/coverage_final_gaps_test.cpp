@@ -15,7 +15,7 @@
 #include "suborno/dictionary/dictionary.hpp"
 #include "suborno/layout-api/key_event.hpp"
 #include "suborno/layouts/national/national_layout.hpp"
-#include "suborno/layouts/phonetic/borno_phonetic_layout.hpp"
+#include "suborno/layouts/phonetic/suborno_classic_layout.hpp"
 #include "suborno/layouts/phonetic/rule_based_phonetic_layout.hpp"
 #include "suborno/layouts/phonetic/suborno_phonetic_layout.hpp"
 #include "suborno/settings/settings.hpp"
@@ -120,7 +120,7 @@ TEST(CoverageFinalGapsTest, StatelessPhoneticLayoutWithDictionaryUsesTheSharedSe
     remove_quietly(db_path);
     {
         suborno::dictionary::Dictionary dictionary(db_path.string());
-        suborno::layouts::BornoPhoneticLayout layout;
+        suborno::layouts::SubornoClassicLayout layout;
         // Stateless phonetic layouts delegate dictionary-backed sessions to
         // the shared LayoutInputSession implementation.
         auto session = layout.create_session(&dictionary, {});
@@ -152,7 +152,7 @@ TEST(CoverageFinalGapsTest, PhoneticCommitWithDictionaryRecordsLearning) {
 }
 
 TEST(CoverageFinalGapsTest, PhoneticSessionNavigationWithoutCandidatesReportsFalse) {
-    suborno::layouts::BornoPhoneticLayout layout;
+    suborno::layouts::SubornoClassicLayout layout;
     auto session = layout.create_session(nullptr, {});
     ASSERT_NE(session, nullptr);
     EXPECT_FALSE(session->select_next_candidate());
@@ -190,17 +190,17 @@ TEST(CoverageFinalGapsTest, SubornoGenerateCandidatesChAlternatesYieldMultipleCa
     EXPECT_EQ(candidates[1].rationale, "phonetic alternative combination");
 }
 
-TEST(CoverageFinalGapsTest, BornoTransliterateBackslashEscapesAndTrailingBackslashIsLiteral) {
-    suborno::layouts::BornoPhoneticLayout layout;
-    // BornoTSF count-based escaping: a single backslash is emitted
+TEST(CoverageFinalGapsTest, ClassicTransliterateBackslashEscapesAndTrailingBackslashIsLiteral) {
+    suborno::layouts::SubornoClassicLayout layout;
+    // legacy reference IME count-based escaping: a single backslash is emitted
     // literally and the remaining text still parses.
     EXPECT_EQ(layout.transliterate("k\\a"), "\u0995\\\u0986");
     // A trailing backslash has nothing to escape and stays literal.
     EXPECT_EQ(layout.transliterate("k\\"), "\u0995\\");
 }
 
-TEST(CoverageFinalGapsTest, BornoTransliterateHandlesTwoThreeAndFourByteUtf8Sequences) {
-    suborno::layouts::BornoPhoneticLayout layout;
+TEST(CoverageFinalGapsTest, ClassicTransliterateHandlesTwoThreeAndFourByteUtf8Sequences) {
+    suborno::layouts::SubornoClassicLayout layout;
     // é = 2-byte lead, ক = 3-byte lead, emoji = 4-byte lead: the byte-length
     // classifier must accept every well-formed lead and pass the unmapped
     // graphemes through unchanged.

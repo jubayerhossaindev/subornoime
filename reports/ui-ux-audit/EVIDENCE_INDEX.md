@@ -13,7 +13,7 @@
 | EV-003 | WCAG contrast recompute from `ui_theme.hpp` literals (re-implementation of the missing cited script) | **22 pairs: 20 PASS; 2 sub-floor pairs have zero current consumers** (documented pairing rule `ui_theme.hpp:77-86`) | `evidence/contrast_check_f8f33d2.txt` |
 | EV-004 | `scripts/brace_scan.py` | exit 0 | console |
 | EV-005 | `scripts/check-layering.py` | layering OK: 20 cross-module edges | console |
-| EV-006 | BUG-05 regression re-check: `kLayouts` display name | `L"বাংলা (Borno)"` clean at `application.cpp:139` — the **only** UI-source change since audit baseline `5724528` | `git diff 5724528..HEAD -- src/platform/windows/app/` |
+| EV-006 | BUG-05 regression re-check: `kLayouts` display name | `L"বাংলা (Suborno Classic)"` clean at `application.cpp:139` — the **only** UI-source change since audit baseline `5724528` | `git diff 5724528..HEAD -- src/platform/windows/app/` |
 | EV-007 | Previous-reports reconciliation (16 documents + 129-row CSV read in full) | 129 rows = 92 BLOCKED + 24 PASS + 13 N/A; 84 harness check IDs enumerated 1:1; "85 checks" claim not supported anywhere | reports 01–09, FINAL, WINDOWS_*, UI_UX_*; subagent summaries (Task 2-a / 2-b) |
 | EV-008 | Source audit of all 6 custom-drawn surfaces + TSF candidate + installer (~10.5k lines) | inventory + control mapping verified | this report + `UI_INVENTORY.csv` |
 

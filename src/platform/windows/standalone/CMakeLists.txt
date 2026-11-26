@@ -2,7 +2,7 @@
 # (SubornoStandalone.exe). WH_KEYBOARD_LL hook + SendInput Unicode injection
 # on top of the SAME portable engine the TSF IME uses (suborno_core). No TSF
 # registration, no language bar, no Win+Space, no Bengali language pack:
-# install, run, type Bangla anywhere — the Avro/Borno usability model.
+# install, run, type Bangla anywhere — the Smart/Classic usability model.
 #
 # The target is additive to the MSVC-WARNINGS-REPAIR-02 pipeline; turn the
 # SUBORNO_BUILD_STANDALONE option off to build only the original pipeline.

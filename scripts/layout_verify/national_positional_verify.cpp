@@ -8,7 +8,7 @@
 
 // the official National Keyboard diagram in Unicode L2/19-079 Figure 4 and
 
-// cross-checked against the BornoTSF mapping facts) and drives the REAL
+// cross-checked against the legacy reference IME mapping facts) and drives the REAL
 
 // engine (transliterate for base/shift keystrokes, real session KeyEvents
 

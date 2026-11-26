@@ -18,7 +18,7 @@ PASS rows are only ever (a) the 7 logic-layer contracts, (b) engine-level suites
 ## 2. Remaining limitations (honest)
 
 1. **No Windows runtime** is available here: 92 rows stay BLOCKED (UI interaction, UIA/Narrator/DPI/theme/monitor, SendInput typing, cross-app insertion, tray/toast/dialog display). Harness + protocol are delivered; execution on Windows is the next action.
-2. **Typing bugs: all closed 2026-11-24** (commit `c1462f4`, user-approved protected-area change): BUG-06 chandrabindu, ri-shadowing, contextual ঙ, national hasanta + missing inventory, khipro ঙ + nukta-run, borno accent, probhat NFC commit, digits. The default layout is engine-level typing-correct again; every fix carries regression tests.
+2. **Typing bugs: all closed 2026-11-24** (commit `c1462f4`, user-approved protected-area change): BUG-06 chandrabindu, ri-shadowing, contextual ঙ, national hasanta + missing inventory, khipro ঙ + nukta-run, classic accent, probhat NFC commit, digits. The default layout is engine-level typing-correct again; every fix carries regression tests.
 3. **One documented structural limitation remains**: Khipro has no explicit hasanta key, so a trailing/displaced virama (ক্ dictionary-headword form) is the single NOT_DERIVABLE item in the 402-case inventory (1/402); all other layouts type it. Normal Khipro words are unaffected.
 4. Windows-only TUs (TSF/COM/WIL, 54 files) are outside the Linux compile DB — MSVC `/analyze` + runtime only.
 
@@ -30,7 +30,7 @@ PASS rows are only ever (a) the 7 logic-layer contracts, (b) engine-level suites
 | 12 | Per-layout Bangla typing | **PASS (engine level, all 6 layouts) / BLOCKED (runtime)** | corpus 294/294 on every layout after `c1462f4`; runtime row stays BLOCKED |
 | 13–19 | words · kar/fola · yuktakkhar · sentences+paragraph · editing · candidate/composition · switching | engine-executed: **all 6 layouts PASS** per category matrix | `BANGLA_LAYOUT_TYPING_AUDIT.md` §2, §8 |
 | 20 | All results in matrix with evidence | PASS | 129-row matrix, script-generated; every status change flows through `merge_audit_results.py`, which refuses unevidenced PASS upgrades |
-| 21 | Complete layout inventory | **PASS** | 7 layouts from real registry; Avro/Borno confirmed to exist |
+| 21 | Complete layout inventory | **PASS** | 7 layouts from real registry; Smart/Classic confirmed to exist |
 | 22 | Real Bangla typing on Windows | **BLOCKED** | harness ready; not executed |
 | 23 | Unicode verification | **PASS (engine level)** | 696 cases code-point compared; canonical equivalence justified (Probhat ড়/ঢ়) |
 | 24 | Complex characters correct | **PASS (engine level)** | kar/fola/yuktakkhar PASS on all 6 layouts after `c1462f4`; khipro displaced-virama headword form documented as the single limitation |

@@ -146,8 +146,8 @@ TEST(EngineTest, RegistersEnglishPassthroughLayoutWithCleanNames) {
     // No layout name may expose the implementation term "Phonetic".
     for (const char* id : {"english",
                            "suborno-phonetic",
-                           "borno-phonetic",
-                           "avro-phonetic",
+                           "suborno-classic",
+                           "suborno-smart",
                            "khipro",
                            "probhat",
                            "national"}) {
@@ -164,8 +164,8 @@ TEST(EngineTest, RegistersEnglishPassthroughLayoutWithCleanNames) {
     EXPECT_EQ(session->snapshot().preedit_utf8, "ami");
 }
 
-// Regression (BUG-05): the Borno display name shipped as mixed-script
-// "বাংলা (Bornো)" — Latin "Born" + Bengali vowel sign U+09CB instead of the
+// Regression (BUG-05): the classic display name shipped as mixed-script
+// "বাংলা (Suborno Classic)" — Latin "Born" + Bengali vowel sign U+09CB instead of the
 // Latin letter "o". Lock every engine-registered display name byte-exactly.
 TEST(EngineTest, LayoutDisplayNamesAreCorrectAndScriptClean) {
     suborno::core::Engine engine;
@@ -175,10 +175,10 @@ TEST(EngineTest, LayoutDisplayNamesAreCorrectAndScriptClean) {
         "English",
         "suborno-phonetic",
         "(Suborno)",
-        "borno-phonetic",
-        "(Borno)",
-        "avro-phonetic",
-        "Avro",
+        "suborno-classic",
+        "\(Suborno Classic\)",
+        "suborno-smart",
+        "Suborno Smart",
         "khipro",
         "Khipro",
         "probhat",
@@ -197,8 +197,8 @@ TEST(EngineTest, LayoutDisplayNamesAreCorrectAndScriptClean) {
         // (the BUG-05 corruption pattern: "Born" + U+09CB).
         EXPECT_EQ(name.find("Born\xE0\xA7\x8B"), std::string::npos) << expected[pair_index];
     }
-    EXPECT_EQ(engine.layout_metadata("borno-phonetic")->display_name,
-              std::string(bangla) + " (Borno)");
+    EXPECT_EQ(engine.layout_metadata("suborno-classic")->display_name,
+              std::string(bangla) + " (Suborno Classic)");
     EXPECT_EQ(engine.layout_metadata("suborno-phonetic")->display_name,
               std::string(bangla) + " (Suborno)");
 }
@@ -226,9 +226,9 @@ TEST(EngineTest, CreatesSessionsThroughStatelessInputLayoutFactory) {
     EXPECT_EQ(session->snapshot().preedit_utf8, "ক");
 }
 
-TEST(EngineTest, RegistersAndCreatesBornoPhoneticSessions) {
+TEST(EngineTest, RegistersAndCreatesSubornoClassicSessions) {
     suborno::core::Engine engine;
-    ASSERT_TRUE(engine.set_active_layout("borno-phonetic"));
+    ASSERT_TRUE(engine.set_active_layout("suborno-classic"));
 
     auto session = engine.create_session();
     ASSERT_NE(session, nullptr);
@@ -248,9 +248,9 @@ TEST(EngineTest, RegistersAndCreatesKhiproCompositionalSessions) {
     EXPECT_EQ(session->commit().text_utf8, "ক্ত");
 }
 
-TEST(EngineTest, RegistersAndCreatesAvroPhoneticSessions) {
+TEST(EngineTest, RegistersAndCreatesSubornoSmartSessions) {
     suborno::core::Engine engine;
-    ASSERT_TRUE(engine.set_active_layout("avro-phonetic"));
+    ASSERT_TRUE(engine.set_active_layout("suborno-smart"));
 
     auto session = engine.create_session();
     ASSERT_NE(session, nullptr);

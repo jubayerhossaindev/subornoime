@@ -1,7 +1,7 @@
 # Refactoring Report
 
 Complete engineering report for the Suborno IME v18 → v19 refactoring:
-C++20-only naming standardization, human-friendly naming, Borno comment
+C++20-only naming standardization, human-friendly naming, legacy comment
 migration, Doxygen integration, toolchain setup and regression validation.
 
 ---
@@ -21,7 +21,7 @@ Audited from the pristine extraction (`subornoime_source_v18.zip`, 561 files):
   no platform leaks into the core, layout definitions and session state remain
   separate types.
 
-Full audit tooling: `repo_audit.py`, `borno_refined_audit.py`,
+Full audit tooling: `repo_audit.py`, `legacy_refined_audit.py`,
 `method_audit.py` (kept in the workspace `scripts/` area).
 
 ## 2. C++20 compliance result
@@ -49,7 +49,7 @@ vocabulary (layout names).
 
 Baseline scan (heuristic + hand review) found:
 
-- 22 one-letter loop variables (`i`, `j`) in `borno_compat` engines, spell
+- 22 one-letter loop variables (`i`, `j`) in `compat` engines, spell
   checker, menu popup, tests → all renamed (`token_index`, `grapheme_index`,
   `pair_index`, `row_index`/`column_index` for the Levenshtein DP, …).
 - 4 pimpl `struct Impl` + `impl_`/`impl` locals →
@@ -75,7 +75,7 @@ Baseline scan (heuristic + hand review) found:
   `IsLoaded`→`is_loaded`, `SetOverridePath`→`set_override_path`,
   `ResetOverridePath`→`reset_override_path`, `ResolveDictionaryPath`→
   `resolve_dictionary_file_path`, `ConsumeJsonMap`→`parse_json_corrections`.
-- Borno `.mim` engine: 19 methods renamed to snake_case verbs
+- Legacy `.mim` engine: 19 methods renamed to snake_case verbs
   (`convert_keystroke_text`, `find_longest_match`, `run_rule_steps`,
   `is_guard_satisfied`, `decode_utf8_to_utf32`, …) + enum values
   (`StepKind::insert_text`, `GuardKind::always_true`, …).
@@ -85,7 +85,7 @@ Baseline scan (heuristic + hand review) found:
   `set_bool_value`, `get_dword_value`, `set_dword_value`, `clear_value`),
   edit-session helpers (`insert_text`, `start_composition`, `update_composition`,
   `finish_composition`, `terminate_composition`, `request_edit_session`),
-  Avro engine internals (`emit_glyph`, `try_rule`, `character_ahead`, …),
+  Smart engine internals (`emit_glyph`, `try_rule`, `character_ahead`, …),
   phonetic-layout pimpl `EngineImpl`→`PhoneticEngineState`.
 - **External contracts kept**: COM/TSF overrides (`QueryInterface`, `AddRef`,
   `Release`, `DoEditSession`, `OnKeyDown`, `OnChange`, `Advise`, …), Windows
@@ -108,10 +108,10 @@ All C++ files already snake_case. One fix: `cmake/msvc-test-c6326-suppress.h`
 `SubornoBuildOptions.cmake`). Test files keep `<unit>_test.cpp`. Renames are
 CI-enforced by `scripts/validate_naming.py`.
 
-## 8. Borno comment removal summary
+## 8. Legacy comment removal summary
 
 See `COMMENT_MIGRATION_REPORT.md` for the full inventory: ~24 prose blocks
-rewritten across 19 files, 4 stale `scripts/borno_parity` references re-pointed
+rewritten across 19 files, 4 stale `scripts/compat_parity` references re-pointed
 to the in-repo parity suite, legal/provenance lines preserved verbatim,
 feature identifiers kept.
 
@@ -148,7 +148,7 @@ cmake --build build/verify --target docs
 
 clang-format (`.clang-format`, Google base + 4-space/100-col policy) run over
 every C++ file; `--dry-run -Werror` clean. Collapsed the doubled blank-line
-artifact in `borno_compat` files (`MaxEmptyLinesToKeep: 1`). `.editorconfig`
+artifact in `compat` files (`MaxEmptyLinesToKeep: 1`). `.editorconfig`
 unchanged.
 
 ## 13. Linting tools
@@ -228,7 +228,7 @@ names/GUIDs untouched. Verified by inspection; the MSVC build that links the
 | `suborno.integration` | PASSED | PASSED |
 | `ctest` total | 2/2 | 2/2 |
 
-The parity suite (`borno_compat_parity_test.cpp`) passing byte-identically is
+The parity suite (`compat_parity_test.cpp`) passing byte-identically is
 the proof that the engine renames did not change transliteration behaviour.
 
 ## 24. CI/CD results
@@ -243,7 +243,7 @@ execution happens on GitHub runners (not verifiable in this workspace).
 1. ~525 Doxygen member-level doc gaps (policy: progressive; types/functions/
    parameters are documented first).
 2. clang-tidy baseline warnings not yet fully reviewed to zero.
-3. Parity harness script (`scripts/borno_parity`) is gone; the in-repo parity
+3. Parity harness script (`scripts/compat_parity`) is gone; the in-repo parity
    test embeds the regression subset only (full 836-input corpus is historical
    evidence in `reports/`).
 

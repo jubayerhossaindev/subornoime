@@ -186,7 +186,7 @@ TEST(WindowsTsfContractTest, CreatesTheTextServiceAndTracksServerLocks) {
         S_OK);
     key_sink.reset();
 
-    // BornoTSF parity contract: the four V16-audit-gap interfaces must be
+    // legacy reference IME parity contract: the four V16-audit-gap interfaces must be
 
     // exposed by the text service.
 

@@ -9,7 +9,7 @@
 
 ## 1. Executive Summary
 
-SubornoIME-এর বর্তমানে Implemented Native Windows Application UI হল একটি সম্পূর্ণ Custom-drawn Win32 shell — কোনো React/WebView/Electron/Qt নেই; প্রতিটি Surface C++20 + Win32 API দিয়ে আঁকা (owner-drawn), এবং প্রতিটি Surface-এর জন্য আলাদা UI Automation provider আছে। এই Audit HEAD `f8f33d2`-এ সম্পন্ন হয়েছে; পুরোনো Audit Baseline `5724528`-এর পর থেকে UI Source-এ একমাত্র পরিবর্তন হল BUG-05 fix — `kLayouts`-এ `L"বাংলা (Borno)"` (mixed-script corruption দূর)।
+SubornoIME-এর বর্তমানে Implemented Native Windows Application UI হল একটি সম্পূর্ণ Custom-drawn Win32 shell — কোনো React/WebView/Electron/Qt নেই; প্রতিটি Surface C++20 + Win32 API দিয়ে আঁকা (owner-drawn), এবং প্রতিটি Surface-এর জন্য আলাদা UI Automation provider আছে। এই Audit HEAD `f8f33d2`-এ সম্পন্ন হয়েছে; পুরোনো Audit Baseline `5724528`-এর পর থেকে UI Source-এ একমাত্র পরিবর্তন হল BUG-05 fix — `kLayouts`-এ `L"বাংলা (Suborno Classic)"` (mixed-script corruption দূর)।
 
 মূল সংখ্যা (সব Count Source Data থেকে স্ক্রিপ্ট দিয়ে হিসাব):
 
@@ -120,7 +120,7 @@ Staged-settings model: সব control `staged_` struct-এ লেখে, **Save*
 
 ## 10. Layout Selector Audit
 
-Layout selection UI-র সব পথ: (1) Tray/Topbar context menu → **Keyboard Layout** submenu — 7টি radio item (English, বাংলা (Suborno), বাংলা (Borno), Avro, Khipro, Probhat, National), active-তে MF_CHECKED, নির্বাচনে `save_layout()` সাথে সাথে persist + topbar label + status line + toast "লেআউট: {layout}"; (2) Settings General → Default keyboard layout dropdown (staged); (3) Topbar mode icon (A/ব) — English↔last-Bangla toggle; (4) OSK-র English/বাংলা mode buttons; (5) Global hotkey `cycle_layout()` (visible order English → বাংলা (Suborno) → …)।
+Layout selection UI-র সব পথ: (1) Tray/Topbar context menu → **Keyboard Layout** submenu — 7টি radio item (English, বাংলা (Suborno), বাংলা (Suborno Classic), Suborno Smart, Khipro, Probhat, National), active-তে MF_CHECKED, নির্বাচনে `save_layout()` সাথে সাথে persist + topbar label + status line + toast "লেআউট: {layout}"; (2) Settings General → Default keyboard layout dropdown (staged); (3) Topbar mode icon (A/ব) — English↔last-Bangla toggle; (4) OSK-র English/বাংলা mode buttons; (5) Global hotkey `cycle_layout()` (visible order English → বাংলা (Suborno) → …)।
 
 - **নামের সততা:** "Phonetic" শব্দ user-visible নামে নেই; BUG-05 fix-এর পর ৭টি নামই পরিষ্কার (`application.cpp:136-145`)।
 - **UI State vs Engine State:** `save_layout()` engine-এ সাথে সাথে লেখে এবং `engine_->active_layout_id()` থেকেই সব UI label আঁকা হয় — highlight শুধু দেখিয়ে আটকে থাকার path নেই (menu নির্মাণে প্রতিবার fresh `engine_->settings()` পড়া হয়, L3815)। Runtime-এ বাস্তব typing-সহ মিল দেখা **BLOCKED** (layout-verification report-এ engine-level switch-chain 7/7 PASS evidence আছে)।

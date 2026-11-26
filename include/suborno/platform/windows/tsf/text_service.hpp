@@ -16,7 +16,7 @@ namespace suborno::platform::windows {
 
 /// TSF Text Service implementation
 ///
-/// BornoTSF parity sink set (the four behaviours the V16 integration audit
+/// legacy reference IME parity sink set (the four behaviours the V16 integration audit
 /// found missing): ITfTextEditSink, ITfThreadFocusSink,
 /// ITfDisplayAttributeProvider and the ITfCompartmentEventSink advises are
 /// implemented here alongside the pre-existing sinks.
@@ -57,19 +57,19 @@ class SubornoTextService final : public ITfTextInputProcessor,
     STDMETHOD(OnCompositionTerminated)
     (TfEditCookie editCookie, ITfComposition* composition) override;
 
-    /// ITfTextEditSink — BornoTSF parity (infra/TextEditSink.cpp): when the
+    /// ITfTextEditSink — legacy reference IME parity (infra/TextEditSink.cpp): when the
     /// selection escapes the composition range while composing, end the
     /// composition keeping the composed text on screen.
     STDMETHOD(OnEndEdit)
     (ITfContext* pContext, TfEditCookie ecReadOnly, ITfEditRecord* pEditRecord) override;
 
-    // ITfThreadFocusSink — BornoTSF parity (infra/ThreadFocusSink.cpp): the
+    // ITfThreadFocusSink — legacy reference IME parity (infra/ThreadFocusSink.cpp): the
     // sink is advised so the thread manager notifies the service; upstream's
     // handlers are empty and Suborno's match that behaviour.
     STDMETHOD(OnSetThreadFocus)() override;
     STDMETHOD(OnKillThreadFocus)() override;
 
-    /// ITfDisplayAttributeProvider — BornoTSF parity
+    /// ITfDisplayAttributeProvider — legacy reference IME parity
     /// (display/DisplayAttributeProvider.cpp): exposes the Input/Converted
     /// display attributes host applications use to render composition text.
     STDMETHOD(EnumDisplayAttributeInfo)(_COM_Outptr_ IEnumTfDisplayAttributeInfo** ppEnum) override;
@@ -105,7 +105,7 @@ class SubornoTextService final : public ITfTextInputProcessor,
         wil::com_ptr<CandidateListUIElement> candidate_ui_element;
         DWORD candidate_ui_element_id = 0;
         bool candidate_ui_owned = false;
-        /// ITfTextEditSink advice for this context (BornoTSF parity:
+        /// ITfTextEditSink advice for this context (legacy reference IME parity:
         /// _InitTextEditSink advised on the focused context; Suborno keeps one
         /// advice per context because its composition state is per-context).
         wil::com_ptr<ITfContext> text_edit_sink_context;
@@ -142,12 +142,12 @@ class SubornoTextService final : public ITfTextInputProcessor,
     // a best-effort reactivation of the bn-BD language profile on this thread.
     void _UpdateInputIndicators();
 
-    // ---- BornoTSF parity: the four V16-audit-gap behaviours ----
+    // ---- legacy reference IME parity: the four V16-audit-gap behaviours ----
     // Registers the Input/Converted display attribute GUIDs with the TSF
-    // category manager (BornoTSF _InitDisplayAttributeGuidAtom).
+    // category manager (legacy reference IME _InitDisplayAttributeGuidAtom).
     HRESULT _InitDisplayAttributeGuidAtom();
     /// Sets/clears GUID_PROP_ATTRIBUTE over the composition range
-    /// (BornoTSF _SetCompositionDisplayAttributes /
+    /// (legacy reference IME _SetCompositionDisplayAttributes /
     /// _ClearCompositionDisplayAttributes). The edit-session helpers apply
     /// them inside the composition edit session; these wrappers exist for the
     /// OnCompositionTerminated path where a write cookie is already held.
@@ -155,20 +155,20 @@ class SubornoTextService final : public ITfTextInputProcessor,
                                                ITfContext* context,
                                                ITfComposition* composition);
     // Advise/unadvise ITfTextEditSink on one context
-    // (BornoTSF _InitTextEditSink, adapted per-context).
+    // (legacy reference IME _InitTextEditSink, adapted per-context).
     BOOL _InitTextEditSink(ITfContext* context, ContextState& state);
     void _ShutdownTextEditSink(ContextState& state);
     /// TRUE when the selection range lies fully inside the composition range
-    /// (BornoTSF _IsRangeCovered).
+    /// (legacy reference IME _IsRangeCovered).
     BOOL _IsRangeCovered(TfEditCookie edit_cookie,
                          ITfRange* range_test,
                          ITfRange* range_cover) const;
     // Advise/unadvise ITfThreadFocusSink on the thread manager
-    // (BornoTSF _InitThreadFocusSink / _UninitThreadFocusSink).
+    // (legacy reference IME _InitThreadFocusSink / _UninitThreadFocusSink).
     HRESULT _InitThreadFocusSink();
     void _UninitThreadFocusSink();
     // Compartment-change entry point: re-syncs the input indicator when the
-    // keyboard open/close compartment changes externally (BornoTSF advises
+    // keyboard open/close compartment changes externally (legacy reference IME advises
     // the same compartments; its callback is an empty stub, Suborno's routes
     // into _UpdateInputIndicators). Static because ITfCompartmentEventSink's
     // callback contract carries a void* context.
@@ -183,13 +183,13 @@ class SubornoTextService final : public ITfTextInputProcessor,
     /// compartment writes and profile activation run on actual changes only.
     std::string m_indicator_layout_id;
 
-    /// BornoTSF parity state
+    /// legacy reference IME parity state
     /// Registered display-attribute guid atoms (0 until _InitDisplayAttributeGuidAtom).
     TfGuidAtom m_gaDisplayAttributeInput = 0;
     TfGuidAtom m_gaDisplayAttributeConverted = 0;
     /// ITfThreadFocusSink advice cookie on the thread manager.
     DWORD m_threadFocusSinkCookie = TF_INVALID_COOKIE;
-    /// Compartment event sinks (BornoTSF parity: keyboard open/close and
+    /// Compartment event sinks (legacy reference IME parity: keyboard open/close and
     /// input-mode conversion).
     std::unique_ptr<CompartmentEventSink> m_compartmentOpenCloseSink;
     std::unique_ptr<CompartmentEventSink> m_compartmentConversionSink;

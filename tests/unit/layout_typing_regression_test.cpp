@@ -6,7 +6,7 @@
 
 // phonetic_tokenizer.cpp / phonetic_parser.cpp / national_layout.cpp /
 
-// khipro_layout.cpp / borno_phonetic_layout.cpp / probhat_layout.cpp.
+// khipro_layout.cpp / suborno_classic_layout.cpp / probhat_layout.cpp.
 
 //
 
@@ -21,8 +21,8 @@
 
 #include "suborno/layouts/khipro/khipro_layout.hpp"
 #include "suborno/layouts/national/national_layout.hpp"
-#include "suborno/layouts/phonetic/avro_phonetic_layout.hpp"
-#include "suborno/layouts/phonetic/borno_phonetic_layout.hpp"
+#include "suborno/layouts/phonetic/suborno_smart_layout.hpp"
+#include "suborno/layouts/phonetic/suborno_classic_layout.hpp"
 #include "suborno/layouts/phonetic/suborno_phonetic_layout.hpp"
 #include "suborno/layouts/probhat/probhat_layout.hpp"
 #include "suborno/unicode/bengali.hpp"
@@ -62,7 +62,7 @@ TEST(LayoutTypingRegressionTest, SubornoRiNoLongerShadowsRaPlusIKar) {
     EXPECT_EQ(layout.transliterate("k:boundary:ri"), std::string("ক") + "র" + "ি");
     EXPECT_EQ(layout.transliterate("j:boundary:n:boundary:priy:nukta:"),
               std::string("জনপ্রি") + ya_nukta);
-    // ঋ/ৃ moved to "rri" (Avro convention shared by the Avro and Borno
+    // ঋ/ৃ moved to "rri" (legacy convention shared by the Smart and Classic
     // phonetic layouts).
 
     EXPECT_EQ(layout.transliterate("rrishi"), "ঋশি");
@@ -107,7 +107,7 @@ TEST(LayoutTypingRegressionTest, SubornoFullCorpusHeadlinesStillPass) {
 
 // The layout is now the real positional National (Jatiyo) layout per the
 
-// BDS 1738:2018 diagram (Unicode L2/19-079 Figure 4) with BornoTSF as
+// BDS 1738:2018 diagram (Unicode L2/19-079 Figure 4) with legacy reference IME as
 
 // factual reference. The regression equivalents of the old phonetic-token
 
@@ -272,15 +272,15 @@ TEST(LayoutTypingRegressionTest, ProbhatStandaloneNuktaIsTypeableViaScanCode) {
 
 // ---------------------------------------------------------------------------
 
-// borno-phonetic
+// suborno-classic
 
 // ---------------------------------------------------------------------------
 
-TEST(LayoutTypingRegressionTest, BornoAccentKeyBreaksVowelCollisions) {
-    const suborno::layouts::BornoPhoneticLayout layout;
+TEST(LayoutTypingRegressionTest, ClassicAccentKeyBreaksVowelCollisions) {
+    const suborno::layouts::SubornoClassicLayout layout;
     EXPECT_EQ(layout.transliterate("Ta`i"), std::string("ট") + "া" + "ই");
     EXPECT_EQ(layout.transliterate("mo`i"), "মই");
-    // Regression guards for the existing contract (BornoTSF emits the
+    // Regression guards for the existing contract (legacy reference IME emits the
 
     // precomposed য় U+09DF after a vowel sign).
 
@@ -308,12 +308,12 @@ TEST(LayoutTypingRegressionTest, ProbhatSessionCommitMatchesTransliterateEncodin
 
 // ---------------------------------------------------------------------------
 
-// avro-phonetic (regression guards)
+// suborno-smart (regression guards)
 
 // ---------------------------------------------------------------------------
 
-TEST(LayoutTypingRegressionTest, AvroUnchangedHeadlines) {
-    const suborno::layouts::AvroPhoneticLayout layout;
+TEST(LayoutTypingRegressionTest, SmartUnchangedHeadlines) {
+    const suborno::layouts::SubornoSmartLayout layout;
     EXPECT_EQ(layout.transliterate("ami"), "আমি");
     EXPECT_EQ(layout.transliterate("rri"), "ঋ");
     EXPECT_EQ(layout.transliterate("jonopriy"), "\u099C\u09A8\u09AA\u09CD\u09B0\u09BF\u09DF");

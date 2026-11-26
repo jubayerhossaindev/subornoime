@@ -115,8 +115,8 @@ verification in §3.
    evidence only; no "Windows Verified" claim is made anywhere. Re-verify on
    Windows with `scripts/windows-ui-audit/Run-BanglaTypingTests.ps1` and the
    `suborno.windows.*` ctest targets.
-3. **Known open notes carried forward** (unchanged by this mission): Borno and
-   Avro phonetic layouts still have no standalone-nukta token (minor, outside
+3. **Known open notes carried forward** (unchanged by this mission): Classic and
+   Smart phonetic layouts still have no standalone-nukta token (minor, outside
    this mission's protected scope); Probhat dead-key composition remains
    literal (documented in probhat-keymap.md).
 

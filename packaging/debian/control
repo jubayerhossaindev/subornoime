@@ -19,7 +19,7 @@ Depends: ${misc:Depends}, ${shlibs:Depends}
 Description: Native Bangla input method — portable core and command-line tools
  Suborno is a Bengali (Bangla) input method engine written in C++20.
  This package ships the portable command-line tools and libraries: the
- phonetic (Suborno/Borno/Avro), Probhat, Khipro and national keyboard
+ phonetic (Suborno/Classic/Smart), Probhat, Khipro and national keyboard
  layouts, candidate ranking, spell correction and a SQLite-backed personal
  dictionary.
  .

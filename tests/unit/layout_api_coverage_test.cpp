@@ -1,7 +1,7 @@
 // Coverage tests for src/layout-api/declarative_layout.cpp and
 // src/layout-api/layout_registry.cpp. Each test names the measured gap
 // (uncovered line or branch) it closes. The registry tests reuse the real
-// BornoPhoneticLayout exactly the way engine.cpp registers it, so no
+// SubornoClassicLayout exactly the way engine.cpp registers it, so no
 // InputLayout test double is needed.
 
 #include <filesystem>
@@ -14,7 +14,7 @@
 
 #include "suborno/layout-api/declarative_layout.hpp"
 #include "suborno/layout-api/layout_registry.hpp"
-#include "suborno/layouts/phonetic/borno_phonetic_layout.hpp"
+#include "suborno/layouts/phonetic/suborno_classic_layout.hpp"
 
 namespace {
 
@@ -33,8 +33,8 @@ void remove_quietly(const std::filesystem::path& path) {
     std::filesystem::remove(path, ignored);
 }
 
-std::unique_ptr<suborno::layouts::BornoPhoneticLayout> make_borno_layout() {
-    return std::make_unique<suborno::layouts::BornoPhoneticLayout>();
+std::unique_ptr<suborno::layouts::SubornoClassicLayout> make_classic_layout() {
+    return std::make_unique<suborno::layouts::SubornoClassicLayout>();
 }
 
 }  // namespace
@@ -253,8 +253,8 @@ TEST(LayoutApiCoverage, EmptyRegistryStartsInactiveAndRejectsEmptyIdsAndNullLayo
     EXPECT_TRUE(registry.active_id().empty());
     EXPECT_EQ(registry.active(), nullptr);
 
-    EXPECT_FALSE(registry.register_layout("", make_borno_layout()));
-    EXPECT_FALSE(registry.register_layout("borno-phonetic", nullptr));
+    EXPECT_FALSE(registry.register_layout("", make_classic_layout()));
+    EXPECT_FALSE(registry.register_layout("suborno-classic", nullptr));
 
     EXPECT_TRUE(registry.active_id().empty());
     EXPECT_EQ(registry.active(), nullptr);
@@ -265,12 +265,12 @@ TEST(LayoutApiCoverage, EmptyRegistryStartsInactiveAndRejectsEmptyIdsAndNullLayo
 TEST(LayoutApiCoverage, FirstRegistrationBecomesTheActiveLayout) {
     suborno::layout::LayoutRegistry registry;
 
-    ASSERT_TRUE(registry.register_layout("borno-phonetic", make_borno_layout()));
-    EXPECT_EQ(registry.active_id(), "borno-phonetic");
+    ASSERT_TRUE(registry.register_layout("suborno-classic", make_classic_layout()));
+    EXPECT_EQ(registry.active_id(), "suborno-classic");
 
     const suborno::layout::InputLayout* active = registry.active();
     ASSERT_NE(active, nullptr);
-    EXPECT_EQ(active, registry.find("borno-phonetic"));
+    EXPECT_EQ(active, registry.find("suborno-classic"));
     EXPECT_EQ(active->transliterate("ka"), "কা");
 }
 
@@ -281,15 +281,15 @@ TEST(LayoutApiCoverage, FirstRegistrationBecomesTheActiveLayout) {
 TEST(LayoutApiCoverage, DuplicateRegistrationIsRejectedAndKeepsTheOriginal) {
     suborno::layout::LayoutRegistry registry;
 
-    ASSERT_TRUE(registry.register_layout("borno-phonetic", make_borno_layout()));
-    const suborno::layout::InputLayout* original = registry.find("borno-phonetic");
+    ASSERT_TRUE(registry.register_layout("suborno-classic", make_classic_layout()));
+    const suborno::layout::InputLayout* original = registry.find("suborno-classic");
     ASSERT_NE(original, nullptr);
 
-    EXPECT_FALSE(registry.register_layout("borno-phonetic", make_borno_layout()));
+    EXPECT_FALSE(registry.register_layout("suborno-classic", make_classic_layout()));
 
-    EXPECT_EQ(registry.find("borno-phonetic"), original);
+    EXPECT_EQ(registry.find("suborno-classic"), original);
     EXPECT_EQ(original->transliterate("ka"), "কা");
-    EXPECT_EQ(registry.active_id(), "borno-phonetic");
+    EXPECT_EQ(registry.active_id(), "suborno-classic");
 }
 
 // Covers layout_registry.cpp:42-46 — set_active switches between registered
@@ -297,13 +297,13 @@ TEST(LayoutApiCoverage, DuplicateRegistrationIsRejectedAndKeepsTheOriginal) {
 TEST(LayoutApiCoverage, SetActiveSwitchesBetweenRegisteredLayouts) {
     suborno::layout::LayoutRegistry registry;
 
-    ASSERT_TRUE(registry.register_layout("borno-a", make_borno_layout()));
-    ASSERT_TRUE(registry.register_layout("borno-b", make_borno_layout()));
-    EXPECT_EQ(registry.active_id(), "borno-a");
+    ASSERT_TRUE(registry.register_layout("classic-a", make_classic_layout()));
+    ASSERT_TRUE(registry.register_layout("classic-b", make_classic_layout()));
+    EXPECT_EQ(registry.active_id(), "classic-a");
 
-    EXPECT_TRUE(registry.set_active("borno-b"));
-    EXPECT_EQ(registry.active_id(), "borno-b");
-    EXPECT_EQ(registry.active(), registry.find("borno-b"));
+    EXPECT_TRUE(registry.set_active("classic-b"));
+    EXPECT_EQ(registry.active_id(), "classic-b");
+    EXPECT_EQ(registry.active(), registry.find("classic-b"));
 }
 
 // Covers layout_registry.cpp:43-44 — set_active to an unknown or empty id is
@@ -315,10 +315,10 @@ TEST(LayoutApiCoverage, SetActiveUnknownOrEmptyIdIsRejectedAndKeepsSelection) {
     EXPECT_FALSE(registry.set_active(""));
     EXPECT_EQ(registry.active(), nullptr);
 
-    ASSERT_TRUE(registry.register_layout("borno-a", make_borno_layout()));
+    ASSERT_TRUE(registry.register_layout("classic-a", make_classic_layout()));
     EXPECT_FALSE(registry.set_active("ghost"));
-    EXPECT_EQ(registry.active_id(), "borno-a");
-    EXPECT_EQ(registry.active(), registry.find("borno-a"));
+    EXPECT_EQ(registry.active_id(), "classic-a");
+    EXPECT_EQ(registry.active(), registry.find("classic-a"));
 }
 
 // Covers layout_registry.cpp:37-38 — metadata lookup returns the stored entry
@@ -326,16 +326,16 @@ TEST(LayoutApiCoverage, SetActiveUnknownOrEmptyIdIsRejectedAndKeepsSelection) {
 TEST(LayoutApiCoverage, FindMetadataReturnsRegisteredEntryOrNullOrMissing) {
     suborno::layout::LayoutRegistry registry;
 
-    const suborno::layout::LayoutMetadata metadata{"", "Borno Phonetic", "2"};
-    ASSERT_TRUE(registry.register_layout("borno-phonetic", make_borno_layout(), metadata));
-    ASSERT_TRUE(registry.register_layout("plain-borno", make_borno_layout()));
+    const suborno::layout::LayoutMetadata metadata{"", "Suborno Classic", "2"};
+    ASSERT_TRUE(registry.register_layout("suborno-classic", make_classic_layout(), metadata));
+    ASSERT_TRUE(registry.register_layout("plain-classic", make_classic_layout()));
 
-    const suborno::layout::LayoutMetadata* found = registry.find_metadata("borno-phonetic");
+    const suborno::layout::LayoutMetadata* found = registry.find_metadata("suborno-classic");
     ASSERT_NE(found, nullptr);
-    EXPECT_EQ(found->display_name, "Borno Phonetic");
+    EXPECT_EQ(found->display_name, "Suborno Classic");
     EXPECT_EQ(found->version, "2");
 
-    EXPECT_EQ(registry.find_metadata("plain-borno"), nullptr);
+    EXPECT_EQ(registry.find_metadata("plain-classic"), nullptr);
     EXPECT_EQ(registry.find_metadata("ghost"), nullptr);
 }
 
@@ -344,16 +344,16 @@ TEST(LayoutApiCoverage, FindMetadataReturnsRegisteredEntryOrNullOrMissing) {
 TEST(LayoutApiCoverage, MetadataIdDefaultsToTheRegistryKeyAndExplicitIdIsKept) {
     suborno::layout::LayoutRegistry registry;
 
-    const suborno::layout::LayoutMetadata defaulted{"", "Borno", "1"};
-    ASSERT_TRUE(registry.register_layout("borno-phonetic", make_borno_layout(), defaulted));
+    const suborno::layout::LayoutMetadata defaulted{"", "Classic", "1"};
+    ASSERT_TRUE(registry.register_layout("suborno-classic", make_classic_layout(), defaulted));
     const suborno::layout::LayoutMetadata* defaulted_found =
-        registry.find_metadata("borno-phonetic");
+        registry.find_metadata("suborno-classic");
     ASSERT_NE(defaulted_found, nullptr);
-    EXPECT_EQ(defaulted_found->id, "borno-phonetic");
+    EXPECT_EQ(defaulted_found->id, "suborno-classic");
 
-    const suborno::layout::LayoutMetadata explicit_id{"custom-id", "Borno", "1"};
-    ASSERT_TRUE(registry.register_layout("other-borno", make_borno_layout(), explicit_id));
-    const suborno::layout::LayoutMetadata* explicit_found = registry.find_metadata("other-borno");
+    const suborno::layout::LayoutMetadata explicit_id{"custom-id", "Classic", "1"};
+    ASSERT_TRUE(registry.register_layout("other-classic", make_classic_layout(), explicit_id));
+    const suborno::layout::LayoutMetadata* explicit_found = registry.find_metadata("other-classic");
     ASSERT_NE(explicit_found, nullptr);
     EXPECT_EQ(explicit_found->id, "custom-id");
 }
@@ -363,17 +363,17 @@ TEST(LayoutApiCoverage, MetadataIdDefaultsToTheRegistryKeyAndExplicitIdIsKept) {
 TEST(LayoutApiCoverage, FailedMetadataRegistrationKeepsTheFirstMetadata) {
     suborno::layout::LayoutRegistry registry;
 
-    const suborno::layout::LayoutMetadata first{"borno-phonetic", "First", "1"};
-    ASSERT_TRUE(registry.register_layout("borno-phonetic", make_borno_layout(), first));
+    const suborno::layout::LayoutMetadata first{"suborno-classic", "First", "1"};
+    ASSERT_TRUE(registry.register_layout("suborno-classic", make_classic_layout(), first));
 
-    const suborno::layout::LayoutMetadata second{"borno-phonetic", "Second", "2"};
-    EXPECT_FALSE(registry.register_layout("borno-phonetic", make_borno_layout(), second));
+    const suborno::layout::LayoutMetadata second{"suborno-classic", "Second", "2"};
+    EXPECT_FALSE(registry.register_layout("suborno-classic", make_classic_layout(), second));
 
-    const suborno::layout::LayoutMetadata* stored = registry.find_metadata("borno-phonetic");
+    const suborno::layout::LayoutMetadata* stored = registry.find_metadata("suborno-classic");
     ASSERT_NE(stored, nullptr);
     EXPECT_EQ(stored->display_name, "First");
     EXPECT_EQ(stored->version, "1");
-    EXPECT_EQ(registry.active_id(), "borno-phonetic");
+    EXPECT_EQ(registry.active_id(), "suborno-classic");
 }
 
 // Covers layout_registry.cpp:50-52 — find() returns the registered layout or
@@ -384,8 +384,8 @@ TEST(LayoutApiCoverage, FindReturnsRegisteredLayoutOrNull) {
     EXPECT_EQ(registry.find("ghost"), nullptr);
     EXPECT_EQ(registry.find(""), nullptr);
 
-    ASSERT_TRUE(registry.register_layout("borno-phonetic", make_borno_layout()));
-    EXPECT_NE(registry.find("borno-phonetic"), nullptr);
+    ASSERT_TRUE(registry.register_layout("suborno-classic", make_classic_layout()));
+    EXPECT_NE(registry.find("suborno-classic"), nullptr);
     EXPECT_EQ(registry.find("ghost"), nullptr);
     EXPECT_EQ(registry.find(""), nullptr);
 }

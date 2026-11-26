@@ -28,7 +28,7 @@ constexpr int design_radius = ui::metrics::radius_pill;
 
 // and close zones are anchored to the RIGHT edge so the pill can auto-size
 
-// to its label (long Bangla layout names like "বাংলা (Borno)" stay visible).
+// to its label (long Bangla layout names like "বাংলা (Suborno Classic)" stay visible).
 
 // Zone widths follow the native caption-button convention (46x32 design px
 

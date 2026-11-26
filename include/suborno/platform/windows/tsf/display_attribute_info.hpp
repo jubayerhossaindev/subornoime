@@ -1,8 +1,9 @@
 #pragma once
 
-// BornoTSF parity components (GPL-3.0-or-later): ported from BornoTSF
-// display/DisplayAttributeInfo.{h,cpp} and display/EnumDisplayAttributeInfo.{h,cpp}
-// (c) Jayed Ahsan Saad, BornoTSF contributors.
+// Compatibility components (GPL-3.0-or-later): ported from the upstream BornoTSF
+// project (https://github.com/JayedAhsan/BornoTSF), (c) Jayed Ahsan Saad and
+// BornoTSF contributors. Required GPL-3.0-or-later attribution; see LICENSE
+// and THIRD_PARTY_NOTICES.md.
 //
 // What the port keeps verbatim:
 //   - Two display attributes (Input / Converted), registered with the TSF
@@ -13,7 +14,7 @@
 //     are overwritten before returning, so both attributes effectively render
 //     as a black squiggle underline (TF_LS_SQUIGGLE, RGB(0,0,0),
 //     TF_ATTR_INPUT). Kept on purpose — Suborno must render composition text
-//     exactly like BornoTSF did. The upstream tables are kept as statics for
+//     exactly like the upstream IME did. The upstream tables are kept as statics for
 //     structural parity with the original code.
 //
 // What the port adapts:
@@ -21,9 +22,9 @@
 //     own GUID_DISPLAY_ATTRIBUTE_{INPUT,CONVERTED} (fresh GUIDs — display
 //     attribute GUIDs are registered globally, so two IMEs sharing the same
 //     GUIDs would collide when both are installed).
-//   - BornoTSF's manual DllAddRef/DllRelease becomes the shared
+//   - The upstream IME's manual DllAddRef/DllRelease becomes the shared
 //     com::module_lifetime() lock used by every Suborno COM object.
-//   - Prefix convention: BornoTSF "CDisplayAttributeInfo*" ->
+//   - Prefix convention: legacy reference IME "CDisplayAttributeInfo*" ->
 //     Suborno "DisplayAttributeInfo*" inside suborno::platform::windows.
 
 #include <msctf.h>
@@ -33,7 +34,7 @@
 namespace suborno::platform::windows {
 
 /// ITfDisplayAttributeInfo for one attribute (base) — mirrors
-/// BornoTSF CDisplayAttributeInfo.
+/// legacy reference IME CDisplayAttributeInfo.
 class DisplayAttributeInfo : public ITfDisplayAttributeInfo {
   public:
     DisplayAttributeInfo(const GUID* guid,
@@ -60,7 +61,7 @@ class DisplayAttributeInfo : public ITfDisplayAttributeInfo {
     volatile LONG reference_count_ = 1;
 };
 
-/// The two concrete attributes BornoTSF exposes.
+/// The two concrete attributes legacy reference IME exposes.
 class DisplayAttributeInfoInput final : public DisplayAttributeInfo {
   public:
     DisplayAttributeInfoInput()
@@ -82,7 +83,7 @@ class DisplayAttributeInfoConverted final : public DisplayAttributeInfo {
 };
 
 /// IEnumTfDisplayAttributeInfo over {Input, Converted} — mirrors
-/// BornoTSF CEnumDisplayAttributeInfo.
+/// legacy reference IME CEnumDisplayAttributeInfo.
 class EnumDisplayAttributeInfo : public IEnumTfDisplayAttributeInfo {
   public:
     EnumDisplayAttributeInfo();
