@@ -204,10 +204,61 @@ TEST(WindowsTsfContractTest, CreatesTheTextServiceAndTracksServerLocks) {
     EXPECT_EQ(service->QueryInterface(IID_ITfDisplayAttributeProvider,
                                       reinterpret_cast<void**>(display_attribute_provider.put())),
               S_OK);
-    display_attribute_provider.reset();
+    // Exercise the real display-attribute provider outputs and BSTR lifetime.
+    wil::com_ptr<IEnumTfDisplayAttributeInfo> attribute_enumerator;
+    ASSERT_EQ(display_attribute_provider->EnumDisplayAttributeInfo(attribute_enumerator.put()),
+              S_OK);
+    ASSERT_NE(attribute_enumerator.get(), nullptr);
 
+    wil::com_ptr<ITfDisplayAttributeInfo> enumerated_input;
+    ULONG fetched = 0;
+    ASSERT_EQ(attribute_enumerator->Next(1, enumerated_input.put(), &fetched), S_OK);
+    ASSERT_EQ(fetched, 1U);
+    ASSERT_NE(enumerated_input.get(), nullptr);
+
+    wil::unique_bstr input_description;
+    ASSERT_EQ(enumerated_input->GetDescription(input_description.put()), S_OK);
+    ASSERT_NE(input_description.get(), nullptr);
+    EXPECT_STREQ(input_description.get(), L"Suborno Text Service Display Attribute Input");
+
+    wil::com_ptr<ITfDisplayAttributeInfo> enumerated_converted;
+    fetched = 0;
+    ASSERT_EQ(attribute_enumerator->Next(1, enumerated_converted.put(), &fetched), S_OK);
+    ASSERT_EQ(fetched, 1U);
+    ASSERT_NE(enumerated_converted.get(), nullptr);
+
+    wil::unique_bstr converted_description;
+    ASSERT_EQ(enumerated_converted->GetDescription(converted_description.put()), S_OK);
+    ASSERT_NE(converted_description.get(), nullptr);
+    EXPECT_STREQ(converted_description.get(), L"Suborno Text Service Display Attribute Converted");
+
+    wil::com_ptr<ITfDisplayAttributeInfo> looked_up_input;
+    ASSERT_EQ(display_attribute_provider->GetDisplayAttributeInfo(
+                  suborno::platform::windows::GUID_DISPLAY_ATTRIBUTE_INPUT, looked_up_input.put()),
+              S_OK);
+    ASSERT_NE(looked_up_input.get(), nullptr);
+
+    wil::com_ptr<ITfDisplayAttributeInfo> looked_up_converted;
+    ASSERT_EQ(display_attribute_provider->GetDisplayAttributeInfo(
+                  suborno::platform::windows::GUID_DISPLAY_ATTRIBUTE_CONVERTED,
+                  looked_up_converted.put()),
+              S_OK);
+    ASSERT_NE(looked_up_converted.get(), nullptr);
+
+    display_attribute_provider.reset();
     service.reset();
     factory.reset();
+
+    // The enumerator and returned attribute objects own independent module
+    // references; the DLL must remain loaded until every client reference is
+    // released, even after the text service and class factory are gone.
+    EXPECT_EQ(DllCanUnloadNow(), S_FALSE);
+
+    looked_up_converted.reset();
+    looked_up_input.reset();
+    enumerated_converted.reset();
+    enumerated_input.reset();
+    attribute_enumerator.reset();
     EXPECT_EQ(DllCanUnloadNow(), S_OK);
 }
 

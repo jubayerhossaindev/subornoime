@@ -34,7 +34,7 @@ class Compartment {
     Compartment(const Compartment&) = delete;
     Compartment& operator=(const Compartment&) = delete;
 
-    HRESULT get_compartment(_Outptr_ ITfCompartment** compartment) const;
+    HRESULT get_compartment(_Outptr_result_nullonfailure_ ITfCompartment** compartment) const;
     HRESULT get_bool_value(_Out_ BOOL* enabled) const;
     HRESULT set_bool_value(BOOL enabled) const;
     HRESULT get_dword_value(_Out_ DWORD* compartment_value) const;

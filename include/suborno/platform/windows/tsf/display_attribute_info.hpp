@@ -27,6 +27,7 @@
 //     Suborno "DisplayAttributeInfo*" inside suborno::platform::windows.
 
 #include <msctf.h>
+#include <string>
 #include <wil/com.h>
 
 namespace suborno::platform::windows {
@@ -38,7 +39,7 @@ class DisplayAttributeInfo : public ITfDisplayAttributeInfo {
     DisplayAttributeInfo(const GUID* guid,
                          const TF_DISPLAYATTRIBUTE* display_attribute,
                          const wchar_t* description);
-    ~DisplayAttributeInfo() override;
+    virtual ~DisplayAttributeInfo();
 
     // IUnknown
     STDMETHOD(QueryInterface)(REFIID riid, void** object) override;
@@ -47,7 +48,7 @@ class DisplayAttributeInfo : public ITfDisplayAttributeInfo {
 
     // ITfDisplayAttributeInfo
     STDMETHOD(GetGUID)(_Out_ GUID* guid) override;
-    STDMETHOD(GetDescription)(_Out_ BSTR* description) override;
+    STDMETHOD(GetDescription)(_Outptr_result_z_ BSTR* description) override;
     STDMETHOD(GetAttributeInfo)(_Out_ TF_DISPLAYATTRIBUTE* attribute) override;
     STDMETHOD(SetAttributeInfo)(_In_ const TF_DISPLAYATTRIBUTE* attribute) override;
     STDMETHOD(Reset)() override;
@@ -55,7 +56,7 @@ class DisplayAttributeInfo : public ITfDisplayAttributeInfo {
   private:
     const GUID* guid_;
     const TF_DISPLAYATTRIBUTE* display_attribute_;
-    const wchar_t* description_;
+    std::wstring description_;
     volatile LONG reference_count_ = 1;
 };
 
@@ -85,7 +86,7 @@ class DisplayAttributeInfoConverted final : public DisplayAttributeInfo {
 class EnumDisplayAttributeInfo : public IEnumTfDisplayAttributeInfo {
   public:
     EnumDisplayAttributeInfo();
-    ~EnumDisplayAttributeInfo() override;
+    virtual ~EnumDisplayAttributeInfo();
 
     // IUnknown
     STDMETHOD(QueryInterface)(REFIID riid, void** object) override;

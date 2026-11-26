@@ -15,6 +15,7 @@
 // (2-column legacy files are accepted; '#' lines are comments).
 
 #include <cstdint>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -274,70 +275,75 @@ int main(int argc, char** argv) {
     const std::filesystem::path database_path = argv[1];
     const std::string mode = argv[2];
 
-    suborno::dictionary::Dictionary dictionary(database_path.string());
+    try {
+        suborno::dictionary::Dictionary dictionary(database_path.string());
 
-    if (mode == "validate") {
-        return run_validate(dictionary);
-    }
-    if (mode == "stats") {
-        return run_stats(dictionary);
-    }
-    if (mode == "vacuum") {
-        dictionary.vacuum();
-        std::cout << "Vacuum complete.\n";
-        return 0;
-    }
-    // Legacy form: the second positional argument is a words TSV (2 args total).
-    if (mode.find(".tsv") != std::string::npos || mode.find(".txt") != std::string::npos) {
-        return run_import(dictionary, std::filesystem::path(mode), false, "seed");
-    }
-    // Only these modes take a required positional argument; validate/stats/
-    // vacuum/dedupe run bare (dedupe's --apply is optional, see usage above).
-    const bool mode_requires_argument =
-        (mode == "import" || mode == "export" || mode == "relations" || mode == "backup");
-    if (argc < 4 && mode_requires_argument) {
-        std::cerr << "Mode '" << mode << "' requires an argument.\n";
-        return 2;
-    }
-    if (argc < 4 && mode != "dedupe") {
-        // Unknown short-argument mode: fall through to the unknown-mode error
-        // so the CLI never misreports a typo as a missing argument.
+        if (mode == "validate") {
+            return run_validate(dictionary);
+        }
+        if (mode == "stats") {
+            return run_stats(dictionary);
+        }
+        if (mode == "vacuum") {
+            dictionary.vacuum();
+            std::cout << "Vacuum complete.\n";
+            return 0;
+        }
+        // Legacy form: the second positional argument is a words TSV (2 args total).
+        if (mode.find(".tsv") != std::string::npos || mode.find(".txt") != std::string::npos) {
+            return run_import(dictionary, std::filesystem::path(mode), false, "seed");
+        }
+        // Only these modes take a required positional argument; validate/stats/
+        // vacuum/dedupe run bare (dedupe's --apply is optional, see usage above).
+        const bool mode_requires_argument =
+            (mode == "import" || mode == "export" || mode == "relations" || mode == "backup");
+        if (argc < 4 && mode_requires_argument) {
+            std::cerr << "Mode '" << mode << "' requires an argument.\n";
+            return 2;
+        }
+        if (argc < 4 && mode != "dedupe") {
+            // Unknown short-argument mode: fall through to the unknown-mode error
+            // so the CLI never misreports a typo as a missing argument.
+            std::cerr << "Unknown mode: " << mode << "\n";
+            return 2;
+        }
+        if (mode == "import") {
+            bool merge = false;
+            std::string origin = "seed";
+            for (int index = 4; index < argc; ++index) {
+                const std::string flag = argv[index];
+                if (flag.rfind("--mode=", 0) == 0) {
+                    merge = flag.substr(7) == "merge";
+                } else if (flag.rfind("--origin=", 0) == 0) {
+                    origin = flag.substr(9);
+                } else {
+                    std::cerr << "Unknown flag: " << flag << "\n";
+                    return 2;
+                }
+            }
+            return run_import(dictionary, std::filesystem::path(argv[3]), merge, origin);
+        }
+        if (mode == "export") {
+            return run_export(dictionary, std::filesystem::path(argv[3]));
+        }
+        if (mode == "relations") {
+            return run_relations(dictionary, std::filesystem::path(argv[3]));
+        }
+        if (mode == "backup") {
+            dictionary.backup_to(argv[3]);
+            std::cout << "Backup written to " << argv[3] << "\n";
+            return 0;
+        }
+        if (mode == "dedupe") {
+            // --apply sits at argv[3] (right after the mode word); the optional
+            // flag used to be read from argv[4], which made bare `dedupe --apply`
+            // silently behave as a report-only run.
+            return run_dedupe(dictionary, argc > 3 && std::string(argv[3]) == "--apply");
+        }
         std::cerr << "Unknown mode: " << mode << "\n";
         return 2;
+    } catch (const std::exception& error) {
+        std::cerr << "Error: " << error.what() << "\n";
+        return 1;
     }
-    if (mode == "import") {
-        bool merge = false;
-        std::string origin = "seed";
-        for (int index = 4; index < argc; ++index) {
-            const std::string flag = argv[index];
-            if (flag.rfind("--mode=", 0) == 0) {
-                merge = flag.substr(7) == "merge";
-            } else if (flag.rfind("--origin=", 0) == 0) {
-                origin = flag.substr(9);
-            } else {
-                std::cerr << "Unknown flag: " << flag << "\n";
-                return 2;
-            }
-        }
-        return run_import(dictionary, std::filesystem::path(argv[3]), merge, origin);
-    }
-    if (mode == "export") {
-        return run_export(dictionary, std::filesystem::path(argv[3]));
-    }
-    if (mode == "relations") {
-        return run_relations(dictionary, std::filesystem::path(argv[3]));
-    }
-    if (mode == "backup") {
-        dictionary.backup_to(argv[3]);
-        std::cout << "Backup written to " << argv[3] << "\n";
-        return 0;
-    }
-    if (mode == "dedupe") {
-        // --apply sits at argv[3] (right after the mode word); the optional
-        // flag used to be read from argv[4], which made bare `dedupe --apply`
-        // silently behave as a report-only run.
-        return run_dedupe(dictionary, argc > 3 && std::string(argv[3]) == "--apply");
-    }
-    std::cerr << "Unknown mode: " << mode << "\n";
-    return 2;
 }

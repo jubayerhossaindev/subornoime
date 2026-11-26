@@ -443,7 +443,9 @@ TEST(ToolsBackupVacuumTest, BackupReportsUnusableDestination) {
 
     const CommandResult result =
         run_command(import_tool + " " + db_path(scratch) + " backup " + quoted(scratch.path_));
-    EXPECT_FALSE(result.exited_normally && result.exit_code == 0) << result.output;
+    ASSERT_TRUE(result.exited_normally) << result.output;
+    EXPECT_EQ(result.exit_code, 1) << result.output;
+    EXPECT_NE(result.output.find("Error:"), std::string::npos) << result.output;
 }
 
 TEST(ToolsArgumentParsingTest, UnknownModeAndMissingArgumentsExitTwo) {

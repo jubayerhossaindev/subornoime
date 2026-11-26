@@ -89,7 +89,17 @@ target_compile_definitions(suborno_unit_tests PRIVATE
     SUBORNO_C_API_EXAMPLE="$<TARGET_FILE:suborno_c_api_example>"
 )
 suborno_configure_test_target(suborno_unit_tests)
-add_test(NAME suborno.unit COMMAND suborno_unit_tests)
+add_test(NAME suborno.unit COMMAND suborno_unit_tests
+    "$<IF:$<CONFIG:Debug>,--gtest_filter=*-PerformanceBudget.*,--gtest_filter=*>"
+)
+# Full functional and soak coverage runs in both configurations. Timing
+# budgets are meaningful only in optimized Release builds: MSVC Debug uses
+# /Od, so PerformanceBudget runs once in Release. Expensive soak snapshots
+# are checkpointed in the test itself. A hard timeout prevents multi-minute
+# regressions from consuming the complete Windows verification job.
+# The Windows workflow supplies a 120s Release / 60s Debug CTest deadline.
+# Keep the timeout at the invocation level because the full Release suite
+# has a measured ~76s baseline on the hosted runner.
 
 add_executable(suborno_integration_tests integration/target_graph_smoke_test.cpp)
 target_link_libraries(suborno_integration_tests PRIVATE suborno_core GTest::gtest_main)
@@ -204,3 +214,5 @@ suborno_apply_build_options(suborno_fuzz_smoke)
 add_test(NAME suborno.fuzz_smoke
     COMMAND suborno_fuzz_smoke "${PROJECT_SOURCE_DIR}/tests/fuzz/corpus")
 set_tests_properties(suborno.fuzz_smoke PROPERTIES TIMEOUT 180)
+# Keep the registered smoke test executable available to the umbrella runner.
+add_dependencies(suborno_run_tests suborno_fuzz_smoke)

@@ -514,9 +514,10 @@ bool append_bijoy_bytes(const std::u32string& code_points, std::string& out) {
             continue;
         }
 
-        if (auto nuqta = match_decomposed_nuqta(code_points, i); nuqta.has_value()) {
+        if (auto decomposed_nuqta_match = match_decomposed_nuqta(code_points, i);
+            decomposed_nuqta_match.has_value()) {
             i += 2;
-            emit_consonant_unit(*nuqta, code_points, i, out);
+            emit_consonant_unit(*decomposed_nuqta_match, code_points, i, out);
             continue;
         }
 
