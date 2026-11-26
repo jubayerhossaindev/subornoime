@@ -54,7 +54,14 @@ function Invoke-SubornoSetup {
 function Assert-CleanInstallDirectory {
     param([string]$Path)
 
-    $expectedFiles = @('Suborno.exe', 'THIRD_PARTY_NOTICES.md', 'unins000.dat', 'unins000.exe')
+    $expectedFiles = @(
+        'LICENSE',
+        'README.md',
+        'Suborno.exe',
+        'THIRD_PARTY_NOTICES.md',
+        'unins000.dat',
+        'unins000.exe'
+    )
     $actualFiles = @(Get-ChildItem -LiteralPath $Path -Force -File |
         Sort-Object Name | Select-Object -ExpandProperty Name)
     if (($actualFiles -join '|') -ne (($expectedFiles | Sort-Object) -join '|')) {
