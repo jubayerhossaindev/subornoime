@@ -333,8 +333,34 @@ function Assert-Element {
 function Invoke-Pattern {
     param([string] $Id, [System.Windows.Automation.AutomationElement] $El, [Type] $PatternType)
     $pattern = $null
-    try { $pattern = $El.GetCurrentPattern($PatternType) } catch { }
-    if ($null -eq $pattern) { Add-Result $Id "pattern $($PatternType.Name) supported" "NOT SUPPORTED" $false; return $null }
+    $availabilityProperty = switch ($PatternType.Name) {
+        'InvokePattern' { [System.Windows.Automation.AutomationElement]::IsInvokePatternAvailableProperty }
+        'TogglePattern' { [System.Windows.Automation.AutomationElement]::IsTogglePatternAvailableProperty }
+        'ExpandCollapsePattern' { [System.Windows.Automation.AutomationElement]::IsExpandCollapsePatternAvailableProperty }
+        'RangeValuePattern' { [System.Windows.Automation.AutomationElement]::IsRangeValuePatternAvailableProperty }
+        default { $null }
+    }
+    $availability = 'not queried'
+    if ($null -ne $availabilityProperty) {
+        try {
+            $availability = [string]$El.GetCurrentPropertyValue($availabilityProperty)
+        } catch {
+            $availability = ('property error {0}: {1}' -f $_.Exception.GetType().FullName, $_.Exception.Message)
+        }
+    }
+    $patternError = ''
+    try {
+        $pattern = $El.GetCurrentPattern($PatternType)
+    } catch {
+        $patternError = ('{0} HRESULT=0x{1:X8}: {2}' -f $_.Exception.GetType().FullName, $_.Exception.HResult, $_.Exception.Message)
+    }
+    if ($null -eq $pattern) {
+        $actual = "NOT SUPPORTED; availability=$availability"
+        if ($patternError -ne '') { $actual += "; GetCurrentPattern=$patternError" }
+        Add-Result $Id "pattern $($PatternType.Name) supported" $actual $false
+        return $null
+    }
+    Write-Host ("UIA pattern diagnostic {0}: availability={1}; GetCurrentPattern=OK" -f $Id, $availability)
     return $pattern
 }
 
