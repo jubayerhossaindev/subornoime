@@ -1,5 +1,6 @@
 #include "standalone_tray.hpp"
 
+#include <algorithm>
 #include <shellapi.h>
 
 namespace suborno::platform::windows::standalone {
@@ -12,6 +13,17 @@ constexpr int icon_resource_id = 101;  // IDI_SUBORNO in the shared .rc template
 constexpr int menu_toggle = 2001;
 constexpr int menu_settings = 2002;
 constexpr int menu_exit = 2003;
+
+void copy_tooltip_text(wchar_t* destination,
+                       std::size_t capacity,
+                       const std::wstring& source) noexcept {
+    if (destination == nullptr || capacity == 0U) {
+        return;
+    }
+    const std::size_t count = std::min(source.size(), capacity - 1U);
+    std::copy_n(source.data(), count, destination);
+    destination[count] = L'\0';
+}
 
 }  // namespace
 
@@ -73,7 +85,7 @@ bool StandaloneTray::create(HINSTANCE instance,
     if (tooltip_.size() >= 128) {
         tooltip_.resize(127);
     }
-    ::lstrcpynW(notify_.szTip, tooltip_.c_str(), 128);
+    copy_tooltip_text(notify_.szTip, _countof(notify_.szTip), tooltip_);
     add_or_modify_icon(NIM_ADD);
     return icon_added_;
 }
@@ -90,11 +102,7 @@ void StandaloneTray::set_enabled_state(bool bangla_on) noexcept {
     }
     const wchar_t* state = bangla_on_ ? L"ON" : L"OFF";
     const std::wstring tip = tooltip_ + L" [" + state + L"]";
-    if (tip.size() >= 128) {
-        ::lstrcpynW(notify_.szTip, tip.c_str(), 128);
-    } else {
-        ::lstrcpynW(notify_.szTip, tip.c_str(), 128);
-    }
+    copy_tooltip_text(notify_.szTip, _countof(notify_.szTip), tip);
     ::Shell_NotifyIconW(NIM_MODIFY, &notify_);
 }
 

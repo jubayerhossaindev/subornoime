@@ -1179,20 +1179,20 @@ LRESULT CALLBACK about_window_proc(HWND window, UINT message, WPARAM w_param, LP
 
 ATOM register_about_class(HINSTANCE instance) {
     static const ATOM registered = [instance] {
-        WNDCLASSEXW window_class{};
-        window_class.cbSize = sizeof(window_class);
+        WNDCLASSEXW about_window_class{};
+        about_window_class.cbSize = sizeof(about_window_class);
         // Native elevation: the small DWM drop shadow under the frameless
 
         // popup (CS_DROPSHADOW is a documented class style, available on
 
         // every supported Windows version).
 
-        window_class.style = CS_DROPSHADOW;
-        window_class.lpfnWndProc = &about_window_proc;
-        window_class.hInstance = instance;
-        window_class.hCursor = ::LoadCursorW(nullptr, IDC_ARROW);
-        window_class.lpszClassName = about_class;
-        return ::RegisterClassExW(&window_class);
+        about_window_class.style = CS_DROPSHADOW;
+        about_window_class.lpfnWndProc = &about_window_proc;
+        about_window_class.hInstance = instance;
+        about_window_class.hCursor = ::LoadCursorW(nullptr, IDC_ARROW);
+        about_window_class.lpszClassName = about_class;
+        return ::RegisterClassExW(&about_window_class);
     }();
     return registered;
 }

@@ -27,6 +27,7 @@
 //     Suborno "DisplayAttributeInfo*" inside suborno::platform::windows.
 
 #include <msctf.h>
+#include <string>
 #include <wil/com.h>
 
 namespace suborno::platform::windows {
@@ -55,7 +56,7 @@ class DisplayAttributeInfo : public ITfDisplayAttributeInfo {
   private:
     const GUID* guid_;
     const TF_DISPLAYATTRIBUTE* display_attribute_;
-    const wchar_t* description_;
+    std::wstring description_;
     volatile LONG reference_count_ = 1;
 };
 

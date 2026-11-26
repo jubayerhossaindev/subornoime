@@ -28,8 +28,16 @@ HRESULT Compartment::get_compartment(_Outptr_ ITfCompartment** compartment) cons
 
     wil::com_ptr<ITfCompartmentMgr> compartment_mgr;
     HRESULT result = owner_->QueryInterface(IID_PPV_ARGS(compartment_mgr.put()));
-    if (SUCCEEDED(result) && compartment_mgr != nullptr) {
-        result = compartment_mgr->GetCompartment(guid_compartment_, compartment);
+    if (result != S_OK) {
+        return result;
+    }
+    if (compartment_mgr == nullptr) {
+        return E_NOINTERFACE;
+    }
+
+    result = compartment_mgr->GetCompartment(guid_compartment_, compartment);
+    if (result == S_OK && *compartment == nullptr) {
+        return E_UNEXPECTED;
     }
     return result;
 }
@@ -61,7 +69,10 @@ HRESULT Compartment::get_bool_value(_Out_ BOOL* enabled) const {
 HRESULT Compartment::set_bool_value(BOOL enabled) const {
     wil::com_ptr<ITfCompartment> compartment;
     HRESULT result = get_compartment(compartment.put());
-    if (SUCCEEDED(result)) {
+    if (result == S_OK && compartment == nullptr) {
+        return E_UNEXPECTED;
+    }
+    if (result == S_OK) {
         VARIANT value{};
         value.vt = VT_I4;
         value.lVal = enabled ? 1 : 0;
@@ -78,7 +89,10 @@ HRESULT Compartment::get_dword_value(_Out_ DWORD* compartment_value) const {
 
     wil::com_ptr<ITfCompartment> compartment;
     HRESULT result = get_compartment(compartment.put());
-    if (SUCCEEDED(result)) {
+    if (result == S_OK && compartment == nullptr) {
+        return E_UNEXPECTED;
+    }
+    if (result == S_OK) {
         VARIANT variant{};
         result = compartment->GetValue(&variant);
         if (result == S_OK) {
@@ -95,7 +109,10 @@ HRESULT Compartment::get_dword_value(_Out_ DWORD* compartment_value) const {
 HRESULT Compartment::set_dword_value(DWORD value) const {
     wil::com_ptr<ITfCompartment> compartment;
     HRESULT result = get_compartment(compartment.put());
-    if (SUCCEEDED(result)) {
+    if (result != S_OK || compartment == nullptr) {
+        return result == S_OK ? E_UNEXPECTED : result;
+    }
+    {
         VARIANT variant{};
         variant.vt = VT_I4;
         variant.lVal = static_cast<LONG>(value);
@@ -117,10 +134,13 @@ HRESULT Compartment::clear_value() {
 
     wil::com_ptr<ITfCompartmentMgr> compartment_mgr;
     HRESULT result = owner_->QueryInterface(IID_PPV_ARGS(compartment_mgr.put()));
-    if (result == S_OK && compartment_mgr != nullptr) {
-        result = compartment_mgr->ClearCompartment(client_id_, guid_compartment_);
+    if (result != S_OK) {
+        return result;
     }
-    return result;
+    if (compartment_mgr == nullptr) {
+        return E_NOINTERFACE;
+    }
+    return compartment_mgr->ClearCompartment(client_id_, guid_compartment_);
 }
 
 CompartmentEventSink::CompartmentEventSink(CompartmentCallback callback, void* callback_context)

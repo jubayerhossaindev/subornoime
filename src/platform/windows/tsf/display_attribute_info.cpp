@@ -85,7 +85,7 @@ DisplayAttributeInfo::DisplayAttributeInfo(const GUID* guid,
                                            const wchar_t* description)
     : guid_(guid),
       display_attribute_(display_attribute),
-      description_(description) {
+      description_(description != nullptr ? description : L"") {
     com::module_lifetime().object_created();
 }
 
@@ -143,7 +143,8 @@ STDMETHODIMP DisplayAttributeInfo::GetDescription(_Out_ BSTR* description) {
             return E_INVALIDARG;
         }
         *description = nullptr;
-        const BSTR allocated = ::SysAllocString(description_);
+        const BSTR allocated =
+            ::SysAllocStringLen(description_.c_str(), static_cast<UINT>(description_.size()));
         if (allocated == nullptr) {
             return E_OUTOFMEMORY;
         }

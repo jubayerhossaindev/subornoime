@@ -201,7 +201,7 @@ void CALLBACK foreground_changed(HWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, 
 
     // hide the preview (TSF would have done this through its edit cookie).
 
-    g_controller->on_focus_lost();
+    [[maybe_unused]] const auto focus_lost_commands = g_controller->on_focus_lost();
     if (g_preview != nullptr) {
         g_preview->hide();
     }

@@ -1276,12 +1276,12 @@ STDMETHODIMP SubornoTextService::OnKillThreadFocus() {
 
 STDMETHODIMP SubornoTextService::EnumDisplayAttributeInfo(
     __RPC__deref_out_opt IEnumTfDisplayAttributeInfo** ppEnum) {
-    return run_inside_com_boundary([&]() -> HRESULT {
-        if (ppEnum == nullptr) {
-            return E_INVALIDARG;
-        }
-        *ppEnum = nullptr;
+    if (ppEnum == nullptr) {
+        return E_INVALIDARG;
+    }
+    *ppEnum = nullptr;
 
+    return run_inside_com_boundary([&]() -> HRESULT {
         // The method name shadows the enum class type inside member scope, so
 
         // the type is named with its namespace qualification.
@@ -1298,12 +1298,12 @@ STDMETHODIMP SubornoTextService::EnumDisplayAttributeInfo(
 
 STDMETHODIMP SubornoTextService::GetDisplayAttributeInfo(
     __RPC__in REFGUID guidInfo, __RPC__deref_out_opt ITfDisplayAttributeInfo** ppInfo) {
-    return run_inside_com_boundary([&]() -> HRESULT {
-        if (ppInfo == nullptr) {
-            return E_INVALIDARG;
-        }
-        *ppInfo = nullptr;
+    if (ppInfo == nullptr) {
+        return E_INVALIDARG;
+    }
+    *ppInfo = nullptr;
 
+    return run_inside_com_boundary([&]() -> HRESULT {
         ITfDisplayAttributeInfo* info = nullptr;
         if (::IsEqualGUID(guidInfo, GUID_DISPLAY_ATTRIBUTE_INPUT)) {
             info = new (std::nothrow) DisplayAttributeInfoInput();

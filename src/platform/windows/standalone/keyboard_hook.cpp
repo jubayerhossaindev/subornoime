@@ -139,7 +139,7 @@ LRESULT KeyboardHook::handle_key_down(const KBDLLHOOKSTRUCT& info) noexcept {
 
     if (ctrl || alt || win) {
         if (deps_.controller != nullptr && deps_.controller->composing()) {
-            deps_.controller->on_focus_lost();
+            [[maybe_unused]] const auto focus_lost_commands = deps_.controller->on_focus_lost();
             if (deps_.preview != nullptr) {
                 deps_.preview->hide();
             }
