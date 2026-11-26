@@ -549,12 +549,18 @@ class ElementProvider final : public IRawElementProviderSimple,
             AddRef();
             return S_OK;
         }
-        std::unique_ptr<ElementProvider> parent = make_root_provider();
-        if (FAILED(parent->QueryInterface(__uuidof(IRawElementProviderFragmentRoot),
-                                          reinterpret_cast<void**>(root)))) {
-            return E_FAIL;
+        // QueryInterface AddRefs the returned COM interface. Transfer the
+        // initial reference to COM ownership and release only that initial
+        // reference; a C++ unique_ptr must not delete an AddRef'd interface.
+        ElementProvider* parent =
+            new (std::nothrow) ElementProvider(window_, source_, alive_, true, -1);
+        if (parent == nullptr) {
+            return E_OUTOFMEMORY;
         }
-        return S_OK;
+        const HRESULT query_result = parent->QueryInterface(
+            __uuidof(IRawElementProviderFragmentRoot), reinterpret_cast<void**>(root));
+        parent->Release();
+        return query_result;
     }
 
     // ---- IRawElementProviderFragmentRoot (window root only) ----
