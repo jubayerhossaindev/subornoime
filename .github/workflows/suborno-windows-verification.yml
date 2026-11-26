@@ -77,7 +77,11 @@ jobs:
           $env_report.cmake = (cmake --version | Select-Object -First 1)
           $msbuild = Join-Path $vs 'MSBuild\Current\Bin\amd64\MSBuild.exe'
           $msbuildOutput = (& $msbuild -version -nologo 2>&1 | Out-String)
-          if ($LASTEXITCODE -ne 0 -or $msbuildOutput -notmatch '(?m)^\s*(\d+\.\d+\.\d+\.\d+)\s*
+          if ($LASTEXITCODE -ne 0 -or $msbuildOutput -notmatch '(?m)^\s*(\d+\.\d+\.\d+\.\d+)\s*$') {
+            throw "Unable to determine the installed MSBuild version."
+          }
+          $msbuildVersion = $Matches[1]
+          $env_report.msbuild = $msbuildVersion
           $env_report.dumpbin = Test-Path (Join-Path $cl.FullName 'bin\Hostx64\x64\dumpbin.exe')
           if (-not $env_report.dumpbin) { throw "dumpbin.exe not found." }
           # Compiler identity: must be the Microsoft optimizing compiler on x64.
@@ -104,28 +108,6 @@ jobs:
             "msvc_compiler_sha256=$compilerFingerprint"
             "msbuild_version=$msbuildVersion"
           ) | Add-Content $env:GITHUB_OUTPUT
-          $env_report | ConvertTo-Json -Depth 4 | Set-Content verify-evidence\environment.json
-          Get-Content verify-evidence\environment.json
-
-) {
-            throw "Unable to determine the installed MSBuild version."
-          }
-          $msbuildVersion = $Matches[1]
-          $env_report.msbuild = $msbuildVersion
-          $env_report.dumpbin = Test-Path (Join-Path $cl.FullName 'bin\Hostx64\x64\dumpbin.exe')
-          if (-not $env_report.dumpbin) { throw "dumpbin.exe not found." }
-          # Compiler identity: must be the Microsoft optimizing compiler on x64.
-          $banner = cmd /c "`"$(Join-Path $vs 'VC\Auxiliary\Build\vcvars64.bat')`" && cl 2>&1" | Out-String
-          $env_report.cl_banner = ($banner -split "`r?`n" | Where-Object { $_ -match 'Version' }) -join ' | '
-          if ($banner -notmatch 'Optimizing Compiler') { throw "cl.exe did not identify as the Microsoft C/C++ Optimizing Compiler." }
-          if ($env_report.msvc_toolset -notmatch '^14\.(3[0-9]|4[0-9])\.') { throw "cl.exe toolset is not v143." }
-          # Preset assertions: generator/arch/toolset/standard pinned to the mission contract.
-          $presets = Get-Content CMakePresets.json -Raw | ConvertFrom-Json
-          $cfg = $presets.configurePresets | Where-Object { $_.name -eq 'windows-msvc' }
-          if ($cfg.generator -ne 'Visual Studio 17 2022') { throw "generator is $($cfg.generator)" }
-          if ($cfg.architecture.value -ne 'x64') { throw "architecture is $($cfg.architecture.value)" }
-          if ($cfg.toolset.value -ne 'v143') { throw "toolset is $($cfg.toolset.value)" }
-          if ($presets.cmakeMinimumRequired -eq $null) { } # presence check only
           $env_report | ConvertTo-Json -Depth 4 | Set-Content verify-evidence\environment.json
           Get-Content verify-evidence\environment.json
 
