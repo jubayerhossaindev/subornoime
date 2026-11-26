@@ -286,6 +286,42 @@ class ElementProvider final : public IRawElementProviderSimple,
                 value->vt = VT_BOOL;
                 value->boolVal = VARIANT_TRUE;
                 return S_OK;
+            case UIA_IsInvokePatternAvailablePropertyId:
+            case UIA_IsTogglePatternAvailablePropertyId:
+            case UIA_IsExpandCollapsePatternAvailablePropertyId:
+            case UIA_IsRangeValuePatternAvailablePropertyId: {
+                // Pattern availability is a separate UIA property contract:
+                // clients inspect these properties before requesting a
+                // pattern provider. Do not leave them at UIA's default FALSE
+                // when this element advertises the corresponding pattern.
+                value->vt = VT_BOOL;
+                value->boolVal = VARIANT_FALSE;
+                if (!is_root_) {
+                    ElementInfo info{};
+                    if (!source_->element_info(index_, info)) {
+                        return UIA_E_ELEMENTNOTAVAILABLE;
+                    }
+                    bool supported = false;
+                    switch (property_id) {
+                    case UIA_IsInvokePatternAvailablePropertyId:
+                        supported = info.supports_invoke;
+                        break;
+                    case UIA_IsTogglePatternAvailablePropertyId:
+                        supported = info.supports_toggle;
+                        break;
+                    case UIA_IsExpandCollapsePatternAvailablePropertyId:
+                        supported = info.supports_expand_collapse;
+                        break;
+                    case UIA_IsRangeValuePatternAvailablePropertyId:
+                        supported = info.supports_range;
+                        break;
+                    default:
+                        break;
+                    }
+                    value->boolVal = supported ? VARIANT_TRUE : VARIANT_FALSE;
+                }
+                return S_OK;
+            }
             case UIA_IsEnabledPropertyId: {
                 value->vt = VT_BOOL;
                 if (is_root_) {
