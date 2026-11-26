@@ -17,7 +17,8 @@ Compartment::Compartment(IUnknown* owner, TfClientId client_id, REFGUID guid_com
     owner_ = owner;
 }
 
-HRESULT Compartment::get_compartment(_Outptr_ ITfCompartment** compartment) const {
+HRESULT Compartment::get_compartment(
+    _Outptr_result_nullonfailure_ ITfCompartment** compartment) const {
     if (compartment == nullptr) {
         return E_INVALIDARG;
     }
@@ -29,17 +30,26 @@ HRESULT Compartment::get_compartment(_Outptr_ ITfCompartment** compartment) cons
     wil::com_ptr<ITfCompartmentMgr> compartment_mgr;
     HRESULT result = owner_->QueryInterface(IID_PPV_ARGS(compartment_mgr.put()));
     if (result != S_OK) {
-        return result;
+        return FAILED(result) ? result : E_UNEXPECTED;
     }
     if (compartment_mgr == nullptr) {
         return E_NOINTERFACE;
     }
 
-    result = compartment_mgr->GetCompartment(guid_compartment_, compartment);
-    if (result == S_OK && *compartment == nullptr) {
+    ITfCompartment* acquired = nullptr;
+    result = compartment_mgr->GetCompartment(guid_compartment_, &acquired);
+    if (result != S_OK) {
+        if (acquired != nullptr) {
+            acquired->Release();
+        }
+        return FAILED(result) ? result : E_UNEXPECTED;
+    }
+    if (acquired == nullptr) {
         return E_UNEXPECTED;
     }
-    return result;
+
+    *compartment = acquired;
+    return S_OK;
 }
 
 HRESULT Compartment::get_bool_value(_Out_ BOOL* enabled) const {
@@ -52,6 +62,9 @@ HRESULT Compartment::get_bool_value(_Out_ BOOL* enabled) const {
     HRESULT result = get_compartment(compartment.put());
     if (result != S_OK) {
         return result;
+    }
+    if (compartment == nullptr) {
+        return E_UNEXPECTED;
     }
 
     VARIANT value{};

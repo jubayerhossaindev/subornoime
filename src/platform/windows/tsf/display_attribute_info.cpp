@@ -137,20 +137,20 @@ STDMETHODIMP DisplayAttributeInfo::GetGUID(_Out_ GUID* guid) {
     });
 }
 
-STDMETHODIMP DisplayAttributeInfo::GetDescription(_Out_ BSTR* description) {
-    return run_inside_com_boundary([&]() -> HRESULT {
-        if (description == nullptr) {
-            return E_INVALIDARG;
-        }
-        *description = nullptr;
-        const BSTR allocated =
-            ::SysAllocStringLen(description_.c_str(), static_cast<UINT>(description_.size()));
-        if (allocated == nullptr) {
-            return E_OUTOFMEMORY;
-        }
-        *description = allocated;
-        return S_OK;
-    });
+STDMETHODIMP DisplayAttributeInfo::GetDescription(_Outptr_result_z_ BSTR* description) {
+    if (description == nullptr) {
+        return E_INVALIDARG;
+    }
+    *description = nullptr;
+
+    // SysAllocString creates the null-terminated BSTR required by the TSF contract.
+    const BSTR allocated = ::SysAllocString(description_.c_str());
+    if (allocated == nullptr) {
+        return E_OUTOFMEMORY;
+    }
+
+    *description = allocated;
+    return S_OK;
 }
 
 STDMETHODIMP DisplayAttributeInfo::GetAttributeInfo(_Out_ TF_DISPLAYATTRIBUTE* attribute) {

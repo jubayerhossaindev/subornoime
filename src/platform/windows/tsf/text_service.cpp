@@ -1275,13 +1275,14 @@ STDMETHODIMP SubornoTextService::OnKillThreadFocus() {
 }
 
 STDMETHODIMP SubornoTextService::EnumDisplayAttributeInfo(
-    __RPC__deref_out_opt IEnumTfDisplayAttributeInfo** ppEnum) {
+    _COM_Outptr_ IEnumTfDisplayAttributeInfo** ppEnum) {
     if (ppEnum == nullptr) {
         return E_INVALIDARG;
     }
     *ppEnum = nullptr;
 
-    return run_inside_com_boundary([&]() -> HRESULT {
+    IEnumTfDisplayAttributeInfo* created = nullptr;
+    const HRESULT result = run_inside_com_boundary([&]() -> HRESULT {
         // The method name shadows the enum class type inside member scope, so
 
         // the type is named with its namespace qualification.
@@ -1291,19 +1292,29 @@ STDMETHODIMP SubornoTextService::EnumDisplayAttributeInfo(
         if (attribute_enum == nullptr) {
             return E_OUTOFMEMORY;
         }
-        *ppEnum = attribute_enum;
+        created = attribute_enum;
         return S_OK;
     });
+    if (FAILED(result)) {
+        return result;
+    }
+    if (created == nullptr) {
+        return E_UNEXPECTED;
+    }
+
+    *ppEnum = created;
+    return S_OK;
 }
 
 STDMETHODIMP SubornoTextService::GetDisplayAttributeInfo(
-    __RPC__in REFGUID guidInfo, __RPC__deref_out_opt ITfDisplayAttributeInfo** ppInfo) {
+    __RPC__in REFGUID guidInfo, _COM_Outptr_ ITfDisplayAttributeInfo** ppInfo) {
     if (ppInfo == nullptr) {
         return E_INVALIDARG;
     }
     *ppInfo = nullptr;
 
-    return run_inside_com_boundary([&]() -> HRESULT {
+    ITfDisplayAttributeInfo* created = nullptr;
+    const HRESULT result = run_inside_com_boundary([&]() -> HRESULT {
         ITfDisplayAttributeInfo* info = nullptr;
         if (::IsEqualGUID(guidInfo, GUID_DISPLAY_ATTRIBUTE_INPUT)) {
             info = new (std::nothrow) DisplayAttributeInfoInput();
@@ -1315,9 +1326,18 @@ STDMETHODIMP SubornoTextService::GetDisplayAttributeInfo(
         if (info == nullptr) {
             return E_OUTOFMEMORY;
         }
-        *ppInfo = info;
+        created = info;
         return S_OK;
     });
+    if (FAILED(result)) {
+        return result;
+    }
+    if (created == nullptr) {
+        return E_UNEXPECTED;
+    }
+
+    *ppInfo = created;
+    return S_OK;
 }
 
 HRESULT SubornoTextService::_UpdateCandidateUI(ITfContext* context,

@@ -48,7 +48,7 @@ class DisplayAttributeInfo : public ITfDisplayAttributeInfo {
 
     // ITfDisplayAttributeInfo
     STDMETHOD(GetGUID)(_Out_ GUID* guid) override;
-    STDMETHOD(GetDescription)(_Out_ BSTR* description) override;
+    STDMETHOD(GetDescription)(_Outptr_result_z_ BSTR* description) override;
     STDMETHOD(GetAttributeInfo)(_Out_ TF_DISPLAYATTRIBUTE* attribute) override;
     STDMETHOD(SetAttributeInfo)(_In_ const TF_DISPLAYATTRIBUTE* attribute) override;
     STDMETHOD(Reset)() override;
