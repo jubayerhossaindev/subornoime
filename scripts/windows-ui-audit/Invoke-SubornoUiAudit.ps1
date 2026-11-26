@@ -333,12 +333,23 @@ function Assert-Element {
 function Invoke-Pattern {
     param([string] $Id, [System.Windows.Automation.AutomationElement] $El, [Type] $PatternType)
     $pattern = $null
+    $patternObject = switch ($PatternType.Name) {
+        'InvokePattern' { [System.Windows.Automation.InvokePattern]::Pattern }
+        'TogglePattern' { [System.Windows.Automation.TogglePattern]::Pattern }
+        'ExpandCollapsePattern' { [System.Windows.Automation.ExpandCollapsePattern]::Pattern }
+        'RangeValuePattern' { [System.Windows.Automation.RangeValuePattern]::Pattern }
+        default { $null }
+    }
     $availabilityProperty = switch ($PatternType.Name) {
         'InvokePattern' { [System.Windows.Automation.AutomationElement]::IsInvokePatternAvailableProperty }
         'TogglePattern' { [System.Windows.Automation.AutomationElement]::IsTogglePatternAvailableProperty }
         'ExpandCollapsePattern' { [System.Windows.Automation.AutomationElement]::IsExpandCollapsePatternAvailableProperty }
         'RangeValuePattern' { [System.Windows.Automation.AutomationElement]::IsRangeValuePatternAvailableProperty }
         default { $null }
+    }
+    if ($null -eq $patternObject) {
+        Add-Result $Id "known UIA pattern type" ("UNMAPPED: " + $PatternType.FullName) $false
+        return $null
     }
     $availability = 'not queried'
     if ($null -ne $availabilityProperty) {
@@ -350,7 +361,9 @@ function Invoke-Pattern {
     }
     $patternError = ''
     try {
-        $pattern = $El.GetCurrentPattern($PatternType)
+        # GetCurrentPattern expects an AutomationPattern instance, not the
+        # System.Type that identifies the .NET wrapper class.
+        $pattern = $El.GetCurrentPattern($patternObject)
     } catch {
         $patternError = ('{0} HRESULT=0x{1:X8}: {2}' -f $_.Exception.GetType().FullName, $_.Exception.HResult, $_.Exception.Message)
     }
@@ -361,6 +374,7 @@ function Invoke-Pattern {
         return $null
     }
     Write-Host ("UIA pattern diagnostic {0}: availability={1}; GetCurrentPattern=OK" -f $Id, $availability)
+    Add-Result $Id "pattern $($PatternType.Name) supported" ("available=$availability; COM pattern retrieved") $true
     return $pattern
 }
 
@@ -498,7 +512,7 @@ foreach ($id in $checkboxIds) {
     if ($toggle) {
         $before = $toggle.ToggleState
         $toggle.Toggle(); Start-Sleep -Milliseconds 150
-        $after = ((Find-ById $settings $id).GetCurrentPattern([System.Windows.Automation.TogglePattern])).ToggleState
+        $after = ((Find-ById $settings $id).GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern)).ToggleState
         Add-Result "CHK-$id-toggle" "state changed $before -> opposite" "$before -> $after" ($after -ne $before)
         $toggle.Toggle(); Start-Sleep -Milliseconds 150   # restore original state
     }
@@ -516,7 +530,7 @@ foreach ($id in $dropdownIds) {
     $listCond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::ListItem)
     $items = $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $listCond)
     $optionCount = 0
-    $sel = Invoke-Pattern "DD-$id-select" $el ([System.Windows.Automation.SelectionPattern])
+    # This custom dropdown exposes ExpandCollapsePattern, not SelectionPattern.
     foreach ($item in $items) {
         if ($item.Current.IsOffscreen) { continue }
         $optionCount++
@@ -536,7 +550,7 @@ foreach ($id in $sliderIds) {
         $mid = ($min + $max) / 2
         foreach ($v in $min, $max, $mid) {
             $range.SetValue($v); Start-Sleep -Milliseconds 120
-            $now = (Find-ById $settings $id).GetCurrentPattern([System.Windows.Automation.RangeValuePattern]).Current.Value
+            $now = (Find-ById $settings $id).GetCurrentPattern([System.Windows.Automation.RangeValuePattern]::Pattern).Current.Value
             Add-Result "SLD-$id-set-$v" ("value set to {0}" -f $v) ("value now {0}" -f $now) ([math]::Abs($now - $v) -lt 0.51)
         }
     }
@@ -588,7 +602,7 @@ if ($cancel) {
 $settings2 = Find-Window $root 'SubornoDesktopWindow' ''
 if ($settings2) {
     $el = Find-ById $settings2 'action.show-candidate-window'
-    if ($el) { $t = $el.GetCurrentPattern([System.Windows.Automation.TogglePattern]); $t.Toggle(); Start-Sleep -Milliseconds 200; $t.Toggle(); }
+    if ($el) { $t = $el.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern); $t.Toggle(); Start-Sleep -Milliseconds 200; $t.Toggle(); }
     $toast = Find-ById $root 'toast.message'
     Add-Result 'TOAST-element' 'toast.message element visible after an action' (& { if ($toast) { 'visible' } else { 'not visible (may have auto-dismissed; re-run with faster polling)' } }) ($null -ne $toast)
 }
