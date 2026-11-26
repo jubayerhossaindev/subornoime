@@ -38,10 +38,6 @@ Add-Type -Namespace Suborno.Audit -Name Native -MemberDefinition @'
 public static extern IntPtr FindWindow(string className, string windowName);
 [DllImport("user32.dll", EntryPoint = "SendMessageW", SetLastError = true)]
 public static extern IntPtr SendMessage(IntPtr hWnd, uint message, IntPtr wParam, IntPtr lParam);
-[DllImport("user32.dll", EntryPoint = "GetTopWindow", SetLastError = true)]
-public static extern IntPtr GetTopWindow(IntPtr hWnd);
-[DllImport("user32.dll", EntryPoint = "GetWindow", SetLastError = true)]
-public static extern IntPtr GetWindow(IntPtr hWnd, uint command);
 [DllImport("user32.dll", EntryPoint = "GetClassNameW", CharSet = CharSet.Unicode, SetLastError = true)]
 public static extern int GetClassName(IntPtr hWnd, System.Text.StringBuilder className, int maxCount);
 [DllImport("user32.dll", EntryPoint = "GetWindowTextW", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -52,6 +48,46 @@ public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint process
 [return: MarshalAs(UnmanagedType.Bool)]
 public static extern bool IsWindowVisible(IntPtr hWnd);
 '@
+
+# Use the Win32 API that Microsoft recommends for enumerating top-level windows.
+# GetWindow-in-a-loop is explicitly documented as less reliable because HWNDs
+# can be destroyed while the Z-order is being traversed.
+Add-Type -TypeDefinition @'
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+
+namespace Suborno.Audit
+{
+    public static class WindowEnumerator
+    {
+        private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool EnumWindows(EnumWindowsProc callback, IntPtr extraData);
+
+        public static IntPtr[] GetTopLevelWindows()
+        {
+            var handles = new List<IntPtr>();
+            EnumWindowsProc callback = delegate(IntPtr hWnd, IntPtr lParam)
+            {
+                handles.Add(hWnd);
+                return true;
+            };
+
+            if (!EnumWindows(callback, IntPtr.Zero))
+            {
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "EnumWindows failed.");
+            }
+
+            return handles.ToArray();
+        }
+    }
+}
+'@
+
 [void][Suborno.Audit.Native]::SetProcessDPIAware()
 
 $script:results = New-Object System.Collections.Generic.List[object]
@@ -146,26 +182,20 @@ function Find-NativeWindowByClass {
         [Parameter(Mandatory = $true)] [int] $ProcessId
     )
 
-    # FindWindowW is retained as a diagnostic comparison, but enumerate the
-    # desktop's top-level windows to bind the target HWND to this exact process.
-    # This also finds hidden top-level windows; visibility is not a filter.
-    $handle = [Suborno.Audit.Native]::GetTopWindow([IntPtr]::Zero)
-    $windowIndex = 0
-    while ($handle -ne [IntPtr]::Zero -and $windowIndex -lt 512) {
-        $next = [Suborno.Audit.Native]::GetWindow($handle, 2) # GW_HWNDNEXT
+    # Enumerate all desktop top-level windows, including hidden windows, then
+    # match both the native class and the exact owning process ID.
+    foreach ($handle in [Suborno.Audit.WindowEnumerator]::GetTopLevelWindows()) {
         [uint32]$windowProcessId = 0
-        [void][Suborno.Audit.Native]::GetWindowThreadProcessId($handle, [ref]$windowProcessId)
-
-        if ($windowProcessId -eq $ProcessId) {
-            $classNameBuffer = New-Object System.Text.StringBuilder 256
-            [void][Suborno.Audit.Native]::GetClassName($handle, $classNameBuffer, $classNameBuffer.Capacity)
-            if ($classNameBuffer.ToString() -ceq $ClassName) {
-                return $handle
-            }
+        $threadId = [Suborno.Audit.Native]::GetWindowThreadProcessId($handle, [ref]$windowProcessId)
+        if ($threadId -eq 0 -or $windowProcessId -ne $ProcessId) {
+            continue
         }
 
-        $handle = $next
-        $windowIndex++
+        $classNameBuffer = New-Object System.Text.StringBuilder 256
+        [void][Suborno.Audit.Native]::GetClassName($handle, $classNameBuffer, $classNameBuffer.Capacity)
+        if ($classNameBuffer.ToString() -ceq $ClassName) {
+            return $handle
+        }
     }
 
     return [IntPtr]::Zero
@@ -204,10 +234,9 @@ function Get-StartupDiagnostics {
         [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
         [System.Windows.Automation.ControlType]::Text
     )
-    $handle = [Suborno.Audit.Native]::GetTopWindow([IntPtr]::Zero)
+    $topLevelWindows = [Suborno.Audit.WindowEnumerator]::GetTopLevelWindows()
     $windowIndex = 0
-    while ($handle -ne [IntPtr]::Zero -and $windowIndex -lt 200) {
-        $next = [Suborno.Audit.Native]::GetWindow($handle, 2) # GW_HWNDNEXT
+    foreach ($handle in $topLevelWindows) {
         [uint32]$windowProcessId = 0
         [void][Suborno.Audit.Native]::GetWindowThreadProcessId($handle, [ref]$windowProcessId)
 
@@ -245,7 +274,6 @@ function Get-StartupDiagnostics {
             }
         }
 
-        $handle = $next
         $windowIndex++
     }
 
@@ -299,42 +327,46 @@ if ($smokeCompleted) {
 }
 $smokeProcess.Dispose()
 
-# 0) Build/attach
-$process = $null
-$existing = Get-Process -Name 'Suborno' -ErrorAction SilentlyContinue
+# 0) Build/attach. Keep a Process object in both paths so all discovery
+# remains scoped to the exact PID, including when an existing instance is reused.
+$existing = Get-Process -Name 'Suborno' -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($null -eq $existing) {
     $process = Start-Process -FilePath $ExePath -PassThru
     Write-Host ("Started Suborno PID {0}." -f $process.Id)
 } else {
-    Write-Host ('Attaching to running Suborno instance (PID {0}).' -f (($existing | Select-Object -First 1).Id))
+    $process = Get-Process -Id $existing.Id
+    Write-Host ("Attaching to running Suborno PID {0}." -f $process.Id)
 }
 
 # The application intentionally starts in its configured topbar/tray surface;
-# Settings is not guaranteed to be visible on launch. Find the real native
-# application window and dispatch the same WM_COMMAND used by the tray and
-# topbar "Settings…" entries (menu_open_settings = 2003). This opens the
-# production Settings window through the application's own command handler;
-# all subsequent checks still use UI Automation and real mouse input.
+# Settings is not guaranteed to be visible on launch. Find its hidden native
+# host by class + owning PID, then dispatch the production Settings command.
+# Use a monotonic timeout so delayed window creation is not mistaken for failure.
 $settingsHost = [IntPtr]::Zero
-for ($attempt = 0; $attempt -lt 100; $attempt++) {
-    if ($process) {
-        $settingsHost = Find-NativeWindowByClass -ClassName 'SubornoDesktopWindow' -ProcessId $process.Id
-    } else {
-        $settingsHost = [Suborno.Audit.Native]::FindWindow('SubornoDesktopWindow', 'Suborno Settings')
-    }
+$windowStartupTimeoutMs = 60000
+$windowPollIntervalMs = 200
+$startupStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+while ($startupStopwatch.ElapsedMilliseconds -lt $windowStartupTimeoutMs) {
+    $settingsHost = Find-NativeWindowByClass -ClassName 'SubornoDesktopWindow' -ProcessId $process.Id
     if ($settingsHost -ne [IntPtr]::Zero) { break }
-    if ($process) {
-        $process.Refresh()
-        if ($process.HasExited) {
-            Get-StartupDiagnostics -Process $process -Label 'process-exited-before-window'
-            throw ("Suborno exited before creating its native window (exit code {0})." -f $process.ExitCode)
-        }
+
+    $process.Refresh()
+    if ($process.HasExited) {
+        $startupStopwatch.Stop()
+        Get-StartupDiagnostics -Process $process -Label 'process-exited-before-window'
+        throw ("Suborno exited before creating its native window (exit code {0})." -f $process.ExitCode)
     }
-    Start-Sleep -Milliseconds 200
+
+    Start-Sleep -Milliseconds $windowPollIntervalMs
 }
+$startupStopwatch.Stop()
+Write-Host ("Native host discovery elapsed: {0:N0} ms; timeout: {1:N0} ms." -f
+    $startupStopwatch.Elapsed.TotalMilliseconds, $windowStartupTimeoutMs)
+
 if ($settingsHost -eq [IntPtr]::Zero) {
     Get-StartupDiagnostics -Process $process -Label 'native-window-timeout'
-    throw 'Suborno did not create the SubornoDesktopWindow host within 20 seconds. Startup diagnostics were saved to uia-startup-diagnostics.txt.'
+    throw ("Suborno did not create the SubornoDesktopWindow host within {0} seconds. Startup diagnostics were saved to uia-startup-diagnostics.txt." -f
+        [math]::Ceiling($windowStartupTimeoutMs / 1000))
 }
 
 $wmCommand = [uint32]0x0111
