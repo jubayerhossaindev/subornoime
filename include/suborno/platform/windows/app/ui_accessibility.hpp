@@ -112,6 +112,20 @@ class ElementSource {
     virtual std::uint64_t tree_generation() const {
         return 0;
     }
+    /// Monotonic generation scoped to a specific child element index.
+    /// Surfaces with persistent shell elements (sidebar, footer) and
+    /// dynamic page subtrees override this so tab switches keep shell
+    /// proxies valid while invalidating old page-content proxies.
+    virtual std::uint64_t element_generation(int index) const {
+        (void)index;
+        return tree_generation();
+    }
+    /// Schedules an asynchronous focus-changed UIA notification outside the
+    /// active COM callback when the surface supports deferred dispatch.
+    /// Returns false to fall back to synchronous notify_focus_changed().
+    virtual bool schedule_focus_changed() {
+        return false;
+    }
 
     // Actions; index is the element index. Return false when the window
     // cannot act (out of range, wrong kind, transient state).

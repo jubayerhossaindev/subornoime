@@ -299,23 +299,109 @@ function Get-AuditEnvironment {
     }
 }
 
-function Classify-UiaException {
+function Get-RuntimeIdString {
+    param([System.Windows.Automation.AutomationElement] $El)
+    if ($null -eq $El) { return '' }
+    try {
+        $rid = $El.GetRuntimeId()
+        if ($null -ne $rid -and $rid.Length -gt 0) {
+            return ($rid -join '.')
+        }
+    } catch {
+    }
+    return ''
+}
+
+function Unwrap-UiaException {
     param([System.Exception] $Exception)
+    $chain = New-Object 'System.Collections.Generic.List[System.Exception]'
+    if ($null -eq $Exception) {
+        return [pscustomobject]@{
+            Outer = $null
+            Inner = $null
+            Chain = $chain
+        }
+    }
+    $visited = New-Object 'System.Collections.Generic.HashSet[int]'
+    $queue = New-Object 'System.Collections.Generic.Queue[System.Exception]'
+    $queue.Enqueue($Exception)
+    while ($queue.Count -gt 0) {
+        $cur = $queue.Dequeue()
+        if ($null -eq $cur) { continue }
+        $identity = [System.Runtime.CompilerServices.RuntimeHelpers]::GetHashCode($cur)
+        if (-not $visited.Add($identity)) { continue }
+        $chain.Add($cur) | Out-Null
+        if ($cur -is [System.AggregateException]) {
+            foreach ($aggInner in $cur.InnerExceptions) {
+                if ($null -ne $aggInner) { $queue.Enqueue($aggInner) }
+            }
+        } elseif ($null -ne $cur.InnerException) {
+            $queue.Enqueue($cur.InnerException)
+        }
+    }
+
+    $chosen = $chain[$chain.Count - 1]
+    for ($i = $chain.Count - 1; $i -ge 0; $i--) {
+        $cand = $chain[$i]
+        if ($cand -is [System.Windows.Automation.ElementNotAvailableException] -or
+            $cand -is [System.Runtime.InteropServices.COMException] -or
+            $cand -is [System.TimeoutException] -or
+            $cand -is [System.InvalidOperationException]) {
+            $chosen = $cand
+            break
+        }
+    }
+
+    return [pscustomobject]@{
+        Outer = $Exception
+        Inner = $chosen
+        Chain = $chain
+    }
+}
+
+function Classify-UiaException {
+    param(
+        [System.Exception] $Exception,
+        [string] $Operation = ''
+    )
     if ($null -eq $Exception) { return 'UnexpectedError' }
-    if ($Exception -is [System.Windows.Automation.ElementNotAvailableException]) {
-        return 'ElementUnavailable'
-    }
-    if ($Exception -is [System.InvalidOperationException] -and $Exception.Message -like '*Pattern*') {
-        return 'PatternUnsupported'
-    }
-    if ($Exception -is [System.Runtime.InteropServices.COMException]) {
-        if ($Exception.HResult -eq ([int][uint32]::Parse('80040201', [System.Globalization.NumberStyles]::HexNumber))) {
+    $unwrapped = Unwrap-UiaException -Exception $Exception
+    $hrElemNotAvail = [int][uint32]::Parse('80040201', [System.Globalization.NumberStyles]::HexNumber)
+    $hrPatternNotSupported = [int][uint32]::Parse('80040202', [System.Globalization.NumberStyles]::HexNumber)
+    $hrInvalidOp = [int][uint32]::Parse('80131509', [System.Globalization.NumberStyles]::HexNumber)
+
+    foreach ($ex in $unwrapped.Chain) {
+        if ($ex -is [System.Windows.Automation.ElementNotAvailableException]) {
             return 'ElementUnavailable'
         }
-        return 'ComFailure'
+        if ($ex -is [System.Runtime.InteropServices.COMException] -and $ex.HResult -eq $hrElemNotAvail) {
+            return 'ElementUnavailable'
+        }
     }
-    if ($Exception -is [System.TimeoutException]) {
-        return 'Timeout'
+    foreach ($ex in $unwrapped.Chain) {
+        if ($ex -is [System.TimeoutException]) {
+            return 'Timeout'
+        }
+    }
+
+    $isPatternAcquireOp = ($Operation -eq 'GetCurrentPattern' -or $Operation -like 'GetCurrentPattern*' -or $Operation -eq 'QueryPattern')
+    foreach ($ex in $unwrapped.Chain) {
+        if ($ex -is [System.Runtime.InteropServices.COMException] -and $ex.HResult -eq $hrPatternNotSupported) {
+            return 'PatternUnsupported'
+        }
+        if ($isPatternAcquireOp -and $ex -is [System.InvalidOperationException] -and ($ex.HResult -eq $hrInvalidOp -or $ex.Message -like '*Pattern*' -or $ex.Message -like '*Unsupported*')) {
+            return 'PatternUnsupported'
+        }
+    }
+    foreach ($ex in $unwrapped.Chain) {
+        if ($ex -is [System.InvalidOperationException]) {
+            return 'InvalidOperation'
+        }
+    }
+    foreach ($ex in $unwrapped.Chain) {
+        if ($ex -is [System.Runtime.InteropServices.COMException]) {
+            return 'ComFailure'
+        }
     }
     return 'UnexpectedError'
 }
@@ -329,20 +415,38 @@ function Format-UiaDiagnostic {
         [int] $ProcessId = 0,
         [IntPtr] $Hwnd = [IntPtr]::Zero,
         [string] $PatternName = '',
+        [string] $RuntimeId = '',
+        [string] $CurrentPage = '',
         [double] $ElapsedMs = 0,
         [System.Exception] $Exception = $null
     )
-    $parts = New-Object System.Collections.Generic.List[string]
+    $parts = New-Object 'System.Collections.Generic.List[string]'
     $parts.Add("category=$Category")
     $parts.Add("op=$Operation")
     if ($AutomationId -ne '') { $parts.Add("id=$AutomationId") }
     if ($ControlType -ne '') { $parts.Add("type=$ControlType") }
     if ($PatternName -ne '') { $parts.Add("pattern=$PatternName") }
+    if ($CurrentPage -ne '') { $parts.Add("page=$CurrentPage") }
+    if ($RuntimeId -ne '') { $parts.Add("rid=$RuntimeId") }
     if ($ProcessId -gt 0) { $parts.Add("pid=$ProcessId") }
     if ($Hwnd -ne [IntPtr]::Zero) { $parts.Add(('hwnd=0x{0:X}' -f $Hwnd.ToInt64())) }
     if ($ElapsedMs -gt 0) { $parts.Add(('elapsed={0:N0}ms' -f $ElapsedMs)) }
     if ($null -ne $Exception) {
-        $parts.Add(('ex={0}(0x{1:X8}): {2}' -f $Exception.GetType().Name, $Exception.HResult, $Exception.Message))
+        $unwrapped = Unwrap-UiaException -Exception $Exception
+        $outer = $unwrapped.Outer
+        $inner = $unwrapped.Inner
+        $parts.Add(('outer={0}(0x{1:X8}): {2}' -f $outer.GetType().Name, $outer.HResult, $outer.Message))
+        if ($null -ne $inner -and -not [object]::ReferenceEquals($outer, $inner)) {
+            $parts.Add(('inner={0}(0x{1:X8}): {2}' -f $inner.GetType().FullName, $inner.HResult, $inner.Message))
+        }
+        if ($unwrapped.Chain.Count -gt 1) {
+            $chainText = New-Object 'System.Collections.Generic.List[string]'
+            for ($idx = 0; $idx -lt $unwrapped.Chain.Count; $idx++) {
+                $item = $unwrapped.Chain[$idx]
+                $chainText.Add(('{0}:{1}(0x{2:X8})' -f $idx, $item.GetType().Name, $item.HResult))
+            }
+            $parts.Add(('chain=[{0}]' -f ($chainText -join ' -> ')))
+        }
     }
     return ($parts -join ' ')
 }
@@ -588,7 +692,9 @@ function Try-GetValueText {
 function Try-InvokePattern {
     param(
         [System.Windows.Automation.InvokePattern] $Pattern,
-        [string] $AutomationId = ''
+        [string] $AutomationId = '',
+        [string] $RuntimeId = '',
+        [string] $CurrentPage = ''
     )
     if ($null -eq $Pattern) {
         return [pscustomobject]@{ Success = $false; Category = 'PatternUnsupported'; HResult = 0; Error = 'InvokePattern is null' }
@@ -597,12 +703,14 @@ function Try-InvokePattern {
         $Pattern.Invoke()
         return [pscustomobject]@{ Success = $true; Category = ''; HResult = 0; Error = '' }
     } catch {
-        $cat = Classify-UiaException $_.Exception
+        $unwrapped = Unwrap-UiaException -Exception $_.Exception
+        $innerHr = if ($null -ne $unwrapped.Inner) { $unwrapped.Inner.HResult } else { $_.Exception.HResult }
+        $cat = Classify-UiaException -Exception $_.Exception -Operation 'InvokePattern.Invoke'
         return [pscustomobject]@{
             Success  = $false
             Category = $cat
-            HResult  = $_.Exception.HResult
-            Error    = Format-UiaDiagnostic -Category $cat -Operation 'InvokePattern.Invoke' -AutomationId $AutomationId -PatternName 'InvokePattern' -Exception $_.Exception
+            HResult  = $innerHr
+            Error    = Format-UiaDiagnostic -Category $cat -Operation 'InvokePattern.Invoke' -AutomationId $AutomationId -PatternName 'InvokePattern' -RuntimeId $RuntimeId -CurrentPage $CurrentPage -Exception $_.Exception
         }
     }
 }
@@ -619,11 +727,13 @@ function Try-TogglePattern {
         $Pattern.Toggle()
         return [pscustomobject]@{ Success = $true; Category = ''; HResult = 0; Error = '' }
     } catch {
-        $cat = Classify-UiaException $_.Exception
+        $unwrapped = Unwrap-UiaException -Exception $_.Exception
+        $innerHr = if ($null -ne $unwrapped.Inner) { $unwrapped.Inner.HResult } else { $_.Exception.HResult }
+        $cat = Classify-UiaException -Exception $_.Exception -Operation 'TogglePattern.Toggle'
         return [pscustomobject]@{
             Success  = $false
             Category = $cat
-            HResult  = $_.Exception.HResult
+            HResult  = $innerHr
             Error    = Format-UiaDiagnostic -Category $cat -Operation 'TogglePattern.Toggle' -AutomationId $AutomationId -PatternName 'TogglePattern' -Exception $_.Exception
         }
     }
@@ -644,12 +754,12 @@ function Try-GetToggleState {
         }
         return [pscustomobject]@{ Success = $true; State = [string]$tp.Current.ToggleState; Pattern = $tp; Category = ''; Error = '' }
     } catch {
-        $cat = Classify-UiaException $_.Exception
+        $cat = Classify-UiaException -Exception $_.Exception -Operation 'GetCurrentPattern'
         return [pscustomobject]@{
             Success  = $false
             State    = ''
             Category = $cat
-            Error    = Format-UiaDiagnostic -Category $cat -Operation 'TogglePattern.Current.ToggleState' -AutomationId $AutomationId -PatternName 'TogglePattern' -Exception $_.Exception
+            Error    = Format-UiaDiagnostic -Category $cat -Operation 'TogglePattern.Current.ToggleState' -AutomationId $AutomationId -PatternName 'TogglePattern' -RuntimeId (Get-RuntimeIdString $El) -Exception $_.Exception
         }
     }
 }
@@ -671,12 +781,15 @@ function Try-ExpandCollapseOp {
         }
         return [pscustomobject]@{ Success = $true; Category = ''; HResult = 0; Error = '' }
     } catch {
-        $cat = Classify-UiaException $_.Exception
+        $unwrapped = Unwrap-UiaException -Exception $_.Exception
+        $innerHr = if ($null -ne $unwrapped.Inner) { $unwrapped.Inner.HResult } else { $_.Exception.HResult }
+        $op = "ExpandCollapsePattern.$Action"
+        $cat = Classify-UiaException -Exception $_.Exception -Operation $op
         return [pscustomobject]@{
             Success  = $false
             Category = $cat
-            HResult  = $_.Exception.HResult
-            Error    = Format-UiaDiagnostic -Category $cat -Operation ("ExpandCollapsePattern.$Action") -AutomationId $AutomationId -PatternName 'ExpandCollapsePattern' -Exception $_.Exception
+            HResult  = $innerHr
+            Error    = Format-UiaDiagnostic -Category $cat -Operation $op -AutomationId $AutomationId -PatternName 'ExpandCollapsePattern' -Exception $_.Exception
         }
     }
 }
@@ -696,12 +809,12 @@ function Try-GetExpandCollapseState {
         }
         return [pscustomobject]@{ Success = $true; State = [string]$ep.Current.ExpandCollapseState; Pattern = $ep; Category = ''; Error = '' }
     } catch {
-        $cat = Classify-UiaException $_.Exception
+        $cat = Classify-UiaException -Exception $_.Exception -Operation 'GetCurrentPattern'
         return [pscustomobject]@{
             Success  = $false
             State    = ''
             Category = $cat
-            Error    = Format-UiaDiagnostic -Category $cat -Operation 'ExpandCollapseState' -AutomationId $AutomationId -PatternName 'ExpandCollapsePattern' -Exception $_.Exception
+            Error    = Format-UiaDiagnostic -Category $cat -Operation 'ExpandCollapseState' -AutomationId $AutomationId -PatternName 'ExpandCollapsePattern' -RuntimeId (Get-RuntimeIdString $El) -Exception $_.Exception
         }
     }
 }
@@ -719,11 +832,12 @@ function Try-SetRangeValue {
         $Pattern.SetValue($Value)
         return [pscustomobject]@{ Success = $true; Category = ''; Error = '' }
     } catch {
-        $cat = Classify-UiaException $_.Exception
+        $op = "RangeValuePattern.SetValue($Value)"
+        $cat = Classify-UiaException -Exception $_.Exception -Operation $op
         return [pscustomobject]@{
             Success  = $false
             Category = $cat
-            Error    = Format-UiaDiagnostic -Category $cat -Operation ("RangeValuePattern.SetValue($Value)") -AutomationId $AutomationId -PatternName 'RangeValuePattern' -Exception $_.Exception
+            Error    = Format-UiaDiagnostic -Category $cat -Operation $op -AutomationId $AutomationId -PatternName 'RangeValuePattern' -Exception $_.Exception
         }
     }
 }
@@ -751,12 +865,12 @@ function Try-GetRangeValue {
             Error    = ''
         }
     } catch {
-        $cat = Classify-UiaException $_.Exception
+        $cat = Classify-UiaException -Exception $_.Exception -Operation 'GetCurrentPattern'
         return [pscustomobject]@{
             Success  = $false
             Value    = [double]::NaN
             Category = $cat
-            Error    = Format-UiaDiagnostic -Category $cat -Operation 'RangeValuePattern.Current' -AutomationId $AutomationId -PatternName 'RangeValuePattern' -Exception $_.Exception
+            Error    = Format-UiaDiagnostic -Category $cat -Operation 'RangeValuePattern.Current' -AutomationId $AutomationId -PatternName 'RangeValuePattern' -RuntimeId (Get-RuntimeIdString $El) -Exception $_.Exception
         }
     }
 }
@@ -900,14 +1014,23 @@ function Select-SettingsPage {
         [System.Windows.Automation.AutomationElement] $SettingsWindow,
         [string] $PageId
     )
+    $script:lastUiaError = ''
     $pageEl = Try-FindById $SettingsWindow $PageId
-    if ($null -eq $pageEl) { return $false }
-    try {
-        $inv = $pageEl.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
-        if ($null -eq $inv) { return $false }
-        $res = Try-InvokePattern -Pattern $inv -AutomationId $PageId
-        if (-not $res.Success) { return $false }
-    } catch {
+    if ($null -eq $pageEl) {
+        if ($script:lastUiaError -eq '') {
+            $script:lastUiaError = Format-UiaDiagnostic -Category 'ElementNotFound' -Operation 'SelectSettingsPage.FindSidebar' -AutomationId $PageId -CurrentPage $PageId
+        }
+        return $false
+    }
+    $rid = Get-RuntimeIdString $pageEl
+    $patRes = Get-UiaPattern -El $pageEl -PatternType ([System.Windows.Automation.InvokePattern]) -AutomationId $PageId -CurrentPage $PageId
+    if (-not $patRes.Success) {
+        $script:lastUiaError = $patRes.Error
+        return $false
+    }
+    $res = Try-InvokePattern -Pattern $patRes.Pattern -AutomationId $PageId -RuntimeId $rid -CurrentPage $PageId
+    if (-not $res.Success) {
+        $script:lastUiaError = $res.Error
         return $false
     }
 
@@ -915,11 +1038,16 @@ function Select-SettingsPage {
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($sw.ElapsedMilliseconds -lt 2500) {
         if ([string]::IsNullOrEmpty($probeId) -or $null -ne (Try-FindById $SettingsWindow $probeId)) {
+            $sw.Stop()
             Start-Sleep -Milliseconds 50
+            $script:lastUiaError = ''
             return $true
         }
         Start-Sleep -Milliseconds 40
     }
+    $sw.Stop()
+    $probeDetail = if ($script:lastUiaError -ne '') { "; lastLookup=[$script:lastUiaError]" } else { '' }
+    $script:lastUiaError = ("category=Timeout op=SelectSettingsPage.WaitProbe targetPage=$PageId expectedProbe=$probeId rid=$rid elapsed={0:N0}ms{1}" -f $sw.ElapsedMilliseconds, $probeDetail)
     return $false
 }
 
@@ -1148,17 +1276,23 @@ function Assert-Element {
     return $ok
 }
 
-function Invoke-Pattern {
+function Get-UiaPattern {
     param(
-        [string] $Id,
         [System.Windows.Automation.AutomationElement] $El,
-        [Type] $PatternType
+        [Type] $PatternType,
+        [string] $AutomationId = '',
+        [string] $CurrentPage = ''
     )
     if ($null -eq $El) {
-        Add-Result $Id "pattern $($PatternType.Name) supported" 'ELEMENT IS NULL' $false
-        return $null
+        return [pscustomobject]@{
+            Success      = $false
+            Pattern      = $null
+            Availability = 'element null'
+            Category     = 'ElementNotFound'
+            HResult      = 0
+            Error        = Format-UiaDiagnostic -Category 'ElementNotFound' -Operation 'GetCurrentPattern' -AutomationId $AutomationId -PatternName $PatternType.Name -CurrentPage $CurrentPage
+        }
     }
-    $pattern = $null
     $patternObject = switch ($PatternType.Name) {
         'InvokePattern'         { [System.Windows.Automation.InvokePattern]::Pattern }
         'TogglePattern'         { [System.Windows.Automation.TogglePattern]::Pattern }
@@ -1174,33 +1308,77 @@ function Invoke-Pattern {
         default                 { $null }
     }
     if ($null -eq $patternObject) {
-        Add-Result $Id 'known UIA pattern type' ('UNMAPPED: ' + $PatternType.FullName) $false
-        return $null
+        return [pscustomobject]@{
+            Success      = $false
+            Pattern      = $null
+            Availability = 'unmapped'
+            Category     = 'PatternUnsupported'
+            HResult      = 0
+            Error        = ('UNMAPPED pattern type: ' + $PatternType.FullName)
+        }
     }
+    $rid = Get-RuntimeIdString $El
     $availability = 'not queried'
     if ($null -ne $availabilityProperty) {
         try {
             $availability = [string]$El.GetCurrentPropertyValue($availabilityProperty)
         } catch {
-            $availability = ('property error {0}: {1}' -f $_.Exception.GetType().FullName, $_.Exception.Message)
+            $unwAvail = Unwrap-UiaException -Exception $_.Exception
+            $availEx = if ($null -ne $unwAvail.Inner) { $unwAvail.Inner } else { $_.Exception }
+            if ($null -ne $availEx) {
+                $availability = ('property error {0}(0x{1:X8}): {2}' -f $availEx.GetType().Name, $availEx.HResult, $availEx.Message)
+            } else {
+                $availability = 'property error (unknown)'
+            }
         }
     }
+    $pattern = $null
     $patternError = ''
+    $cat = ''
+    $hr = 0
     try {
         $pattern = $El.GetCurrentPattern($patternObject)
     } catch {
-        $cat = Classify-UiaException $_.Exception
-        $patternError = Format-UiaDiagnostic -Category $cat -Operation 'GetCurrentPattern' -PatternName $PatternType.Name -Exception $_.Exception
+        $unwrapped = Unwrap-UiaException -Exception $_.Exception
+        $hr = if ($null -ne $unwrapped.Inner) { $unwrapped.Inner.HResult } else { $_.Exception.HResult }
+        $cat = Classify-UiaException -Exception $_.Exception -Operation 'GetCurrentPattern'
+        $patternError = Format-UiaDiagnostic -Category $cat -Operation 'GetCurrentPattern' -AutomationId $AutomationId -PatternName $PatternType.Name -RuntimeId $rid -CurrentPage $CurrentPage -Exception $_.Exception
     }
     if ($null -eq $pattern) {
         $actual = "NOT SUPPORTED; availability=$availability"
         if ($patternError -ne '') { $actual += "; $patternError" }
-        Add-Result $Id "pattern $($PatternType.Name) supported" $actual $false
-        return $null
+        return [pscustomobject]@{
+            Success      = $false
+            Pattern      = $null
+            Availability = $availability
+            Category     = $(if ($cat -ne '') { $cat } else { 'PatternUnsupported' })
+            HResult      = $hr
+            Error        = $actual
+        }
     }
-    Write-Host ("UIA pattern diagnostic {0}: availability={1}; GetCurrentPattern=OK" -f $Id, $availability)
-    Add-Result $Id "pattern $($PatternType.Name) supported" ("available=$availability; COM pattern retrieved") $true
-    return $pattern
+    Write-Host ("UIA pattern diagnostic [{0}]: pattern={1} availability={2} rid={3} GetCurrentPattern=OK" -f $AutomationId, $PatternType.Name, $availability, $rid)
+    return [pscustomobject]@{
+        Success      = $true
+        Pattern      = $pattern
+        Availability = $availability
+        Category     = ''
+        HResult      = 0
+        Error        = ''
+    }
+}
+
+function Invoke-Pattern {
+    param(
+        [string] $Id,
+        [System.Windows.Automation.AutomationElement] $El,
+        [Type] $PatternType,
+        [string] $AutomationId = ''
+    )
+    $res = Get-UiaPattern -El $El -PatternType $PatternType -AutomationId $(if ($AutomationId -ne '') { $AutomationId } else { $Id })
+    if (-not $res.Success) {
+        $script:lastUiaError = $res.Error
+    }
+    return $res
 }
 
 Write-Host '== Suborno UI audit ==' -ForegroundColor Cyan
@@ -1284,35 +1462,72 @@ Add-Result 'SET-OPEN' 'Settings window found' ($(if ($settingsSnap.Success) { $s
 Write-UIATreeDiagnostics -Window $settings -Label 'settings-root'
 $shot = Save-WindowScreenshot 'SET-OPEN' $settings
 
-# 1) Sidebar pages
+# 1) Sidebar pages (also verify persistent shell RuntimeId stability + old-page stale invalidation)
+$shellSidebarProbe = Try-FindById $settings 'sidebar.general'
+$shellSaveProbe = Try-FindById $settings 'action.save'
+$shellSidebarRidBefore = Get-RuntimeIdString $shellSidebarProbe
+$shellSaveRidBefore = Get-RuntimeIdString $shellSaveProbe
+$generalControlProbe = Try-FindById $settings 'action.remember-layout'
+
 foreach ($page in 'sidebar.general', 'sidebar.interface', 'sidebar.topbar', 'sidebar.input') {
     $el = Try-FindById $settings $page
     $okEl = Assert-Element "NAV-$page" $el $settings 'ListItem'
-    if (-not $okEl) { continue }
-    $invoke = Invoke-Pattern "NAV-$page-invoke" $el ([System.Windows.Automation.InvokePattern])
-    if ($null -ne $invoke) {
-        $invRes = Try-InvokePattern -Pattern $invoke -AutomationId $page
-        $switched = $false
-        if ($invRes.Success) {
-            $probeId = $script:pageProbeControl[$page]
-            $sw = [System.Diagnostics.Stopwatch]::StartNew()
-            while ($sw.ElapsedMilliseconds -lt 2500) {
-                if ([string]::IsNullOrEmpty($probeId) -or $null -ne (Try-FindById $settings $probeId)) {
-                    $switched = $true
-                    break
-                }
-                Start-Sleep -Milliseconds 40
+    if (-not $okEl) {
+        Add-Result "NAV-$page-invoke" 'Invoke succeeded and switched page' "skipped invoke because sidebar element failed: $script:lastUiaError" $false
+        continue
+    }
+    $pageRid = Get-RuntimeIdString $el
+    $patRes = Invoke-Pattern "NAV-$page-invoke" $el ([System.Windows.Automation.InvokePattern]) -AutomationId $page
+    if (-not $patRes.Success) {
+        Add-Result "NAV-$page-invoke" 'pattern InvokePattern supported and invoked' $patRes.Error $false
+        continue
+    }
+    $invRes = Try-InvokePattern -Pattern $patRes.Pattern -AutomationId $page -RuntimeId $pageRid -CurrentPage $page
+    $switched = $false
+    if ($invRes.Success) {
+        $probeId = $script:pageProbeControl[$page]
+        $sw = [System.Diagnostics.Stopwatch]::StartNew()
+        while ($sw.ElapsedMilliseconds -lt 2500) {
+            if ([string]::IsNullOrEmpty($probeId) -or $null -ne (Try-FindById $settings $probeId)) {
+                $switched = $true
+                break
+            }
+            Start-Sleep -Milliseconds 40
+        }
+    }
+    $lifecycleNote = ''
+    $lifecycleOk = $true
+    if ($invRes.Success -and $switched) {
+        $sbSnap = Try-GetElementSnapshot $shellSidebarProbe
+        $svSnap = Try-GetElementSnapshot $shellSaveProbe
+        $sbRidNow = Get-RuntimeIdString $shellSidebarProbe
+        $svRidNow = Get-RuntimeIdString $shellSaveProbe
+        if (-not $sbSnap.Success -or $sbRidNow -ne $shellSidebarRidBefore) {
+            $lifecycleOk = $false
+            $lifecycleNote += "; sidebar.general proxy broke after switch (ok=$($sbSnap.Success) rid=$shellSidebarRidBefore->$sbRidNow)"
+        }
+        if (-not $svSnap.Success -or $svRidNow -ne $shellSaveRidBefore) {
+            $lifecycleOk = $false
+            $lifecycleNote += "; action.save proxy broke after switch (ok=$($svSnap.Success) rid=$shellSaveRidBefore->$svRidNow)"
+        }
+        if ($page -eq 'sidebar.interface' -and $null -ne $generalControlProbe) {
+            $oldSnap = Try-GetElementSnapshot $generalControlProbe
+            if ($oldSnap.Success -or $oldSnap.Category -ne 'ElementUnavailable') {
+                $lifecycleOk = $false
+                $lifecycleNote += "; old general control did not become ElementUnavailable (success=$($oldSnap.Success) cat=$($oldSnap.Category))"
+            } else {
+                $lifecycleNote += '; oldTab=ElementUnavailable; shellRidStable=True'
             }
         }
-        $actualMsg = if ($invRes.Success -and $switched) {
-            'invoked and page controls verified'
-        } elseif ($invRes.Success) {
-            "invoked but expected page control $($script:pageProbeControl[$page]) missing"
-        } else {
-            $invRes.Error
-        }
-        Add-Result "NAV-$page-invoke" 'Invoke succeeded and switched page' $actualMsg ($invRes.Success -and $switched)
     }
+    $actualMsg = if ($invRes.Success -and $switched) {
+        "invoked and page controls verified (rid=$pageRid available=$($patRes.Availability)$lifecycleNote)"
+    } elseif ($invRes.Success) {
+        "invoked but expected page control $($script:pageProbeControl[$page]) missing ($script:lastUiaError)"
+    } else {
+        $invRes.Error
+    }
+    Add-Result "NAV-$page-invoke" 'Invoke succeeded and switched page' $actualMsg ($invRes.Success -and $switched -and $lifecycleOk)
 }
 
 # 2) Checkboxes across all 4 pages: Assert -> Toggle -> verify UIA state changed -> restore
@@ -1324,16 +1539,20 @@ $checkboxPages = @(
 )
 foreach ($group in $checkboxPages) {
     if (-not (Select-SettingsPage $settings $group.Page)) {
+        $switchErr = $script:lastUiaError
         foreach ($id in $group.Ids) {
-            Add-Result "CHK-$id" 'settings page active for checkbox' ("failed to switch to $($group.Page)") $false
+            Add-Result "CHK-$id" 'settings page active for checkbox' ("failed to switch to $($group.Page): $switchErr") $false
         }
         continue
     }
     foreach ($id in $group.Ids) {
         $el = Try-FindById $settings $id
         if (-not (Assert-Element "CHK-$id" $el $settings 'CheckBox')) { continue }
-        $toggle = Invoke-Pattern "CHK-$id" $el ([System.Windows.Automation.TogglePattern])
-        if ($null -eq $toggle) { continue }
+        $patRes = Invoke-Pattern "CHK-$id" $el ([System.Windows.Automation.TogglePattern]) -AutomationId $id
+        if (-not $patRes.Success) {
+            Add-Result "CHK-$id-toggle" 'TogglePattern supported and toggled' $patRes.Error $false
+            continue
+        }
 
         $beforeInfo = Try-GetToggleState -El $el -AutomationId $id
         if (-not $beforeInfo.Success) {
@@ -1341,7 +1560,7 @@ foreach ($group in $checkboxPages) {
             continue
         }
         $before = $beforeInfo.State
-        $togRes = Try-TogglePattern -Pattern $toggle -AutomationId $id
+        $togRes = Try-TogglePattern -Pattern $patRes.Pattern -AutomationId $id
         if (-not $togRes.Success) {
             Add-Result "CHK-$id-toggle" "state changed $before -> opposite" $togRes.Error $false
             continue
@@ -1374,16 +1593,22 @@ $listCond = New-Object System.Windows.Automation.PropertyCondition(
 )
 foreach ($group in $dropdownPages) {
     if (-not (Select-SettingsPage $settings $group.Page)) {
+        $switchErr = $script:lastUiaError
         foreach ($id in $group.Ids) {
-            Add-Result "DD-$id" 'settings page active for dropdown' ("failed to switch to $($group.Page)") $false
+            Add-Result "DD-$id" 'settings page active for dropdown' ("failed to switch to $($group.Page): $switchErr") $false
         }
         continue
     }
     foreach ($id in $group.Ids) {
         $el = Try-FindById $settings $id
         if (-not (Assert-Element "DD-$id" $el $settings 'ComboBox')) { continue }
-        $expand = Invoke-Pattern "DD-$id" $el ([System.Windows.Automation.ExpandCollapsePattern])
-        if ($null -eq $expand) { continue }
+        $patRes = Invoke-Pattern "DD-$id" $el ([System.Windows.Automation.ExpandCollapsePattern]) -AutomationId $id
+        if (-not $patRes.Success) {
+            Add-Result "DD-$id-options" '>0 selectable options enumerated' $patRes.Error $false
+            Add-Result "DD-$id-select" 'option selected and dropdown value updated' $patRes.Error $false
+            continue
+        }
+        $expand = $patRes.Pattern
 
         $beforeValue = Try-GetValueText $el
         $expRes = Try-ExpandCollapseOp -Pattern $expand -Action 'Expand' -AutomationId $id
@@ -1440,11 +1665,14 @@ foreach ($group in $dropdownPages) {
         $selectOk = $false
         $selectActual = ''
         try {
-            $itemInvoke = $candidate.Element.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
-            $selRes = Try-InvokePattern -Pattern $itemInvoke -AutomationId $id
-            if (-not $selRes.Success) {
-                $selectActual = $selRes.Error
+            $itemPatRes = Get-UiaPattern -El $candidate.Element -PatternType ([System.Windows.Automation.InvokePattern]) -AutomationId $id
+            if (-not $itemPatRes.Success) {
+                $selectActual = $itemPatRes.Error
             } else {
+                $selRes = Try-InvokePattern -Pattern $itemPatRes.Pattern -AutomationId $id -RuntimeId (Get-RuntimeIdString $candidate.Element)
+                if (-not $selRes.Success) {
+                    $selectActual = $selRes.Error
+                } else {
                 $closedAfterPick = Wait-WindowClosed -ClassName 'SubornoMenuPopupWindow' -ProcessId $process.Id -TimeoutMs 2000
                 Start-Sleep -Milliseconds 60
                 $freshDropdown = Try-FindById $settings $id
@@ -1458,9 +1686,10 @@ foreach ($group in $dropdownPages) {
                     $selectOk = ($afterValue -eq $candidate.Name)
                     $selectActual = "single-option selected [$afterValue]"
                 }
+                }
             }
         } catch {
-            $cat = Classify-UiaException $_.Exception
+            $cat = Classify-UiaException $_.Exception -Operation 'SelectDropdownItem'
             $selectActual = Format-UiaDiagnostic -Category $cat -Operation 'SelectDropdownItem' -AutomationId $id -Exception $_.Exception
         }
 
@@ -1527,8 +1756,13 @@ if (Select-SettingsPage $settings 'sidebar.topbar') {
     foreach ($id in $sliderIds) {
         $el = Try-FindById $settings $id
         if (-not (Assert-Element "SLD-$id" $el $settings 'Slider')) { continue }
-        $range = Invoke-Pattern "SLD-$id" $el ([System.Windows.Automation.RangeValuePattern])
-        if ($null -eq $range) { continue }
+        $patRes = Invoke-Pattern "SLD-$id" $el ([System.Windows.Automation.RangeValuePattern]) -AutomationId $id
+        if (-not $patRes.Success) {
+            foreach ($suffix in 'min', 'max', 'mid') {
+                Add-Result "SLD-$id-set-$suffix" "slider value set to $suffix" $patRes.Error $false
+            }
+            continue
+        }
 
         $rangeSnap = Try-GetRangeValue -El $el -AutomationId $id
         if (-not $rangeSnap.Success) {
@@ -1574,8 +1808,9 @@ if (Select-SettingsPage $settings 'sidebar.topbar') {
         }
     }
 } else {
+    $switchErr = $script:lastUiaError
     foreach ($id in 'action.idle-opacity', 'action.idle-time') {
-        Add-Result "SLD-$id" 'sidebar.topbar active for slider checks' 'failed to switch to sidebar.topbar' $false
+        Add-Result "SLD-$id" 'sidebar.topbar active for slider checks' ("failed to switch to sidebar.topbar: $switchErr") $false
     }
 }
 
@@ -1603,9 +1838,10 @@ if ($okSaveEl -and (Test-Path $settingsPath)) {
     }
     $hashBeforeSave = (Get-FileHash $settingsPath).Hash
     $save = Try-FindById $settings 'action.save'
-    $saveInvoke = Invoke-Pattern 'SET-SAVE-invoke' $save ([System.Windows.Automation.InvokePattern])
-    if ($null -ne $saveInvoke) {
-        $saveInvRes = Try-InvokePattern -Pattern $saveInvoke -AutomationId 'action.save'
+    $savePatRes = Invoke-Pattern 'SET-SAVE-invoke' $save ([System.Windows.Automation.InvokePattern]) -AutomationId 'action.save'
+    if ($savePatRes.Success) {
+        $saveInvRes = Try-InvokePattern -Pattern $savePatRes.Pattern -AutomationId 'action.save' -RuntimeId (Get-RuntimeIdString $save)
+        Add-Result 'SET-SAVE-invoke' 'InvokePattern supported and Save invoked' ($(if ($saveInvRes.Success) { "available=$($savePatRes.Availability); Invoke=S_OK" } else { $saveInvRes.Error })) $saveInvRes.Success
         if ($saveInvRes.Success) {
             # Toast window appears immediately on save success; poll quickly before auto-dismiss.
             $toastWin = Wait-WindowByClass -ClassName 'SubornoToastWindow' -ProcessId $process.Id -TimeoutMs 2500 -PollMs 40 -FallbackRoot $root
@@ -1631,6 +1867,9 @@ if ($okSaveEl -and (Test-Path $settingsPath)) {
         } else {
             Add-Result 'SET-SAVE-persist' 'settings file rewritten on Save' $saveInvRes.Error $false
         }
+    } else {
+        Add-Result 'SET-SAVE-invoke' 'InvokePattern supported and Save invoked' $savePatRes.Error $false
+        Add-Result 'SET-SAVE-persist' 'settings file rewritten on Save' $savePatRes.Error $false
     }
 
     # Restore original value via real SendInput mouse click on Save.
@@ -1672,29 +1911,86 @@ if ($okSaveEl -and (Test-Path $settingsPath)) {
         Add-Result 'SET-SAVE-mouseclick' 'real mouse click on Save rewrites settings file' 'Settings window did not reopen' $false
     }
 
-    # Rapid repeated Save: first Save commits & hides (incrementing tree_generation);
-    # subsequent rapid Invoke() calls on the stale proxy must either return expected
-    # ElementUnavailable cleanly or succeed without crashing or hanging.
+    # Strict SET-SAVE-rapid:
+    #   Call #1: real Save commits, persists settings.ini, and hides Settings.
+    #   Call #2 & #3 on the ORIGINAL stale proxy (without reopening): MUST return ElementUnavailable (0x80040201) with process alive.
+    #   Fresh-Proxy Reopen check (within SET-SAVE-rapid): reopen Settings, acquire a fresh action.save proxy, restore & persist cleanly.
     $settingsRapid = Open-SettingsWindow -Root $root -HostHwnd $settingsHost -ProcessId $process.Id -WmCommand $wmCommand -MenuOpenSettings $menuOpenSettings
     $rapidUnexpectedError = ''
+    $rapidSummary = ''
+    $hrElemNotAvail = [int][uint32]::Parse('80040201', [System.Globalization.NumberStyles]::HexNumber)
     if ($null -ne $settingsRapid) {
+        [void](Select-SettingsPage $settingsRapid 'sidebar.general')
+        $rapidRememberEl = Try-FindById $settingsRapid 'action.remember-layout'
+        $rapidInitialTog = Try-GetToggleState -El $rapidRememberEl -AutomationId 'action.remember-layout'
+        $rapidOriginalIni = if ($rapidInitialTog.Success -and $rapidInitialTog.State -eq 'On') { 'true' } else { 'false' }
+        $rapidTargetIni = if ($rapidOriginalIni -eq 'true') { 'false' } else { 'true' }
+        if ($rapidInitialTog.Success -and $null -ne $rapidInitialTog.Pattern) {
+            [void](Try-TogglePattern -Pattern $rapidInitialTog.Pattern -AutomationId 'action.remember-layout')
+            Start-Sleep -Milliseconds 80
+        }
+
         $saveRapidEl = Try-FindById $settingsRapid 'action.save'
-        if ($null -ne $saveRapidEl) {
-            try {
-                $saveInvokeRapid = $saveRapidEl.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
-                for ($call = 1; $call -le 3; $call++) {
-                    $rRes = Try-InvokePattern -Pattern $saveInvokeRapid -AutomationId 'action.save'
-                    if (-not $rRes.Success) {
-                        if ($call -ge 2 -and ($rRes.Category -eq 'ElementUnavailable' -or $rRes.Category -eq 'ComFailure')) {
-                            Write-Host ("Rapid Save call #{0} returned expected post-hide lifecycle status: {1}" -f $call, $rRes.Category)
+        $saveRapidRid = Get-RuntimeIdString $saveRapidEl
+        $saveRapidPat = Get-UiaPattern -El $saveRapidEl -PatternType ([System.Windows.Automation.InvokePattern]) -AutomationId 'action.save' -CurrentPage 'sidebar.general'
+        if (-not $saveRapidPat.Success) {
+            $rapidUnexpectedError = "rapid Save pattern setup failed: $($saveRapidPat.Error)"
+        } else {
+            $rapidProxy = $saveRapidPat.Pattern
+            $hashBeforeRapid1 = (Get-FileHash $settingsPath).Hash
+            # Call #1: genuine Save
+            $r1 = Try-InvokePattern -Pattern $rapidProxy -AutomationId 'action.save' -RuntimeId $saveRapidRid -CurrentPage 'sidebar.general'
+            $hidden1 = Wait-WindowHidden -Hwnd $settingsHost -TimeoutMs 2000
+            $iniAfter1 = Wait-SettingsIniKey -Path $settingsPath -Key 'remember_last_input_layout' -ExpectedValue $rapidTargetIni -TimeoutMs 1500
+            $hashAfterRapid1 = (Get-FileHash $settingsPath).Hash
+            $process.Refresh()
+            if (-not $r1.Success -or -not $hidden1 -or $iniAfter1 -ne $rapidTargetIni -or $hashBeforeRapid1 -eq $hashAfterRapid1 -or $process.HasExited) {
+                $rapidUnexpectedError = "call #1 failed (ok=$($r1.Success) hidden=$hidden1 ini=$iniAfter1 expected=$rapidTargetIni hashChanged=$($hashBeforeRapid1 -ne $hashAfterRapid1) exited=$($process.HasExited) err=$($r1.Error))"
+            } else {
+                # Call #2: stale original proxy -> MUST be ElementUnavailable (0x80040201)
+                $r2 = Try-InvokePattern -Pattern $rapidProxy -AutomationId 'action.save' -RuntimeId $saveRapidRid -CurrentPage 'sidebar.general(stale#2)'
+                $process.Refresh()
+                $r2IsNotAvail = (-not $r2.Success) -and ($r2.Category -eq 'ElementUnavailable') -and ($r2.HResult -eq $hrElemNotAvail -or $r2.Error -like '*ElementNotAvailableException*')
+                if (-not $r2IsNotAvail -or $process.HasExited) {
+                    $rapidUnexpectedError = ('call #2 expected ElementUnavailable(0x80040201); actual=[{0}] exited={1}' -f $r2.Error, $process.HasExited)
+                } else {
+                    # Call #3: same stale original proxy -> MUST also be ElementUnavailable (0x80040201)
+                    $r3 = Try-InvokePattern -Pattern $rapidProxy -AutomationId 'action.save' -RuntimeId $saveRapidRid -CurrentPage 'sidebar.general(stale#3)'
+                    $process.Refresh()
+                    $r3IsNotAvail = (-not $r3.Success) -and ($r3.Category -eq 'ElementUnavailable') -and ($r3.HResult -eq $hrElemNotAvail -or $r3.Error -like '*ElementNotAvailableException*')
+                    if (-not $r3IsNotAvail -or $process.HasExited) {
+                        $rapidUnexpectedError = ('call #3 expected ElementUnavailable(0x80040201); actual=[{0}] exited={1}' -f $r3.Error, $process.HasExited)
+                    } else {
+                        # Separate Fresh-Proxy Reopen verification within SET-SAVE-rapid
+                        $reopenedFresh = Open-SettingsWindow -Root $root -HostHwnd $settingsHost -ProcessId $process.Id -WmCommand $wmCommand -MenuOpenSettings $menuOpenSettings
+                        if ($null -eq $reopenedFresh) {
+                            $rapidUnexpectedError = 'fresh reopen failed after stale-proxy calls'
                         } else {
-                            $rapidUnexpectedError = "call #$call failed unexpectedly: $($rRes.Error)"
-                            break
+                            [void](Select-SettingsPage $reopenedFresh 'sidebar.general')
+                            $freshRem = Try-FindById $reopenedFresh 'action.remember-layout'
+                            $freshRemTog = Try-GetToggleState -El $freshRem -AutomationId 'action.remember-layout'
+                            if ($freshRemTog.Success -and $null -ne $freshRemTog.Pattern) {
+                                [void](Try-TogglePattern -Pattern $freshRemTog.Pattern -AutomationId 'action.remember-layout')
+                                Start-Sleep -Milliseconds 80
+                            }
+                            $freshSaveEl = Try-FindById $reopenedFresh 'action.save'
+                            $freshSavePat = Get-UiaPattern -El $freshSaveEl -PatternType ([System.Windows.Automation.InvokePattern]) -AutomationId 'action.save' -CurrentPage 'sidebar.general'
+                            if (-not $freshSavePat.Success) {
+                                $rapidUnexpectedError = "fresh reopen action.save pattern failed: $($freshSavePat.Error)"
+                            } else {
+                                $rFresh = Try-InvokePattern -Pattern $freshSavePat.Pattern -AutomationId 'action.save' -RuntimeId (Get-RuntimeIdString $freshSaveEl) -CurrentPage 'sidebar.general(fresh-reopen)'
+                                $hiddenFresh = Wait-WindowHidden -Hwnd $settingsHost -TimeoutMs 2000
+                                $iniFresh = Wait-SettingsIniKey -Path $settingsPath -Key 'remember_last_input_layout' -ExpectedValue $rapidOriginalIni -TimeoutMs 1500
+                                if (-not $rFresh.Success -or -not $hiddenFresh -or $iniFresh -ne $rapidOriginalIni) {
+                                    $rapidUnexpectedError = "fresh reopen Save failed (ok=$($rFresh.Success) hidden=$hiddenFresh ini=$iniFresh expected=$rapidOriginalIni err=$($rFresh.Error))"
+                                } else {
+                                    $rapidSummary = ('call1=S_OK(ini={0},hidden=True); call2={1}(0x{2:X8}); call3={3}(0x{4:X8}); freshReopen=S_OK(ini={5},hidden=True)' -f
+                                        $iniAfter1, $r2.Category, $r2.HResult, $r3.Category, $r3.HResult, $iniFresh)
+                                }
+                            }
                         }
                     }
                 }
-            } catch {
-                $rapidUnexpectedError = Format-UiaDiagnostic -Category (Classify-UiaException $_.Exception) -Operation 'RapidSaveSetup' -AutomationId 'action.save' -Exception $_.Exception
             }
         }
         [void](Wait-WindowHidden -Hwnd $settingsHost -TimeoutMs 1500)
@@ -1703,7 +1999,7 @@ if ($okSaveEl -and (Test-Path $settingsPath)) {
     }
     $process.Refresh()
     $alive = -not $process.HasExited
-    Add-Result 'SET-SAVE-rapid' 'process alive and rapid Save stale-proxy lifecycle handled cleanly' ("alive=$alive" + $(if ($rapidUnexpectedError -ne '') { "; $rapidUnexpectedError" } else { '' })) ($alive -and $rapidUnexpectedError -eq '')
+    Add-Result 'SET-SAVE-rapid' 'call #1 saves & hides; stale calls #2/#3 return ElementUnavailable(0x80040201); fresh-reopen Save succeeds; process alive' ("alive=$alive; $rapidSummary" + $(if ($rapidUnexpectedError -ne '') { "; $rapidUnexpectedError" } else { '' })) ($alive -and $rapidUnexpectedError -eq '')
 } elseif ($okSaveEl) {
     Add-Result 'SET-SAVE-persist' 'settings.ini exists before Save persistence check' "NOT FOUND: $settingsPath" $false
 }
@@ -1720,11 +2016,12 @@ if ($null -ne $settingsForCancel) {
         Start-Sleep -Milliseconds 80
     }
     $cancelEl = Try-FindById $settingsForCancel 'action.cancel'
-    $cancelInvoke = Invoke-Pattern 'SET-CANCEL-invoke' $cancelEl ([System.Windows.Automation.InvokePattern])
-    if ($null -ne $cancelInvoke) {
+    $cancelPatRes = Invoke-Pattern 'SET-CANCEL-invoke' $cancelEl ([System.Windows.Automation.InvokePattern]) -AutomationId 'action.cancel'
+    if ($cancelPatRes.Success) {
         $hashBeforeCancel = if (Test-Path $settingsPath) { (Get-FileHash $settingsPath).Hash } else { '' }
         $iniBeforeCancel = Get-IniKeyValue -Path $settingsPath -Key 'remember_last_input_layout'
-        $cancelRes = Try-InvokePattern -Pattern $cancelInvoke -AutomationId 'action.cancel'
+        $cancelRes = Try-InvokePattern -Pattern $cancelPatRes.Pattern -AutomationId 'action.cancel' -RuntimeId (Get-RuntimeIdString $cancelEl)
+        Add-Result 'SET-CANCEL-invoke' 'InvokePattern supported and Cancel invoked' ($(if ($cancelRes.Success) { "available=$($cancelPatRes.Availability); Invoke=S_OK" } else { $cancelRes.Error })) $cancelRes.Success
         [void](Wait-WindowHidden -Hwnd $settingsHost -TimeoutMs 2000)
         $hashAfterCancel = if (Test-Path $settingsPath) { (Get-FileHash $settingsPath).Hash } else { '' }
         $iniAfterCancel = Get-IniKeyValue -Path $settingsPath -Key 'remember_last_input_layout'
@@ -1750,6 +2047,9 @@ if ($null -ne $settingsForCancel) {
 
         $cancelOk = $cancelRes.Success -and ($hashBeforeCancel -eq $hashAfterCancel) -and ($iniBeforeCancel -eq $iniAfterCancel) -and ($initialCancelState -eq '' -or $discardedState -eq $initialCancelState)
         Add-Result 'SET-CANCEL-nopersist' 'Cancel leaves settings.ini unchanged and discards staged edit' "fileUnchanged=$($hashBeforeCancel -eq $hashAfterCancel) ini=$iniBeforeCancel->$iniAfterCancel state=$initialCancelState->$discardedState" $cancelOk
+    } else {
+        Add-Result 'SET-CANCEL-invoke' 'InvokePattern supported and Cancel invoked' $cancelPatRes.Error $false
+        Add-Result 'SET-CANCEL-nopersist' 'Cancel leaves settings.ini unchanged and discards staged edit' $cancelPatRes.Error $false
     }
 } else {
     Add-Result 'SET-CANCEL-nopersist' 'Settings window reopened for Cancel check' 'NOT OPEN' $false

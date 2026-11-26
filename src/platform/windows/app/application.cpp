@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <memory>
 #include <msctf.h>
+#include <mutex>
 #include <new>
 #include <optional>
 #include <shellapi.h>
@@ -43,6 +44,7 @@ constexpr wchar_t window_class[] = L"SubornoDesktopWindow";
 constexpr UINT tray_message = WM_APP + 1;
 constexpr UINT tray_icon_id = 1;
 constexpr UINT second_instance_show_topbar = WM_APP + 2;
+constexpr UINT a11y_notify_message = WM_APP + 3;
 constexpr UINT layout_hotkey_id = 1;
 constexpr UINT encoding_hotkey_id = 2;
 constexpr LANGID bengali_bangladesh = MAKELANGID(0x45, 0x02);
@@ -1315,20 +1317,22 @@ class Application final : public ui_access::ElementSource {
 
     // are always in bounds; a11y_alive_ catches the destruction window.
 
-    // Element order: 0..3 sidebar pages, 4.. the current page's controls,
-
-    // then Save, Cancel and Close.
+    // Element order: 0..3 sidebar pages, 4..(a11y_footer_base - 1) the
+    // current page's controls, and fixed shell indices a11y_footer_base..+2
+    // for Save, Cancel and Close so footer proxies never shift across tabs.
 
     static constexpr int a11y_sidebar_count = 4;
+    static constexpr int a11y_page_control_capacity = 64;
+    static constexpr int a11y_footer_base = a11y_sidebar_count + a11y_page_control_capacity;
 
     int a11y_save_index() const {
-        return a11y_sidebar_count + static_cast<int>(pages_[static_cast<int>(page_)].size());
+        return a11y_footer_base;
     }
     int a11y_cancel_index() const {
-        return a11y_save_index() + 1;
+        return a11y_footer_base + 1;
     }
     int a11y_close_index() const {
-        return a11y_cancel_index() + 1;
+        return a11y_footer_base + 2;
     }
 
     // Stable UIA selectors (the winapp-ui-automation skill's preferred
@@ -1414,7 +1418,18 @@ class Application final : public ui_access::ElementSource {
     }
 
     std::uint64_t tree_generation() const override {
-        return a11y_generation_;
+        return a11y_shell_generation_;
+    }
+
+    std::uint64_t element_generation(int index) const override {
+        if ((index >= 0 && index < a11y_sidebar_count) || index >= a11y_footer_base) {
+            return a11y_shell_generation_;
+        }
+        return a11y_page_generation_;
+    }
+
+    bool schedule_focus_changed() override {
+        return schedule_a11y_notifications(false, true);
     }
 
     bool element_info(int index, ui_access::ElementInfo& out) const override {
@@ -1434,7 +1449,8 @@ class Application final : public ui_access::ElementSource {
             return true;
         }
         const int control_index = index - a11y_sidebar_count;
-        if (control_index >= 0 && control_index < static_cast<int>(controls.size())) {
+        if (control_index >= 0 && control_index < static_cast<int>(controls.size())
+            && index < a11y_footer_base) {
             const UiControl& control = controls[static_cast<std::size_t>(control_index)];
             out.rect = scale_rect(control.rect);
             out.automation_id = control_automation_id(control, control_index);
@@ -1540,7 +1556,7 @@ class Application final : public ui_access::ElementSource {
             return true;
         }
         const int control_index = index - a11y_sidebar_count;
-        if (control_index >= 0
+        if (control_index >= 0 && index < a11y_footer_base
             && control_index < static_cast<int>(pages_[static_cast<int>(page_)].size())) {
             focus_index_ = control_index;
             focus_footer_ = 0;
@@ -1565,12 +1581,13 @@ class Application final : public ui_access::ElementSource {
     bool invoke_element(int index) override {
         if (index >= 0 && index < a11y_sidebar_count) {
             switch_settings_page(static_cast<PageId>(index));
-            ui_access::notify_focus_changed(window_, this, a11y_alive_);
+            schedule_a11y_notifications(false, true);
             return true;
         }
         const int control_index = index - a11y_sidebar_count;
         std::vector<UiControl>& controls = page_controls();
-        if (control_index >= 0 && control_index < static_cast<int>(controls.size())) {
+        if (control_index >= 0 && index < a11y_footer_base
+            && control_index < static_cast<int>(controls.size())) {
             UiControl& control = controls[static_cast<std::size_t>(control_index)];
             focus_index_ = control_index;
             switch (control.kind) {
@@ -1601,7 +1618,8 @@ class Application final : public ui_access::ElementSource {
     bool toggle_element(int index) override {
         const int control_index = index - a11y_sidebar_count;
         std::vector<UiControl>& controls = page_controls();
-        if (control_index < 0 || control_index >= static_cast<int>(controls.size())) {
+        if (control_index < 0 || index >= a11y_footer_base
+            || control_index >= static_cast<int>(controls.size())) {
             return false;
         }
         UiControl& control = controls[static_cast<std::size_t>(control_index)];
@@ -1616,7 +1634,8 @@ class Application final : public ui_access::ElementSource {
     bool expand_element(int index, bool expand) override {
         const int control_index = index - a11y_sidebar_count;
         std::vector<UiControl>& controls = page_controls();
-        if (control_index < 0 || control_index >= static_cast<int>(controls.size())) {
+        if (control_index < 0 || index >= a11y_footer_base
+            || control_index >= static_cast<int>(controls.size())) {
             return false;
         }
         UiControl& control = controls[static_cast<std::size_t>(control_index)];
@@ -1641,7 +1660,8 @@ class Application final : public ui_access::ElementSource {
     bool set_element_value(int index, double value) override {
         const int control_index = index - a11y_sidebar_count;
         std::vector<UiControl>& controls = page_controls();
-        if (control_index < 0 || control_index >= static_cast<int>(controls.size())) {
+        if (control_index < 0 || index >= a11y_footer_base
+            || control_index >= static_cast<int>(controls.size())) {
             return false;
         }
         UiControl& control = controls[static_cast<std::size_t>(control_index)];
@@ -1950,6 +1970,8 @@ class Application final : public ui_access::ElementSource {
         }
         switch (message) {
         case WM_CREATE:
+            clear_pending_a11y_notifications();
+            ++a11y_session_id_;
             if (!smoke_test_) {
                 const HRESULT result = add_tray_icon();
                 if (FAILED(result)) {
@@ -1985,12 +2007,19 @@ class Application final : public ui_access::ElementSource {
 
             show_topbar();
             return 0;
+        case a11y_notify_message:
+            flush_pending_a11y_notifications();
+            return 0;
         case WM_CLOSE:
             // Cancel semantics: discard staged changes and hide to the tray.
             close_active_dropdown();
 
             if (!smoke_test_ && tray_added_) {
+                ++a11y_shell_generation_;
+                ++a11y_page_generation_;
+                clear_pending_a11y_notifications();
                 ::ShowWindow(window_, SW_HIDE);
+                trace_app_a11y(L"WM_CLOSE-hide");
                 return 0;
             }
             ::DestroyWindow(window_);
@@ -2054,6 +2083,8 @@ class Application final : public ui_access::ElementSource {
             return 0;
         case WM_DESTROY:
             close_active_dropdown();
+            clear_pending_a11y_notifications();
+            ++a11y_session_id_;
             a11y_alive_.reset();
             toast_.shutdown();
             remove_tray_icon();
@@ -2597,9 +2628,11 @@ class Application final : public ui_access::ElementSource {
             ui::text("settings.input.traditional_typing_style", L"Traditional Typing Style"),
             staged_.typing_style == "traditional"));
 
-        ++a11y_generation_;
+        ++a11y_shell_generation_;
+        ++a11y_page_generation_;
+        trace_app_a11y(L"build_pages");
         if (window_ != nullptr && ::IsWindowVisible(window_) != FALSE) {
-            ui_access::notify_structure_changed(window_, this, a11y_alive_);
+            schedule_a11y_notifications(true, false);
         }
     }
 
@@ -2609,10 +2642,13 @@ class Application final : public ui_access::ElementSource {
         focus_index_ = -1;
         focus_footer_ = 0;
         sidebar_hover_ = -1;
-        ++a11y_generation_;
+        ++a11y_page_generation_;
+        trace_app_a11y(L"switch_settings_page");
         if (window_ != nullptr) {
             ::InvalidateRect(window_, nullptr, TRUE);
-            ui_access::notify_structure_changed(window_, this, a11y_alive_);
+            if (::IsWindowVisible(window_) != FALSE) {
+                schedule_a11y_notifications(true, false);
+            }
         }
     }
 
@@ -3053,7 +3089,7 @@ class Application final : public ui_access::ElementSource {
         const int sidebar = sidebar_hit(design_point);
         if (sidebar >= 0) {
             switch_settings_page(static_cast<PageId>(sidebar));
-            ui_access::notify_focus_changed(window_, this, a11y_alive_);
+            schedule_a11y_notifications(false, true);
             return;
         }
         std::vector<UiControl>& controls = page_controls();
@@ -3085,7 +3121,7 @@ class Application final : public ui_access::ElementSource {
             break;
         }
         ::InvalidateRect(window_, nullptr, FALSE);
-        ui_access::notify_focus_changed(window_, this, a11y_alive_);
+        schedule_a11y_notifications(false, true);
     }
 
     // Immediate (non-staged) button actions in the settings pages.
@@ -3172,7 +3208,7 @@ class Application final : public ui_access::ElementSource {
                 page = 0;
             }
             switch_settings_page(static_cast<PageId>(page));
-            ui_access::notify_focus_changed(window_, this, a11y_alive_);
+            schedule_a11y_notifications(false, true);
             return;
         }
         if (virtual_key == VK_TAB) {
@@ -3213,7 +3249,7 @@ class Application final : public ui_access::ElementSource {
             focus_footer_ = next == control_count ? 1 : next == control_count + 1 ? 2 : 0;
             focus_index_ = focus_footer_ == 0 ? next : -1;
             ::InvalidateRect(window_, nullptr, FALSE);
-            ui_access::notify_focus_changed(window_, this, a11y_alive_);
+            schedule_a11y_notifications(false, true);
             return;
         }
         if (focus_index_ >= 0 && focus_index_ < static_cast<int>(controls.size())) {
@@ -3289,7 +3325,9 @@ class Application final : public ui_access::ElementSource {
         cancel_pressed_ = false;
         slider_drag_ = -1;
         if (tray_added_ && !smoke_test_) {
+            clear_pending_a11y_notifications();
             ::ShowWindow(window_, SW_HIDE);
+            trace_app_a11y(L"cancel_settings-hide");
         }
         ::InvalidateRect(window_, nullptr, TRUE);
     }
@@ -3368,7 +3406,9 @@ class Application final : public ui_access::ElementSource {
         save_pressed_ = false;
         cancel_pressed_ = false;
         if (tray_added_ && !smoke_test_) {
+            clear_pending_a11y_notifications();
             ::ShowWindow(window_, SW_HIDE);
+            trace_app_a11y(L"save_settings-hide");
         }
     }
 
@@ -4525,8 +4565,106 @@ class Application final : public ui_access::ElementSource {
         ::SetForegroundWindow(window_);
         ::SetFocus(window_);
         ::UpdateWindow(window_);
-        ui_access::notify_structure_changed(window_, this, a11y_alive_);
+        schedule_a11y_notifications(true, false);
         persist_last_ui_mode("window");
+    }
+
+    struct PendingA11yNotify {
+        HWND target_window = nullptr;
+        std::weak_ptr<int> alive;
+        std::uint64_t session_id = 0;
+        std::uint64_t shell_generation = 0;
+        std::uint64_t page_generation = 0;
+        bool structure_changed = false;
+        bool focus_changed = false;
+        bool message_posted = false;
+    };
+
+    void trace_app_a11y(const wchar_t* op) const noexcept {
+        wchar_t buffer[384]{};
+        const DWORD tid = ::GetCurrentThreadId();
+        const DWORD in_send = ::InSendMessageEx(nullptr);
+        swprintf_s(buffer,
+                   _countof(buffer),
+                   L"SubornoA11y [%ls] tid=%lu in_send=0x%lX hwnd=0x%p sess=%llu shell_gen=%llu page_gen=%llu page=%d\n",
+                   op != nullptr ? op : L"?",
+                   static_cast<unsigned long>(tid),
+                   static_cast<unsigned long>(in_send),
+                   static_cast<const void*>(window_),
+                   static_cast<unsigned long long>(a11y_session_id_),
+                   static_cast<unsigned long long>(a11y_shell_generation_),
+                   static_cast<unsigned long long>(a11y_page_generation_),
+                   static_cast<int>(page_));
+        ::OutputDebugStringW(buffer);
+    }
+
+    void clear_pending_a11y_notifications() noexcept {
+        std::lock_guard<std::mutex> lock(a11y_notify_mutex_);
+        pending_a11y_.target_window = nullptr;
+        pending_a11y_.alive.reset();
+        pending_a11y_.session_id = 0;
+        pending_a11y_.shell_generation = 0;
+        pending_a11y_.page_generation = 0;
+        pending_a11y_.structure_changed = false;
+        pending_a11y_.focus_changed = false;
+        pending_a11y_.message_posted = false;
+    }
+
+    bool schedule_a11y_notifications(bool structure, bool focus) noexcept {
+        if (window_ == nullptr || ::IsWindow(window_) == FALSE || !a11y_alive_) {
+            return false;
+        }
+        bool should_post = false;
+        {
+            std::lock_guard<std::mutex> lock(a11y_notify_mutex_);
+            pending_a11y_.target_window = window_;
+            pending_a11y_.alive = a11y_alive_;
+            pending_a11y_.session_id = a11y_session_id_;
+            pending_a11y_.shell_generation = a11y_shell_generation_;
+            pending_a11y_.page_generation = a11y_page_generation_;
+            pending_a11y_.structure_changed = pending_a11y_.structure_changed || structure;
+            pending_a11y_.focus_changed = pending_a11y_.focus_changed || focus;
+            if (!pending_a11y_.message_posted) {
+                pending_a11y_.message_posted = true;
+                should_post = true;
+            }
+        }
+        if (should_post) {
+            if (::PostMessageW(window_, a11y_notify_message, 0, 0) == FALSE) {
+                std::lock_guard<std::mutex> lock(a11y_notify_mutex_);
+                pending_a11y_.message_posted = false;
+                trace_app_a11y(L"schedule-post-failed");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    void flush_pending_a11y_notifications() {
+        PendingA11yNotify batch;
+        {
+            std::lock_guard<std::mutex> lock(a11y_notify_mutex_);
+            batch = pending_a11y_;
+            pending_a11y_.structure_changed = false;
+            pending_a11y_.focus_changed = false;
+            pending_a11y_.message_posted = false;
+        }
+        const std::shared_ptr<int> alive = batch.alive.lock();
+        if (!alive || batch.target_window == nullptr || batch.target_window != window_
+            || ::IsWindow(window_) == FALSE || ::IsWindowVisible(window_) == FALSE
+            || batch.session_id != a11y_session_id_
+            || batch.shell_generation != a11y_shell_generation_
+            || batch.page_generation != a11y_page_generation_) {
+            trace_app_a11y(L"flush-skipped-stale");
+            return;
+        }
+        trace_app_a11y(L"flush-dispatch");
+        if (batch.structure_changed) {
+            ui_access::notify_structure_changed(window_, this, alive);
+        }
+        if (batch.focus_changed) {
+            ui_access::notify_focus_changed(window_, this, alive);
+        }
     }
 
     HINSTANCE instance_ = nullptr;
@@ -4538,7 +4676,11 @@ class Application final : public ui_access::ElementSource {
     UINT ui_dpi_ = 96;
     ToastWindow toast_;
     std::shared_ptr<int> a11y_alive_ = std::make_shared<int>(0);
-    std::uint64_t a11y_generation_ = 1;
+    std::mutex a11y_notify_mutex_;
+    PendingA11yNotify pending_a11y_;
+    std::uint64_t a11y_session_id_ = 1;
+    std::uint64_t a11y_shell_generation_ = 1;
+    std::uint64_t a11y_page_generation_ = 1;
     std::array<std::vector<UiControl>, page_count> pages_;
     PageId page_ = PageId::general;
     int focus_index_ = -1;

@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cwchar>
 #include <memory>
 #include <new>
 #include <string>
@@ -92,6 +93,54 @@ void variant_clear_init(VARIANT& variant) noexcept {
     ::VariantInit(&variant);
 }
 
+void trace_uia_callback(const wchar_t* op,
+                        HWND window,
+                        bool is_root,
+                        int index,
+                        const wchar_t* automation_id,
+                        std::uint32_t runtime_id,
+                        std::uint64_t expected_generation,
+                        std::uint64_t current_generation,
+                        HRESULT hr) noexcept {
+    wchar_t buffer[512]{};
+    const DWORD tid = ::GetCurrentThreadId();
+    const DWORD in_send = ::InSendMessageEx(nullptr);
+    swprintf_s(buffer,
+               _countof(buffer),
+               L"SubornoUIA [%ls] tid=%lu in_send=0x%lX hwnd=0x%p root=%d idx=%d id=%ls rid=%lu exp_gen=%llu cur_gen=%llu hr=0x%08lX\n",
+               op != nullptr ? op : L"?",
+               static_cast<unsigned long>(tid),
+               static_cast<unsigned long>(in_send),
+               static_cast<const void*>(window),
+               is_root ? 1 : 0,
+               index,
+               automation_id != nullptr ? automation_id : L"",
+               static_cast<unsigned long>(runtime_id),
+               static_cast<unsigned long long>(expected_generation),
+               static_cast<unsigned long long>(current_generation),
+               static_cast<unsigned long>(hr));
+    ::OutputDebugStringW(buffer);
+}
+
+void trace_uia_raise(const wchar_t* event_name,
+                     HWND window,
+                     int focus_index,
+                     HRESULT hr) noexcept {
+    wchar_t buffer[384]{};
+    const DWORD tid = ::GetCurrentThreadId();
+    const DWORD in_send = ::InSendMessageEx(nullptr);
+    swprintf_s(buffer,
+               _countof(buffer),
+               L"SubornoUIA [%ls] tid=%lu in_send=0x%lX hwnd=0x%p focus_idx=%d hr=0x%08lX\n",
+               event_name != nullptr ? event_name : L"?",
+               static_cast<unsigned long>(tid),
+               static_cast<unsigned long>(in_send),
+               static_cast<const void*>(window),
+               focus_index,
+               static_cast<unsigned long>(hr));
+    ::OutputDebugStringW(buffer);
+}
+
 // The ref-counted provider. One instance either serves the window root or
 // one element of the source (is_root + index).
 class ElementProvider final : public IRawElementProviderSimple,
@@ -112,10 +161,12 @@ class ElementProvider final : public IRawElementProviderSimple,
           index_(index),
           reference_count_(1) {
         if (!is_root_ && source_ != nullptr && !alive_.expired()) {
-            expected_generation_ = source_->tree_generation();
+            expected_generation_ = source_->element_generation(index_);
             ElementInfo info{};
             if (source_->element_info(index_, info)) {
                 expected_automation_id_ = info.automation_id;
+                expected_runtime_id_ =
+                    info.runtime_id != 0 ? info.runtime_id : static_cast<std::uint32_t>(index_ + 1);
                 has_identity_snapshot_ = true;
             }
         }
@@ -350,12 +401,16 @@ class ElementProvider final : public IRawElementProviderSimple,
                 return S_OK;
             }
             case UIA_IsEnabledPropertyId: {
-                value->vt = VT_BOOL;
                 if (is_root_) {
+                    value->vt = VT_BOOL;
                     value->boolVal = VARIANT_TRUE;
                     return S_OK;
                 }
                 ElementInfo info{};
+                if (!child_available(info)) {
+                    return UIA_E_ELEMENTNOTAVAILABLE;
+                }
+                value->vt = VT_BOOL;
                 value->boolVal = (source_->element_info(index_, info) && info.enabled)
                                      ? VARIANT_TRUE
                                      : VARIANT_FALSE;
@@ -617,24 +672,56 @@ class ElementProvider final : public IRawElementProviderSimple,
     }
 
     IFACEMETHODIMP SetFocus() override {
-        if (!available()) {
-            return run_inside_com_boundary([&]() -> HRESULT {
+        return run_inside_com_boundary([&]() -> HRESULT {
+            if (!available()) {
                 return UIA_E_ELEMENTNOTAVAILABLE;
-            });
-        }
-        if (is_root_) {
-            ::SetFocus(window_);
+            }
+            if (is_root_) {
+                ::SetFocus(window_);
+                trace_uia_callback(L"SetFocus-root", window_, true, -1, L"window", 0, 0, 0, S_OK);
+                return S_OK;
+            }
+            ElementInfo info{};
+            const std::uint64_t gen_before = source_->element_generation(index_);
+            if (!child_available(info)) {
+                trace_uia_callback(L"SetFocus-stale",
+                                   window_,
+                                   false,
+                                   index_,
+                                   expected_automation_id_.c_str(),
+                                   expected_runtime_id_,
+                                   expected_generation_,
+                                   gen_before,
+                                   UIA_E_ELEMENTNOTAVAILABLE);
+                return UIA_E_ELEMENTNOTAVAILABLE;
+            }
+            if (!source_->focus_element(index_)) {
+                trace_uia_callback(L"SetFocus-invalid",
+                                   window_,
+                                   false,
+                                   index_,
+                                   info.automation_id.c_str(),
+                                   expected_runtime_id_,
+                                   expected_generation_,
+                                   gen_before,
+                                   E_INVALIDARG);
+                return E_INVALIDARG;
+            }
+            if (!source_->schedule_focus_changed()) {
+                notify_focus_changed(window_, source_, alive_.lock());
+            }
+            const std::uint64_t gen_after = source_->element_generation(index_);
+            trace_uia_callback(L"SetFocus-exit",
+                               window_,
+                               false,
+                               index_,
+                               info.automation_id.c_str(),
+                               expected_runtime_id_,
+                               expected_generation_,
+                               gen_after,
+                               S_OK);
             return S_OK;
-        }
-        ElementInfo info{};
-        if (!child_available(info)) {
-            return UIA_E_ELEMENTNOTAVAILABLE;
-        }
-        if (!source_->focus_element(index_)) {
-            return E_INVALIDARG;
-        }
-        notify_focus_changed(window_, source_, alive_.lock());
-        return S_OK;
+        });
     }
 
     IFACEMETHODIMP get_FragmentRoot(IRawElementProviderFragmentRoot** root) override {
@@ -745,10 +832,48 @@ class ElementProvider final : public IRawElementProviderSimple,
     IFACEMETHODIMP Invoke() override {
         return run_inside_com_boundary([&]() -> HRESULT {
             ElementInfo info{};
+            const std::uint64_t gen_before =
+                (!is_root_ && source_ != nullptr && !alive_.expired())
+                    ? source_->element_generation(index_)
+                    : 0;
             if (!child_available(info)) {
+                trace_uia_callback(L"Invoke-stale",
+                                   window_,
+                                   is_root_,
+                                   index_,
+                                   expected_automation_id_.c_str(),
+                                   expected_runtime_id_,
+                                   expected_generation_,
+                                   gen_before,
+                                   UIA_E_ELEMENTNOTAVAILABLE);
                 return UIA_E_ELEMENTNOTAVAILABLE;
             }
-            return source_->invoke_element(index_) ? S_OK : E_INVALIDARG;
+            const std::uint32_t rid =
+                info.runtime_id != 0 ? info.runtime_id : static_cast<std::uint32_t>(index_ + 1);
+            trace_uia_callback(L"Invoke-enter",
+                               window_,
+                               is_root_,
+                               index_,
+                               info.automation_id.c_str(),
+                               rid,
+                               expected_generation_,
+                               gen_before,
+                               S_OK);
+            const HRESULT hr = source_->invoke_element(index_) ? S_OK : E_INVALIDARG;
+            const std::uint64_t gen_after =
+                (!is_root_ && source_ != nullptr && !alive_.expired())
+                    ? source_->element_generation(index_)
+                    : 0;
+            trace_uia_callback(L"Invoke-exit",
+                               window_,
+                               is_root_,
+                               index_,
+                               info.automation_id.c_str(),
+                               rid,
+                               expected_generation_,
+                               gen_after,
+                               hr);
+            return hr;
         });
     }
 
@@ -757,10 +882,39 @@ class ElementProvider final : public IRawElementProviderSimple,
     IFACEMETHODIMP Toggle() override {
         return run_inside_com_boundary([&]() -> HRESULT {
             ElementInfo info{};
+            const std::uint64_t gen_before =
+                (!is_root_ && source_ != nullptr && !alive_.expired())
+                    ? source_->element_generation(index_)
+                    : 0;
             if (!child_available(info)) {
+                trace_uia_callback(L"Toggle-stale",
+                                   window_,
+                                   is_root_,
+                                   index_,
+                                   expected_automation_id_.c_str(),
+                                   expected_runtime_id_,
+                                   expected_generation_,
+                                   gen_before,
+                                   UIA_E_ELEMENTNOTAVAILABLE);
                 return UIA_E_ELEMENTNOTAVAILABLE;
             }
-            return source_->toggle_element(index_) ? S_OK : E_INVALIDARG;
+            const std::uint32_t rid =
+                info.runtime_id != 0 ? info.runtime_id : static_cast<std::uint32_t>(index_ + 1);
+            const HRESULT hr = source_->toggle_element(index_) ? S_OK : E_INVALIDARG;
+            const std::uint64_t gen_after =
+                (!is_root_ && source_ != nullptr && !alive_.expired())
+                    ? source_->element_generation(index_)
+                    : 0;
+            trace_uia_callback(L"Toggle-exit",
+                               window_,
+                               is_root_,
+                               index_,
+                               info.automation_id.c_str(),
+                               rid,
+                               expected_generation_,
+                               gen_after,
+                               hr);
+            return hr;
         });
     }
 
@@ -784,20 +938,78 @@ class ElementProvider final : public IRawElementProviderSimple,
     IFACEMETHODIMP Expand() override {
         return run_inside_com_boundary([&]() -> HRESULT {
             ElementInfo info{};
+            const std::uint64_t gen_before =
+                (!is_root_ && source_ != nullptr && !alive_.expired())
+                    ? source_->element_generation(index_)
+                    : 0;
             if (!child_available(info)) {
+                trace_uia_callback(L"Expand-stale",
+                                   window_,
+                                   is_root_,
+                                   index_,
+                                   expected_automation_id_.c_str(),
+                                   expected_runtime_id_,
+                                   expected_generation_,
+                                   gen_before,
+                                   UIA_E_ELEMENTNOTAVAILABLE);
                 return UIA_E_ELEMENTNOTAVAILABLE;
             }
-            return source_->expand_element(index_, true) ? S_OK : E_INVALIDARG;
+            const std::uint32_t rid =
+                info.runtime_id != 0 ? info.runtime_id : static_cast<std::uint32_t>(index_ + 1);
+            const HRESULT hr = source_->expand_element(index_, true) ? S_OK : E_INVALIDARG;
+            const std::uint64_t gen_after =
+                (!is_root_ && source_ != nullptr && !alive_.expired())
+                    ? source_->element_generation(index_)
+                    : 0;
+            trace_uia_callback(L"Expand-exit",
+                               window_,
+                               is_root_,
+                               index_,
+                               info.automation_id.c_str(),
+                               rid,
+                               expected_generation_,
+                               gen_after,
+                               hr);
+            return hr;
         });
     }
 
     IFACEMETHODIMP Collapse() override {
         return run_inside_com_boundary([&]() -> HRESULT {
             ElementInfo info{};
+            const std::uint64_t gen_before =
+                (!is_root_ && source_ != nullptr && !alive_.expired())
+                    ? source_->element_generation(index_)
+                    : 0;
             if (!child_available(info)) {
+                trace_uia_callback(L"Collapse-stale",
+                                   window_,
+                                   is_root_,
+                                   index_,
+                                   expected_automation_id_.c_str(),
+                                   expected_runtime_id_,
+                                   expected_generation_,
+                                   gen_before,
+                                   UIA_E_ELEMENTNOTAVAILABLE);
                 return UIA_E_ELEMENTNOTAVAILABLE;
             }
-            return source_->expand_element(index_, false) ? S_OK : E_INVALIDARG;
+            const std::uint32_t rid =
+                info.runtime_id != 0 ? info.runtime_id : static_cast<std::uint32_t>(index_ + 1);
+            const HRESULT hr = source_->expand_element(index_, false) ? S_OK : E_INVALIDARG;
+            const std::uint64_t gen_after =
+                (!is_root_ && source_ != nullptr && !alive_.expired())
+                    ? source_->element_generation(index_)
+                    : 0;
+            trace_uia_callback(L"Collapse-exit",
+                               window_,
+                               is_root_,
+                               index_,
+                               info.automation_id.c_str(),
+                               rid,
+                               expected_generation_,
+                               gen_after,
+                               hr);
+            return hr;
         });
     }
 
@@ -821,10 +1033,39 @@ class ElementProvider final : public IRawElementProviderSimple,
     IFACEMETHODIMP SetValue(double value) override {
         return run_inside_com_boundary([&]() -> HRESULT {
             ElementInfo info{};
+            const std::uint64_t gen_before =
+                (!is_root_ && source_ != nullptr && !alive_.expired())
+                    ? source_->element_generation(index_)
+                    : 0;
             if (!child_available(info)) {
+                trace_uia_callback(L"SetValue-stale",
+                                   window_,
+                                   is_root_,
+                                   index_,
+                                   expected_automation_id_.c_str(),
+                                   expected_runtime_id_,
+                                   expected_generation_,
+                                   gen_before,
+                                   UIA_E_ELEMENTNOTAVAILABLE);
                 return UIA_E_ELEMENTNOTAVAILABLE;
             }
-            return source_->set_element_value(index_, value) ? S_OK : E_INVALIDARG;
+            const std::uint32_t rid =
+                info.runtime_id != 0 ? info.runtime_id : static_cast<std::uint32_t>(index_ + 1);
+            const HRESULT hr = source_->set_element_value(index_, value) ? S_OK : E_INVALIDARG;
+            const std::uint64_t gen_after =
+                (!is_root_ && source_ != nullptr && !alive_.expired())
+                    ? source_->element_generation(index_)
+                    : 0;
+            trace_uia_callback(L"SetValue-exit",
+                               window_,
+                               is_root_,
+                               index_,
+                               info.automation_id.c_str(),
+                               rid,
+                               expected_generation_,
+                               gen_after,
+                               hr);
+            return hr;
         });
     }
 
@@ -913,7 +1154,7 @@ class ElementProvider final : public IRawElementProviderSimple,
 
     bool generation_changed() const noexcept {
         return !is_root_ && source_ != nullptr
-               && source_->tree_generation() != expected_generation_;
+               && source_->element_generation(index_) != expected_generation_;
     }
 
     bool child_available(ElementInfo& out) const {
@@ -926,6 +1167,13 @@ class ElementProvider final : public IRawElementProviderSimple,
         if (has_identity_snapshot_ && !expected_automation_id_.empty()
             && out.automation_id != expected_automation_id_) {
             return false;
+        }
+        if (has_identity_snapshot_) {
+            const std::uint32_t current_runtime_id =
+                out.runtime_id != 0 ? out.runtime_id : static_cast<std::uint32_t>(index_ + 1);
+            if (current_runtime_id != expected_runtime_id_) {
+                return false;
+            }
         }
         return true;
     }
@@ -1013,6 +1261,7 @@ class ElementProvider final : public IRawElementProviderSimple,
     int index_;
     std::uint64_t expected_generation_ = 0;
     std::wstring expected_automation_id_;
+    std::uint32_t expected_runtime_id_ = 0;
     bool has_identity_snapshot_ = false;
     std::atomic<LONG> reference_count_;
 };
@@ -1074,7 +1323,8 @@ void notify_focus_changed(HWND window,
         if (target == nullptr) {
             return;
         }
-        (void)functions.raise_event(target, UIA_AutomationFocusChangedEventId);
+        const HRESULT hr = functions.raise_event(target, UIA_AutomationFocusChangedEventId);
+        trace_uia_raise(L"notify_focus_changed", window, focus, hr);
         target->Release();
     } catch (...) {
         // Accessibility events must never disturb the window's own path.
@@ -1097,8 +1347,9 @@ void notify_structure_changed(HWND window,
         if (root == nullptr) {
             return;
         }
-        (void)functions.raise_structure_changed(
+        const HRESULT hr = functions.raise_structure_changed(
             root, StructureChangeType_ChildrenInvalidated, nullptr, 0);
+        trace_uia_raise(L"notify_structure_changed", window, -1, hr);
         root->Release();
     } catch (...) {
         // Accessibility events must never disturb the window's own path.
