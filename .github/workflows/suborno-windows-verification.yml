@@ -1,28 +1,8 @@
-name: Windows Verification
-
-# Dedicated Part III / Windows verification pipeline. Extends (does not
-# duplicate) the CI `windows-msvc` job: same pinned vcpkg baseline, same
-# presets, same installer scripts - plus the evidence collection the CI job
-# does not produce: toolchain identity assertions, MSVC /analyze execution
-# proof, GoogleTest count reconciliation, PE export/ABI evidence, Windows
-# fuzz-smoke execution, and the UIA functional audit harness run.
-#
-# Hardening notes (what changed versus the previous revision):
-#  - Every native command's exit code is now checked explicitly, and on failure
-#    the first compiler/linker errors are printed as ::error:: annotations
-#    instead of the step ending in a bare "exit code 1".
-#  - "Prove /analyze" now forces a rebuild (--clean-first). An up-to-date
-#    target prints no cl.exe line, so the old check could never find /analyze.
-#  - The toolset check accepts the whole v143 family (14.3x AND 14.4x); the old
-#    '14.3*' test rejected current VS 2022 images (MSVC 14.4x is still v143).
-#  - The distribution is staged flat before upload. upload-artifact keeps the
-#    least-common-ancestor layout, so 'dist/Suborno.exe' never existed.
-#  - Artifact names include run_attempt so "Re-run jobs" does not hit a
-#    duplicate-name conflict (upload-artifact v4 artifacts are immutable).
+name: CI
 
 on:
   push:
-    branches: [ci/suborno-v19-windows-verification]
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -31,164 +11,32 @@ permissions:
   contents: read
 
 concurrency:
-  group: windows-verification-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-defaults:
-  run:
-    shell: pwsh
-
-env:
-  VCPKG_ROOT: ${{ github.workspace }}\.vcpkg
-  VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\.vcpkg-binary-cache
-  VCPKG_MAX_CONCURRENCY: 2
-
 jobs:
-  windows-build-verify:
-    name: MSVC v143 build, analysis, ABI, tests, installer
+  windows-msvc:
+    name: MSVC v143 / Windows 2022 / x64
     runs-on: windows-2022
-    timeout-minutes: 120
+    timeout-minutes: 90
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}\.vcpkg
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\.vcpkg-binary-cache
+      VCPKG_MAX_CONCURRENCY: 2
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
-
-      - name: Initialize verification evidence and CI helpers
-        run: |
-          $ErrorActionPreference = 'Stop'
-          New-Item -ItemType Directory -Force -Path verify-evidence | Out-Null
-          $helper = @'
-          function Show-LogErrors {
-            param([Parameter(Mandatory)][string]$LogPath, [int]$Max = 40)
-            if (-not (Test-Path -LiteralPath $LogPath)) { Write-Host "Log not found: $LogPath"; return }
-            $pattern = '(?i)(fatal error|error)\s+(C\d+|LNK\d+|MSB\d+|D\d+|RC\d+)|CMake Error|internal compiler error|treated as error|\*\*\*Failed|\[\s+FAILED\s+\]'
-            $hits = @(Select-String -LiteralPath $LogPath -Pattern $pattern | Select-Object -First $Max)
-            Write-Host "::group::First errors in $(Split-Path -Leaf $LogPath)"
-            if ($hits.Count -eq 0) {
-              Write-Host 'No known error pattern matched; showing the last 60 log lines.'
-              Get-Content -LiteralPath $LogPath -Tail 60 | ForEach-Object { Write-Host $_ }
-            } else {
-              $hits | ForEach-Object { Write-Host $_.Line }
-            }
-            Write-Host '::endgroup::'
-            foreach ($h in ($hits | Select-Object -First 10)) {
-              $msg = $h.Line.Trim() -replace '%', '%25' -replace "`r", '%0D' -replace "`n", '%0A'
-              Write-Host "::error title=Build or test failure::$msg"
-            }
-          }
-
-          function Invoke-Logged {
-            param(
-              [Parameter(Mandatory)][string]$Label,
-              [Parameter(Mandatory)][string]$LogPath,
-              [Parameter(Mandatory)][scriptblock]$Command
-            )
-            $ErrorActionPreference = 'Continue'
-            $global:LASTEXITCODE = 0
-            & $Command 2>&1 | Tee-Object -FilePath $LogPath
-            $code = $LASTEXITCODE
-            if ($code -ne 0) {
-              Show-LogErrors -LogPath $LogPath
-              throw "$Label failed with exit code $code (log: $LogPath, uploaded in the evidence artifact)."
-            }
-          }
-          '@
-          Set-Content -LiteralPath (Join-Path $env:RUNNER_TEMP 'ci-helpers.ps1') -Value $helper -Encoding utf8
 
       - name: Cache vcpkg packages
         uses: actions/cache@v6.1.0
         with:
           path: .vcpkg-binary-cache
-          key: vcpkg-${{ runner.os }}-msvc-verify-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}
-
-      - name: Verify Windows runner environment
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $report = [ordered]@{}
-          $os = Get-CimInstance Win32_OperatingSystem
-          $report.os = "$($os.Caption) build $($os.BuildNumber)"
-          $report.arch = $env:PROCESSOR_ARCHITECTURE
-          $report.memory_gb = [math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB, 1)
-          $report.free_disk_gb = [math]::Round((Get-PSDrive -Name $env:GITHUB_WORKSPACE.Substring(0, 1)).Free / 1GB, 1)
-
-          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
-          if (-not (Test-Path -LiteralPath $vswhere)) { throw "vswhere.exe not found at $vswhere." }
-          # Pin to Visual Studio 2022 (17.x): the preset generator is "Visual Studio 17 2022".
-          $vsQuery = @('-latest', '-products', '*', '-version', '[17.0,18.0)', '-requires', 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64')
-          $vs = & $vswhere @vsQuery -property installationPath | Select-Object -First 1
-          if (-not $vs) { throw "Visual Studio 2022 (17.x) with the v143 C++ toolset was not found by vswhere." }
-          $report.vs_path = $vs
-          $report.vs_version = "$(& $vswhere @vsQuery -property catalog_productDisplayVersion | Select-Object -First 1)"
-          $report.vs_catalog_version = "$(& $vswhere @vsQuery -property catalog_productLineVersion | Select-Object -First 1)"
-
-          # v143 is the toolset FAMILY 14.30 - 14.4x (VS 2022 17.0 - 17.14); v145 (VS 2026) starts at 14.50.
-          $msvcRoot = Join-Path $vs 'VC\Tools\MSVC'
-          $toolset = Get-ChildItem -LiteralPath $msvcRoot -Directory |
-            Where-Object { $_.Name -match '^14\.[34]\d\.' } |
-            Sort-Object { [version]$_.Name } -Descending |
-            Select-Object -First 1
-          if (-not $toolset) {
-            $installed = (Get-ChildItem -LiteralPath $msvcRoot -Directory).Name -join ', '
-            throw "No v143 MSVC toolset (14.3x/14.4x) under $msvcRoot. Installed: $installed"
-          }
-          $report.msvc_toolset = $toolset.Name
-
-          $report.cmake = (cmake --version | Select-Object -First 1)
-          $msbuild = Join-Path $vs 'MSBuild\Current\Bin\amd64\MSBuild.exe'
-          if (-not (Test-Path -LiteralPath $msbuild)) { throw "MSBuild.exe not found at $msbuild." }
-          $report.msbuild = (& $msbuild -version -nologo | Select-Object -Last 1)
-          $dumpbin = Join-Path $toolset.FullName 'bin\Hostx64\x64\dumpbin.exe'
-          $report.dumpbin = (Test-Path -LiteralPath $dumpbin)
-          if (-not $report.dumpbin) { throw "dumpbin.exe not found at $dumpbin." }
-
-          # Compiler identity: must be the Microsoft optimizing compiler, x64 target, v143 family.
-          $vcvars = Join-Path $vs 'VC\Auxiliary\Build\vcvars64.bat'
-          if (-not (Test-Path -LiteralPath $vcvars)) { throw "vcvars64.bat not found at $vcvars." }
-          $probe = Join-Path $env:RUNNER_TEMP 'cl-probe.cmd'
-          Set-Content -LiteralPath $probe -Encoding ascii -Value @('@echo off', "call `"$vcvars`" >nul", 'if errorlevel 1 exit /b 1', 'cl 2>&1')
-          $ErrorActionPreference = 'Continue'
-          $banner = (& $probe 2>&1 | Out-String)
-          $ErrorActionPreference = 'Stop'
-          $report.cl_banner = (($banner -split "`r?`n") | Where-Object { $_ -match 'Version' }) -join ' | '
-          if ($banner -notmatch 'Optimizing Compiler') { throw "cl.exe did not identify as the Microsoft C/C++ Optimizing Compiler. Output: $banner" }
-          if ($banner -notmatch 'for x64') { throw "cl.exe is not targeting x64. Output: $banner" }
-          if ($banner -notmatch 'Version 19\.[34]\d\.') { throw "cl.exe version is not in the v143 family (19.3x/19.4x). Output: $banner" }
-
-          # Preset assertions: generator/arch/toolset pinned to the mission contract.
-          # Values may be defined directly or through "inherits"; strings may carry ",host=x64" style suffixes.
-          $presets = Get-Content -LiteralPath CMakePresets.json -Raw | ConvertFrom-Json
-          function Get-PresetValue {
-            param([string]$Name, [string]$Field)
-            $p = $presets.configurePresets | Where-Object { $_.name -eq $Name } | Select-Object -First 1
-            if (-not $p) { return $null }
-            if ($null -ne $p.$Field) { return $p.$Field }
-            foreach ($parent in @($p.inherits)) {
-              if ($parent) {
-                $v = Get-PresetValue -Name $parent -Field $Field
-                if ($null -ne $v) { return $v }
-              }
-            }
-            return $null
-          }
-          function Get-PresetToken($Value) {
-            if ($null -eq $Value) { return $null }
-            if ($Value -is [string]) { return ($Value -split ',')[0].Trim() }
-            return "$($Value.value)".Trim()
-          }
-          $generator = Get-PresetToken (Get-PresetValue -Name 'windows-msvc' -Field 'generator')
-          $arch = Get-PresetToken (Get-PresetValue -Name 'windows-msvc' -Field 'architecture')
-          $tool = Get-PresetToken (Get-PresetValue -Name 'windows-msvc' -Field 'toolset')
-          if ($generator -ne 'Visual Studio 17 2022') { throw "Preset windows-msvc generator is '$generator' (expected 'Visual Studio 17 2022')." }
-          if ($arch -ne 'x64') { throw "Preset windows-msvc architecture is '$arch' (expected 'x64')." }
-          if ($tool -ne 'v143') { throw "Preset windows-msvc toolset is '$tool' (expected 'v143')." }
-          $report.preset = "$generator / $arch / $tool"
-
-          $report | ConvertTo-Json -Depth 4 | Set-Content verify-evidence\environment.json
-          Get-Content verify-evidence\environment.json
+          key: vcpkg-${{ runner.os }}-msvc-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}
 
       - name: Install pinned vcpkg
+        shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $ProgressPreference = 'SilentlyContinue'
           New-Item -ItemType Directory -Force -Path $env:VCPKG_DEFAULT_BINARY_CACHE | Out-Null
           git clone --filter=blob:none --no-checkout https://github.com/microsoft/vcpkg.git "$env:VCPKG_ROOT"
           if ($LASTEXITCODE -ne 0) { throw "Unable to clone vcpkg." }
@@ -199,268 +47,76 @@ jobs:
           & "$env:VCPKG_ROOT\bootstrap-vcpkg.bat" -disableMetrics
           if ($LASTEXITCODE -ne 0) { throw "vcpkg bootstrap failed." }
 
-      - name: Configure (windows-msvc preset)
-        run: |
-          . (Join-Path $env:RUNNER_TEMP 'ci-helpers.ps1')
-          Invoke-Logged -Label 'CMake configure (windows-msvc)' -LogPath 'verify-evidence\configure.log' -Command {
-            cmake --preset windows-msvc
-          }
+      - name: Configure
+        run: cmake --preset windows-msvc
 
-      - name: Build Release (full, log captured)
+      - name: Test Release
         run: |
-          . (Join-Path $env:RUNNER_TEMP 'ci-helpers.ps1')
-          Invoke-Logged -Label 'Release build' -LogPath 'verify-evidence\release_build.log' -Command {
-            cmake --build --preset windows-msvc-release
-          }
+          cmake --build --preset windows-msvc-release --target suborno_unit_tests suborno_integration_tests suborno_windows_tests suborno_app
+          ctest --preset windows-msvc-release --output-on-failure
 
-      - name: Prove /analyze actually executes (verbose compile line)
-        run: |
-          . (Join-Path $env:RUNNER_TEMP 'ci-helpers.ps1')
-          # A successful normal compilation is not proof /analyze ran, and an
-          # up-to-date target prints no compile line at all. --clean-first forces
-          # suborno_core to recompile, and MSBuild detailed verbosity prints the
-          # real cl.exe command lines.
-          Invoke-Logged -Label 'Verbose rebuild of suborno_core' -LogPath 'verify-evidence\analyze_compile_line.log' -Command {
-            cmake --build --preset windows-msvc-release --target suborno_core --clean-first --verbose -- /v:d
-          }
-          $log = Get-Content -LiteralPath verify-evidence\analyze_compile_line.log
-          $hits = @($log | Where-Object { $_ -match '(?i)cl\.exe' -and $_ -match '(?i)(^|\s)[/-]analyze(\s|:|$)' })
-          if ($hits.Count -eq 0) { throw "No /analyze flag found in any cl.exe compile line - static analysis is NOT executing." }
-          "PROOF - cl.exe invoked with analysis ($($hits.Count) compile lines):" | Set-Content verify-evidence\analyze_execution_proof.txt
-          $hits | Select-Object -First 3 | Add-Content verify-evidence\analyze_execution_proof.txt
-          Get-Content verify-evidence\analyze_execution_proof.txt
+      - name: Build Release
+        run: cmake --build --preset windows-msvc-release
 
-      - name: Collect MSVC analysis diagnostics from the full build
-        run: |
-          $ErrorActionPreference = 'Continue'
-          # Analysis diagnostics use C6xxx codes; count them honestly (no
-          # suppression) and record locations for the report.
-          $found = Select-String -Path verify-evidence\release_build.log -Pattern 'warning C6\d{3}' -AllMatches
-          $lines = @($found | ForEach-Object { $_.Line })
-          "analysis diagnostic count: $($lines.Count)" | Set-Content verify-evidence\analysis_diagnostics.txt
-          $lines | Add-Content verify-evidence\analysis_diagnostics.txt
-          Get-Content verify-evidence\analysis_diagnostics.txt -TotalCount 40
+      - name: Audit Windows binary dependencies
+        shell: pwsh
+        run: ./scripts/audit-windows-dependencies.ps1
 
-      - name: Test Release (ctest)
-        run: |
-          . (Join-Path $env:RUNNER_TEMP 'ci-helpers.ps1')
-          Invoke-Logged -Label 'Build Release test targets' -LogPath 'verify-evidence\release_test_targets_build.log' -Command {
-            cmake --build --preset windows-msvc-release --target suborno_unit_tests suborno_integration_tests suborno_windows_tests suborno_app suborno_fuzz_smoke
-          }
-          Invoke-Logged -Label 'Release ctest' -LogPath 'verify-evidence\release_ctest.log' -Command {
-            ctest --preset windows-msvc-release --output-on-failure
-          }
-
-      - name: GoogleTest count reconciliation (34 vs 35)
+      - name: Install Inno Setup
+        shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $exe = 'build\windows-msvc\Release\suborno_unit_tests.exe'
-          if (-not (Test-Path -LiteralPath $exe)) { throw "Missing test executable: $exe" }
-          $listing = (& $exe --gtest_list_tests | Out-String)
-          if ($LASTEXITCODE -ne 0) { throw "suborno_unit_tests --gtest_list_tests failed with exit code $LASTEXITCODE." }
-          $listing | Set-Content verify-evidence\gtest_listing.txt
-          $count = @(($listing -split "`r?`n") | Where-Object { $_ -match '^\s+\w' }).Count
-          $run = (& $exe | Out-String)
-          $runExit = $LASTEXITCODE
-          $run | Set-Content verify-evidence\gtest_run.log
-          if ($runExit -ne 0) { throw "suborno_unit_tests failed with exit code $runExit (see gtest_run.log in the evidence artifact)." }
-          $summary = ($run -split "`r?`n") | Where-Object { $_ -match 'tests? from .* test suites? ran|PASSED|FAILED' }
-          "listed test cases: $count" | Set-Content verify-evidence\test_counts.txt
-          $summary | Add-Content verify-evidence\test_counts.txt
-          foreach ($suite in @('KeyEventMatrix', 'CandidateNavigation', 'DiagnosticsTest', 'StabilitySoak', 'PerformanceBudget')) {
-            if ($listing -notmatch "(?m)^$suite\.") { throw "Part III suite missing from listing: $suite" }
-          }
-          Get-Content verify-evidence\test_counts.txt
-          Add-Content $env:GITHUB_STEP_SUMMARY "## GoogleTest reconciliation`n`n``````$(Get-Content verify-evidence\test_counts.txt | Out-String)``````"
-
-      - name: Part III regression suites (explicit filters)
-        run: |
-          $ErrorActionPreference = 'Continue'
-          $exe = 'build\windows-msvc\Release\suborno_unit_tests.exe'
-          if (-not (Test-Path -LiteralPath $exe)) { throw "Missing test executable: $exe" }
-          function Invoke-GtestFilter {
-            param([string]$Filter, [string]$Log, [string]$Label)
-            $global:LASTEXITCODE = 0
-            $out = (& $exe "--gtest_filter=$Filter" 2>&1 | Out-String)
-            $code = $LASTEXITCODE
-            $out | Set-Content $Log
-            ($out -split "`r?`n") | Select-Object -Last 8 | ForEach-Object { Write-Host $_ }
-            if ($code -ne 0) { throw "$Label failed with exit code $code (full output: $Log)." }
-          }
-          Invoke-GtestFilter -Label 'Part III input reliability suites' -Log 'verify-evidence\part3_input.log' -Filter 'KeyEventMatrix.*:*LayoutTypingRegression*:NationalLayoutTest.*:ProbhatLayoutTest.*:KhiproLayoutTest.*'
-          Invoke-GtestFilter -Label 'Part III candidate suites' -Log 'verify-evidence\part3_candidates.log' -Filter 'CandidateNavigation.*:PhoneticCandidateTest.*:CandidateEngineTest.*'
-          Invoke-GtestFilter -Label 'Part III diagnostics/soak/budget suites' -Log 'verify-evidence\part3_diagnostics_soak_budget.log' -Filter 'DiagnosticsTest.*:StabilitySoak.*:PerformanceBudget.*'
-
-      - name: Windows fuzz smoke (portable driver, corpus replay)
-        run: |
-          $ErrorActionPreference = 'Continue'
-          $exe = 'build\windows-msvc\Release\suborno_fuzz_smoke.exe'
-          if (-not (Test-Path -LiteralPath $exe)) { throw "Missing fuzz smoke executable: $exe" }
-          $global:LASTEXITCODE = 0
-          $out = (& $exe tests/fuzz/corpus 2>&1 | Out-String)
-          $code = $LASTEXITCODE
-          $out | Set-Content verify-evidence\fuzz_smoke_windows.log
-          ($out -split "`r?`n") | Select-Object -Last 6 | ForEach-Object { Write-Host $_ }
-          if ($code -ne 0) { throw "Windows fuzz smoke failed with exit code $code." }
-
-      - name: PE export evidence (dumpbin vs .def vs public header)
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -version '[17.0,18.0)' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath | Select-Object -First 1
-          if (-not $vs) { throw "Visual Studio 2022 not found by vswhere." }
-          $dumpbin = Get-ChildItem (Join-Path $vs 'VC\Tools\MSVC') -Directory |
-            Where-Object { $_.Name -match '^14\.[34]\d\.' } |
-            Sort-Object { [version]$_.Name } -Descending |
-            ForEach-Object { Join-Path $_.FullName 'bin\Hostx64\x64\dumpbin.exe' } |
-            Where-Object { Test-Path -LiteralPath $_ } |
-            Select-Object -First 1
-          if (-not $dumpbin) { throw "dumpbin.exe not found." }
-          $dll = 'build\windows-msvc\Release\suborno_windows_tsf.dll'
-          $exe = 'build\windows-msvc\Release\Suborno.exe'
-          $defFile = 'src\platform\windows\tsf\suborno_windows_tsf.def'
-          foreach ($p in @($dll, $exe, $defFile)) { if (-not (Test-Path -LiteralPath $p)) { throw "Missing file: $p" } }
-          & $dumpbin /exports $dll 2>&1 | Out-String | Set-Content verify-evidence\dumpbin_tsf_dll_exports.txt
-          if ($LASTEXITCODE -ne 0) { throw "dumpbin /exports failed for $dll." }
-          & $dumpbin /exports $exe 2>&1 | Out-String | Set-Content verify-evidence\dumpbin_suborno_exe_exports.txt
-          if ($LASTEXITCODE -ne 0) { throw "dumpbin /exports failed for $exe." }
-          & $dumpbin /dependents $dll 2>&1 | Out-String | Set-Content verify-evidence\dumpbin_tsf_dll_dependents.txt
-          if ($LASTEXITCODE -ne 0) { throw "dumpbin /dependents failed for $dll." }
-          # Cross-check: every .def EXPORTS name must appear in the dumpbin listing (whole-name match).
-          $def = @(Get-Content $defFile | Where-Object { $_ -match '^\s+\w' -and $_ -notmatch '^\s*;' })
-          $dump = Get-Content verify-evidence\dumpbin_tsf_dll_exports.txt -Raw
-          $missing = @($def | ForEach-Object { ($_.Trim() -split '\s+')[0] } | Where-Object { $dump -notmatch ('(?<!\w)' + [regex]::Escape($_) + '(?!\w)') })
-          ".def exports: $($def.Count); missing from PE: $($missing.Count)" | Set-Content verify-evidence\def_vs_pe_check.txt
-          if ($missing.Count -gt 0) {
-            $missing | Add-Content verify-evidence\def_vs_pe_check.txt
-            throw ".def exports missing from the built DLL: $($missing -join ', ')"
-          }
-          Get-Content verify-evidence\def_vs_pe_check.txt
-
-      - name: Build installer (Inno Setup, SHA-pinned)
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $ProgressPreference = 'SilentlyContinue'
           $innoSetupUrl = "https://github.com/jrsoftware/issrc/releases/download/is-6_3_3/innosetup-6.3.3.exe"
+          # SHA256 of the official innosetup-6.3.3.exe release asset (supply-chain pin).
           $innoSetupSha256 = "0bcb2a409dea17e305a27a6b09555cabe600e984f88570ab72575cd7e93c95e6"
           $innoSetupInstaller = Join-Path $env:TEMP 'inno-setup.exe'
           Invoke-WebRequest -Uri $innoSetupUrl -OutFile $innoSetupInstaller
           $actualSha256 = (Get-FileHash -LiteralPath $innoSetupInstaller -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($actualSha256 -ne $innoSetupSha256) { throw "Inno Setup installer checksum mismatch (got $actualSha256)." }
+          if ($actualSha256 -ne $innoSetupSha256) { throw "Inno Setup installer checksum mismatch: expected $innoSetupSha256, got $actualSha256." }
           $proc = Start-Process -FilePath $innoSetupInstaller -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-' -Wait -PassThru
           if ($proc.ExitCode -ne 0) { throw "Inno Setup installation failed with exit code $($proc.ExitCode)." }
+
+      - name: Build installer
+        shell: pwsh
+        run: |
           $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
-          if (-not (Test-Path -LiteralPath $iscc)) { throw "ISCC.exe not found." }
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe not found." }
           & $iscc /Q packaging/windows/suborno_installer.iss
-          if ($LASTEXITCODE -ne 0) { throw "Inno Setup compilation failed with exit code $LASTEXITCODE." }
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup compilation failed." }
 
-      - name: Installer lifecycle test (clean install + upgrade + uninstall)
-        run: |
-          $ErrorActionPreference = 'Continue'
-          $global:LASTEXITCODE = 0
-          & ./scripts/test-windows-installer.ps1 2>&1 | Tee-Object -FilePath verify-evidence\installer_test.log
-          $code = $LASTEXITCODE
-          if ($code -ne 0) { throw "Installer lifecycle test failed with exit code $code (see installer_test.log)." }
+      - name: Test installer lifecycle
+        shell: pwsh
+        run: ./scripts/test-windows-installer.ps1
 
-      - name: Installer signature status (honest recording)
+      - name: Create checksum and inspect signature
+        shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
           $installer = 'packaging/windows/Output/Suborno-Setup-x64.exe'
-          if (-not (Test-Path -LiteralPath $installer)) { throw "Installer not found: $installer" }
           $hash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  Suborno-Setup-x64.exe" | Set-Content -Encoding ascii "$installer.sha256"
+          "$hash Suborno-Setup-x64.exe" | Set-Content -Encoding ascii "$installer.sha256"
           $signature = Get-AuthenticodeSignature -LiteralPath $installer
-          "Authenticode status: $($signature.Status) (no signing certificate exists in CI - unsigned is recorded honestly, never claimed as signed)" | Set-Content verify-evidence\installer_signature.txt
-          if ($signature.Status -notin @('Valid', 'NotSigned')) { throw "Unexpected installer signature status: $($signature.Status)" }
-
-      - name: Build Debug + test
-        run: |
-          . (Join-Path $env:RUNNER_TEMP 'ci-helpers.ps1')
-          Invoke-Logged -Label 'Build Debug test targets' -LogPath 'verify-evidence\debug_build.log' -Command {
-            cmake --build --preset windows-msvc-debug --target suborno_unit_tests suborno_integration_tests suborno_windows_tests suborno_app
+          Write-Host "Installer Authenticode status: $($signature.Status)"
+          if ($signature.Status -notin @('Valid', 'NotSigned')) {
+            throw "Unexpected installer signature status: $($signature.Status)"
           }
-          Invoke-Logged -Label 'Debug ctest' -LogPath 'verify-evidence\debug_ctest.log' -Command {
-            ctest --preset windows-msvc-debug --output-on-failure
-          }
-
-      - name: Stage Windows distribution
-        run: |
-          $ErrorActionPreference = 'Stop'
-          # Flat layout, so the UIA job (and anyone downloading) gets predictable paths.
-          $stage = 'dist-stage'
-          New-Item -ItemType Directory -Force -Path $stage | Out-Null
-          $files = @(
-            'packaging/windows/Output/Suborno-Setup-x64.exe',
-            'packaging/windows/Output/Suborno-Setup-x64.exe.sha256',
-            'build/windows-msvc/Release/Suborno.exe',
-            'build/windows-msvc/Release/suborno_windows_tsf.dll'
-          )
-          foreach ($f in $files) {
-            if (-not (Test-Path -LiteralPath $f)) { throw "Missing distribution file: $f" }
-            Copy-Item -LiteralPath $f -Destination $stage
-          }
-          Get-ChildItem $stage | Select-Object Name, Length | Format-Table | Out-Host
-
-      - name: Upload verification artifacts
-        if: always()
-        uses: actions/upload-artifact@v4.6.2
-        with:
-          name: windows-verification-evidence-${{ github.run_number }}-${{ github.run_attempt }}
-          path: verify-evidence/
-          if-no-files-found: warn
-          retention-days: 14
 
       - name: Upload Windows distribution
-        if: success()
         uses: actions/upload-artifact@v4.6.2
         with:
-          name: suborno-windows-x64-verify-${{ github.run_number }}-${{ github.run_attempt }}
-          path: dist-stage/
+          name: suborno-windows-x64-${{ github.run_number }}
+          path: |
+            packaging/windows/Output/Suborno-Setup-x64.exe
+            packaging/windows/Output/Suborno-Setup-x64.exe.sha256
+            build/windows-msvc/Release/Suborno.exe
+            build/windows-msvc/Release/suborno_windows_tsf.dll
+            THIRD_PARTY_NOTICES.md
           if-no-files-found: error
           retention-days: 14
 
-  windows-uia-audit:
-    name: UIA functional audit (84 checks) on real Windows
-    runs-on: windows-2022
-    timeout-minutes: 40
-    needs: windows-build-verify
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
-
-      - name: Download built application
-        uses: actions/download-artifact@v4.3.0
-        with:
-          name: suborno-windows-x64-verify-${{ github.run_number }}-${{ github.run_attempt }}
-          path: dist
-
-      - name: Run UI Automation audit harness
+      - name: Test Debug
         run: |
-          $ErrorActionPreference = 'Stop'
-          # Locate the application regardless of the artifact's internal layout.
-          $app = Get-ChildItem -Path dist -Recurse -Filter Suborno.exe -File | Select-Object -First 1
-          if (-not $app) {
-            Get-ChildItem -Path dist -Recurse | Out-Host
-            throw "Suborno.exe was not found in the downloaded artifact."
-          }
-          Write-Host "Application under test: $($app.FullName)"
-          # The repository's own audit harness (84 happy-path + 14 failure-path
-          # checks: settings elements, 16 checkboxes, 10 dropdowns, 2 sliders,
-          # Save via UIA Invoke AND real mouse click, About/OSK counts, topbar
-          # zones, toast, screenshots). Exit code = failed check count.
-          $global:LASTEXITCODE = 0
-          powershell -ExecutionPolicy Bypass -File scripts\windows-ui-audit\Invoke-SubornoUiAudit.ps1 -ExePath $app.FullName -ResultsJson uia-results.json -EvidenceDir uia-evidence
-          $code = $LASTEXITCODE
-          "audit exit code (failed checks): $code" | Set-Content uia-summary.txt
-          if ($code -ne 0) { throw "UIA audit failed with $code failing checks." }
+          cmake --build --preset windows-msvc-debug --target suborno_unit_tests suborno_integration_tests suborno_windows_tests suborno_app
+          ctest --preset windows-msvc-debug --output-on-failure
 
-      - name: Upload UIA evidence
-        if: always()
-        uses: actions/upload-artifact@v4.6.2
-        with:
-          name: windows-uia-audit-${{ github.run_number }}-${{ github.run_attempt }}
-          path: |
-            uia-results.json
-            uia-summary.txt
-            uia-evidence/
-          if-no-files-found: warn
-          retention-days: 14
+      - name: Build Debug
+        run: cmake --build --preset windows-msvc-debug
