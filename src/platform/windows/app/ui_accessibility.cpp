@@ -156,7 +156,11 @@ class ElementProvider final : public IRawElementProviderSimple,
                 return E_POINTER;
             });
         }
-        *options = ProviderOptions_ServerSideProvider;
+        // The provider is created on the application's COM STA thread.
+        // UIA must marshal provider callbacks back to that apartment before
+        // ElementSource reads or mutates the window-owned UI state.
+        *options = static_cast<ProviderOptions>(
+            ProviderOptions_ServerSideProvider | ProviderOptions_UseComThreading);
         return S_OK;
     }
 
@@ -888,19 +892,12 @@ LRESULT handle_get_object(HWND window,
                           bool& handled) {
     handled = false;
 
-    // UiaReturnRawElementProvider itself validates the object id and answers
-    // exactly two requests:
-    //   * UiaRootObjectId — the UI Automation provider LRESULT.
-    //   * OBJID_CLIENT    — the same provider exposed through the Microsoft
-    //     Active Accessibility bridge (screen readers and the UIA core's own
-    //     provider re-dispatch use this object id).
-    // Returning zero for OBJID_CLIENT silently severs both bridges: clients
-    // then see an empty element with no children. Everything else falls back
-    // to DefWindowProc below.
+    // UI Automation requests its provider with UiaRootObjectId. This
+    // window does not implement IAccessible, so OBJID_CLIENT must fall
+    // through to DefWindowProc rather than returning a UIA provider for an
+    // MSAA request.
     const DWORD object_id = static_cast<DWORD>(l_param);
-    if ((object_id != static_cast<DWORD>(UiaRootObjectId)
-         && object_id != static_cast<DWORD>(OBJID_CLIENT))
-        || !uia_available()) {
+    if (object_id != static_cast<DWORD>(UiaRootObjectId) || !uia_available()) {
         return 0;
     }
     try {
