@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.25)
 
+if(POLICY CMP0141)
+    cmake_policy(SET CMP0141 NEW)
+endif()
+
 project(subornoime VERSION 0.1.0 LANGUAGES CXX)
 
 option(BUILD_TESTING "Build SUBORNO test executables" OFF)
@@ -7,6 +11,34 @@ option(SUBORNO_BUILD_BENCHMARKS "Build optional Google Benchmark executables" OF
 option(SUBORNO_ENABLE_MSVC_ANALYSIS "Enable MSVC static analysis with /analyze" ON)
 option(SUBORNO_ENABLE_SANITIZERS "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 option(SUBORNO_BUILD_FUZZING "Build optional libFuzzer targets" OFF)
+option(SUBORNO_ENABLE_MSVC_CCACHE "Enable the MSVC compilation cache when ccache is available" ON)
+
+# Visual Studio's MSBuild generator uses CLToolExe/CLToolPath rather than
+# CMAKE_CXX_COMPILER_LAUNCHER. ccache documents this masquerading setup for
+# MSVC; /Z7 is required instead of /Zi, and forced includes/PCH are avoided.
+# The cache itself lives in RUNNER_TEMP (not the build tree) on CI.
+if(WIN32 AND MSVC AND SUBORNO_ENABLE_MSVC_CCACHE)
+    set(_suborno_ccache_executable "$ENV{SUBORNO_CCACHE_EXECUTABLE}")
+    if(_suborno_ccache_executable AND EXISTS "${_suborno_ccache_executable}")
+        set(_suborno_ccache_proxy_dir "${CMAKE_BINARY_DIR}/ccache-proxy")
+        file(MAKE_DIRECTORY "${_suborno_ccache_proxy_dir}")
+        file(COPY_FILE
+            "${_suborno_ccache_executable}"
+            "${_suborno_ccache_proxy_dir}/cl.exe"
+            ONLY_IF_DIFFERENT
+        )
+
+        set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT
+            "$<$<CONFIG:Debug,RelWithDebInfo>:Embedded>"
+        )
+        set(CMAKE_VS_GLOBALS
+            "CLToolExe=cl.exe"
+            "CLToolPath=${_suborno_ccache_proxy_dir}"
+            "UseMultiToolTask=true"
+        )
+        message(STATUS "MSVC compilation cache enabled through ccache: ${_suborno_ccache_executable}")
+    endif()
+endif()
 
 include("${PROJECT_SOURCE_DIR}/cmake/modules/SubornoBuildOptions.cmake")
 

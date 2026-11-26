@@ -89,7 +89,15 @@ target_compile_definitions(suborno_unit_tests PRIVATE
     SUBORNO_C_API_EXAMPLE="$<TARGET_FILE:suborno_c_api_example>"
 )
 suborno_configure_test_target(suborno_unit_tests)
-add_test(NAME suborno.unit COMMAND suborno_unit_tests)
+add_test(NAME suborno.unit COMMAND suborno_unit_tests
+    "$<IF:$<CONFIG:Debug>,--gtest_filter=*-PerformanceBudget.*,--gtest_filter=*>"
+)
+# Full functional and soak coverage runs in both configurations. Timing
+# budgets are meaningful only in optimized Release builds: MSVC Debug uses
+# /Od, so PerformanceBudget runs once in Release. Expensive soak snapshots
+# are checkpointed in the test itself. A hard timeout prevents multi-minute
+# regressions from consuming the complete Windows verification job.
+set_tests_properties(suborno.unit PROPERTIES TIMEOUT 60)
 
 add_executable(suborno_integration_tests integration/target_graph_smoke_test.cpp)
 target_link_libraries(suborno_integration_tests PRIVATE suborno_core GTest::gtest_main)

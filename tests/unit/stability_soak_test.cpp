@@ -2,7 +2,9 @@
 // must survive a fast typist and an app-hopper for a whole work day. These
 // soaks run deterministic, bounded workloads (seconds, not hours) over the
 // real session pipeline and assert the invariants that matter after churn:
-// bounded buffers, consistent state, no lost or duplicated input.
+// bounded buffers, consistent state, no lost or duplicated input. Expensive
+// derived snapshots are sampled at checkpoints; every input status remains
+// checked across the full workload.
 #include <cstddef>
 #include <gtest/gtest.h>
 #include <string>
@@ -17,8 +19,10 @@ using suborno::layouts::PhoneticInputSession;
 using suborno::layouts::SubornoPhoneticLayout;
 
 constexpr std::size_t input_limit_max = PhoneticInputSession::max_input_code_points;
+constexpr std::size_t unbounded_snapshot_interval = 1'024;
+constexpr int churn_snapshot_interval = 128;
 
-/// The invariant every soak step must hold: the raw buffer never exceeds the
+/// The invariant checked at each checkpoint: the raw buffer never exceeds the
 /// documented limit and the selected candidate, if any, stays in range.
 void expectSessionInvariants(const PhoneticInputSession& session) {
     const auto snapshot = session.snapshot();
@@ -43,7 +47,6 @@ TEST(StabilitySoak, RapidTypingBurstsPreserveCompositionAcrossCommits) {
             ASSERT_TRUE(status == InputStatus::updated || status == InputStatus::input_limit
                         || status == InputStatus::literal_passthrough)
                 << "burst " << burst << " keystroke " << keystroke;
-            expectSessionInvariants(session);
         }
         if (burst % 2 == 0) {
             const auto committed = session.commit();
@@ -55,6 +58,9 @@ TEST(StabilitySoak, RapidTypingBurstsPreserveCompositionAcrossCommits) {
         } else {
             session.reset();
         }
+        // snapshot() reparses and regenerates candidates. One derived-state
+        // check per burst preserves boundary coverage without repeating that
+        // expensive work after every one of the 50k input events.
         expectSessionInvariants(session);
     }
     EXPECT_EQ(committed_words, 100U);
@@ -72,10 +78,15 @@ TEST(StabilitySoak, UnboundedRawInputNeverGrowsPastTheLimit) {
         if (status == InputStatus::input_limit) {
             limit_reported = true;
         }
-        expectSessionInvariants(session);
+        if ((index % unbounded_snapshot_interval) == 0U) {
+            expectSessionInvariants(session);
+        }
     }
     EXPECT_TRUE(limit_reported);
-    EXPECT_EQ(session.snapshot().raw_input_utf8.size(), input_limit_max);
+    const auto bounded_snapshot = session.snapshot();
+    EXPECT_EQ(bounded_snapshot.raw_input_utf8.size(), input_limit_max);
+    EXPECT_LT(bounded_snapshot.selected_candidate_index,
+              bounded_snapshot.candidates.empty() ? 1U : bounded_snapshot.candidates.size());
 
     // After the clamp the composition still commits exactly the buffered
     // input — clamping is not dropping. Transliteration expands each ASCII
@@ -106,22 +117,25 @@ TEST(StabilitySoak, FocusChangeChurnRecoversEveryCycle) {
     for (int cycle = 0; cycle < 2'000; ++cycle) {
         ASSERT_EQ(session.append_utf8("ami"), InputStatus::updated);
         session.reset();
-        const auto snapshot = session.snapshot();
-        ASSERT_TRUE(snapshot.raw_input_utf8.empty());
-        ASSERT_TRUE(snapshot.candidates.empty());
         ASSERT_EQ(session.selected_candidate_index(), 0U);
 
         ASSERT_EQ(session.append_utf8("tumi"), InputStatus::updated);
         const auto committed = session.commit();
         ASSERT_EQ(committed.status, InputStatus::updated);
         ASSERT_EQ(committed.text_utf8, "তুমি");
-        ASSERT_TRUE(session.snapshot().raw_input_utf8.empty());
+        if ((cycle % churn_snapshot_interval) == 0) {
+            const auto snapshot = session.snapshot();
+            ASSERT_TRUE(snapshot.raw_input_utf8.empty());
+            ASSERT_TRUE(snapshot.candidates.empty());
+            ASSERT_EQ(snapshot.selected_candidate_index, 0U);
+        }
     }
 }
 
 TEST(StabilitySoak, MixedChurnThroughTheKeyMatrixStaysConsistent) {
     // Interleaves appends, backspaces, candidate taps, repeats and resets in
-    // a fixed pseudo-random pattern; every step re-checks the invariants.
+    // a fixed pseudo-random pattern; invariants are checked at bounded
+    // checkpoints while all 20k state transitions still execute.
     const SubornoPhoneticLayout layout;
     PhoneticInputSession session(layout);
     suborno::layout::KeyEvent key;
@@ -146,11 +160,14 @@ TEST(StabilitySoak, MixedChurnThroughTheKeyMatrixStaysConsistent) {
             session.reset();
             break;
         }
-        expectSessionInvariants(session);
+        if ((step % churn_snapshot_interval) == 0) {
+            expectSessionInvariants(session);
+        }
     }
     // The session is still fully usable after the churn.
     ASSERT_EQ(session.append_utf8("ami"), InputStatus::updated);
     const auto committed = session.commit();
     EXPECT_EQ(committed.status, InputStatus::updated);
     EXPECT_EQ(committed.text_utf8, "আমি");
+    expectSessionInvariants(session);
 }

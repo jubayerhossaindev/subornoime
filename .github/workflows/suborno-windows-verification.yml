@@ -76,6 +76,15 @@ jobs:
           path: .ci-cache/downloads
           key: windows-tool-innosetup-6.3.3-0bcb2a409dea17e305a27a6b09555cabe600e984f88570ab72575cd7e93c95e
 
+      - name: Restore MSVC compilation cache
+        id: msvc-ccache
+        uses: actions/cache/restore@v6.1.0
+        with:
+          path: ${{ runner.temp }}\ccache-store
+          key: ccache-windows-msvc-v143-4.14.3-${{ github.sha }}
+          restore-keys: |
+            ccache-windows-msvc-v143-4.14.3-
+
       - name: Report cache restore results
         shell: pwsh
         run: |
@@ -86,6 +95,7 @@ jobs:
             "vcpkg downloaded asset cache matched key: ${{ steps.vcpkg-download-cache.outputs.cache-matched-key }}"
             "pinned vcpkg tool cache exact hit: ${{ steps.vcpkg-tool-cache.outputs.cache-hit }}"
             "Inno Setup download cache exact hit: ${{ steps.windows-tool-cache.outputs.cache-hit }}"
+            "MSVC compilation cache exact hit: ${{ steps.msvc-ccache.outputs.cache-hit }}"
           ) | Tee-Object -FilePath verify-cache-status.txt
           Get-Content verify-cache-status.txt | Add-Content $env:GITHUB_STEP_SUMMARY
 
@@ -177,6 +187,41 @@ jobs:
           path: .vcpkg
           key: vcpkg-tool-${{ runner.os }}-0df93a05b9de080129e653ec4776d7e14a1b2e4f
 
+      - name: Install pinned ccache for MSVC
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = '4.14.3'
+          $archiveName = "ccache-$version-windows-x86_64.zip"
+          $archivePath = Join-Path $env:RUNNER_TEMP $archiveName
+          $downloadUrl = "https://github.com/ccache/ccache/releases/download/v$version/$archiveName"
+          $expectedSha256 = 'c845c3d65be81954c75659145a522a793a27586bf940c5dcfe18af33fa1a67dd'
+          if (-not (Test-Path -LiteralPath $archivePath -PathType Leaf)) {
+            Invoke-WebRequest -Uri $downloadUrl -OutFile $archivePath
+          }
+          $actualSha256 = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualSha256 -ne $expectedSha256) {
+            throw "ccache $version SHA-256 mismatch: expected $expectedSha256, got $actualSha256."
+          }
+          $extractDirectory = Join-Path $env:RUNNER_TEMP "ccache-$version"
+          if (Test-Path -LiteralPath $extractDirectory) {
+            Remove-Item -LiteralPath $extractDirectory -Recurse -Force
+          }
+          Expand-Archive -LiteralPath $archivePath -DestinationPath $extractDirectory -Force
+          $ccacheSource = Get-ChildItem -LiteralPath $extractDirectory -Filter 'ccache.exe' -File -Recurse |
+            Select-Object -First 1
+          if ($null -eq $ccacheSource) { throw "Pinned ccache.exe was not found in the official archive." }
+          $ccacheInstallDirectory = Join-Path $env:GITHUB_WORKSPACE '.ci-cache\ccache'
+          New-Item -ItemType Directory -Force -Path $ccacheInstallDirectory | Out-Null
+          $ccacheExecutable = Join-Path $ccacheInstallDirectory 'ccache.exe'
+          Copy-Item -LiteralPath $ccacheSource.FullName -Destination $ccacheExecutable -Force
+          & $ccacheExecutable --version
+          if ($LASTEXITCODE -ne 0) { throw "Pinned ccache failed its version check." }
+          Add-Content $env:GITHUB_ENV "SUBORNO_CCACHE_EXECUTABLE=$ccacheExecutable"
+          Add-Content $env:GITHUB_ENV "CCACHE_DIR=$env:RUNNER_TEMP\ccache-store"
+          Add-Content $env:GITHUB_ENV 'CCACHE_MAXSIZE=512M'
+          Add-Content $env:GITHUB_ENV 'CCACHE_COMPILERCHECK=content'
+
       - name: Configure (windows-msvc preset)
         run: cmake --preset windows-msvc
 
@@ -196,6 +241,12 @@ jobs:
         with:
           path: .vcpkg-downloads
           key: vcpkg-downloads-${{ runner.os }}-0df93a05b9de080129e653ec4776d7e14a1b2e4f-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}-${{ github.sha }}
+
+      - name: Reset MSVC compilation cache statistics
+        shell: pwsh
+        run: |
+          & $env:SUBORNO_CCACHE_EXECUTABLE --zero-stats
+          if ($LASTEXITCODE -ne 0) { throw "Unable to reset ccache statistics." }
 
       - name: Build Release (full, log captured)
         shell: pwsh
@@ -278,36 +329,44 @@ jobs:
           ctest --preset windows-msvc-release --output-on-failure 2>&1 | Tee-Object -FilePath verify-evidence\release_ctest.log
           if ($LASTEXITCODE -ne 0) { throw "Release ctest failed." }
 
-      - name: GoogleTest count reconciliation (34 vs 35)
+      - name: GoogleTest inventory reconciliation (no duplicate execution)
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $exe = 'build\windows-msvc\Release\suborno_unit_tests.exe'
           $listing = & $exe --gtest_list_tests | Out-String
+          if ($LASTEXITCODE -ne 0) { throw "GoogleTest inventory command failed." }
           $listing | Set-Content verify-evidence\gtest_listing.txt
-          $count = (& $exe --gtest_list_tests | Where-Object { $_ -match '^\s+\w' }).Count
-          $run = & $exe | Out-String
-          $run | Set-Content verify-evidence\gtest_run.log
-          $summary = ($run -split "`r?`n") | Where-Object { $_ -match 'tests? from .* test suites? ran|PASSED|FAILED' }
-          "listed test cases: $count" | Set-Content verify-evidence\test_counts.txt
-          $summary | Add-Content verify-evidence\test_counts.txt
-          foreach ($suite in @('KeyEventMatrix','CandidateNavigation','DiagnosticsTest','StabilitySoak','PerformanceBudget')) {
-            $inListing = $listing -match "(?m)^$suite\."
-            if (-not $inListing) { throw "Part III suite missing from listing: $suite" }
+          $count = ($listing -split '\r?\n' | Where-Object { $_ -match '^\s+\w' }).Count
+          $requiredSuites = @(
+            'KeyEventMatrix',
+            'NationalLayoutTest',
+            'ProbhatLayoutTest',
+            'KhiproLayoutTest',
+            'CandidateNavigation',
+            'PhoneticCandidateTest',
+            'CandidateEngineTest',
+            'DiagnosticsTest',
+            'StabilitySoak',
+            'PerformanceBudget'
+          )
+          foreach ($suite in $requiredSuites) {
+            if ($listing -notmatch "(?m)^$suite\.") {
+              throw "Required unit-test suite missing from GoogleTest inventory: $suite"
+            }
           }
+          $releaseCtest = Get-Content verify-evidence\release_ctest.log -Raw
+          if ($releaseCtest -notmatch '100% tests passed, 0 tests failed') {
+            throw "The preceding full Release CTest run has no success summary."
+          }
+          @(
+            "listed test cases: $count"
+            'execution: full Release CTest passed in the preceding step'
+            'Part III suites: all required suites are present in the full unit-test executable'
+            'duplicate GoogleTest suite executions: removed'
+          ) | Set-Content verify-evidence\test_counts.txt
           Get-Content verify-evidence\test_counts.txt
-          Add-Content $env:GITHUB_STEP_SUMMARY "## GoogleTest reconciliation`n`n``````$(Get-Content verify-evidence\test_counts.txt | Out-String)``````"
-
-      - name: Part III regression suites (explicit filters)
-        shell: pwsh
-        run: |
-          $exe = 'build\windows-msvc\Release\suborno_unit_tests.exe'
-          & $exe --gtest_filter=KeyEventMatrix.*:*LayoutTypingRegression*:NationalLayoutTest.*:ProbhatLayoutTest.*:KhiproLayoutTest.* 2>&1 | Select-Object -Last 4 | Tee-Object -FilePath verify-evidence\part3_input.log
-          if ($LASTEXITCODE -ne 0) { throw "Part III input reliability suites failed." }
-          & $exe --gtest_filter=CandidateNavigation.*:PhoneticCandidateTest.*:CandidateEngineTest.* 2>&1 | Select-Object -Last 4 | Tee-Object -FilePath verify-evidence\part3_candidates.log
-          if ($LASTEXITCODE -ne 0) { throw "Part III candidate suites failed." }
-          & $exe --gtest_filter=DiagnosticsTest.*:StabilitySoak.*:PerformanceBudget.* 2>&1 | Select-Object -Last 4 | Tee-Object -FilePath verify-evidence\part3_diagnostics_soak_budget.log
-          if ($LASTEXITCODE -ne 0) { throw "Part III diagnostics/soak/budget suites failed." }
+          Add-Content $env:GITHUB_STEP_SUMMARY ("## GoogleTest inventory`n`n" + (Get-Content verify-evidence\test_counts.txt | Out-String))
 
       - name: Windows fuzz smoke (portable driver, corpus replay)
         shell: pwsh
@@ -386,6 +445,24 @@ jobs:
           cmake --build --preset windows-msvc-debug --target suborno_unit_tests suborno_integration_tests suborno_windows_tests suborno_app suborno_fuzz_smoke
           ctest --preset windows-msvc-debug --output-on-failure 2>&1 | Tee-Object -FilePath verify-evidence\debug_ctest.log
           if ($LASTEXITCODE -ne 0) { throw "Debug ctest failed." }
+
+      - name: Report MSVC compilation cache statistics
+        if: always()
+        shell: pwsh
+        run: |
+          if (-not [string]::IsNullOrWhiteSpace($env:SUBORNO_CCACHE_EXECUTABLE) -and
+              (Test-Path -LiteralPath $env:SUBORNO_CCACHE_EXECUTABLE -PathType Leaf)) {
+            & $env:SUBORNO_CCACHE_EXECUTABLE --show-stats 2>&1 | Tee-Object -FilePath verify-evidence\msvc_ccache_stats.txt
+            if ($LASTEXITCODE -ne 0) { throw "ccache statistics command failed." }
+            Get-Content verify-evidence\msvc_ccache_stats.txt | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
+
+      - name: Save MSVC compilation cache
+        if: always()
+        uses: actions/cache/save@v6.1.0
+        with:
+          path: ${{ runner.temp }}\ccache-store
+          key: ccache-windows-msvc-v143-4.14.3-${{ github.sha }}
 
       - name: Upload verification artifacts
         if: always()

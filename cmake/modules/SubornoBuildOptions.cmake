@@ -29,7 +29,9 @@ function(suborno_apply_build_options target)
         # source relies on the macro forms.
         target_compile_definitions("${target}" PRIVATE UNICODE _UNICODE NOMINMAX)
         if(SUBORNO_ENABLE_MSVC_ANALYSIS)
-            target_compile_options("${target}" PRIVATE /analyze)
+            # Full Code Analysis runs once against the optimized Release
+            # configuration. Debug remains a separate runtime validation pass.
+            target_compile_options("${target}" PRIVATE "$<$<CONFIG:Release>:/analyze>")
             # Third-party header analysis policy (C28182 disposition, task
             # MSVC-WARNINGS-REPAIR-02). MSVC Code Analysis scans third-party
             # headers by default (the documented default of /analyze is to
@@ -70,9 +72,9 @@ function(suborno_apply_build_options target)
             if(DEFINED VCPKG_INSTALLED_DIR AND DEFINED VCPKG_TARGET_TRIPLET
                AND EXISTS "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include")
                 target_compile_options("${target}" PRIVATE
-                    /external:W4
-                    "/external:I${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include"
-                    /analyze:external-)
+                    "$<$<CONFIG:Release>:/external:W4>"
+                    "$<$<CONFIG:Release>:/external:I${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include>"
+                    "$<$<CONFIG:Release>:/analyze:external->")
             endif()
         endif()
         if(SUBORNO_ENABLE_SANITIZERS)
@@ -99,10 +101,11 @@ function(suborno_configure_target target_name)
     suborno_apply_build_options(${target_name})
 endfunction()
 
-# Code analysis stays ON for test targets, exactly like production code. The
-# single exception is C6326, forced-included (cl /FI) into MSVC test
-# translation units only: googletest 1.18's own assertion helper
-# AssertionResultExpectation::operator bool() compares
+# Code analysis stays ON for test targets in Release, exactly like production
+# code. The one narrow C6326 exception is passed as /wd6326 on Release test
+# targets instead of a forced include, so the MSVC ccache wrapper can cache
+# translation units without /FI. This suppresses only the known GoogleTest
+# 1.18 AssertionResultExpectation::operator bool() false positive. That helper compares
 # `converted == expected_result` (bool == bool), and the MSVC analyzer
 # attributes a constant-vs-constant C6326 to every EXPECT_*/ASSERT_*
 # expansion line — ~1000 false positives per build, a class Microsoft
@@ -113,8 +116,8 @@ function(suborno_configure_test_target target_name)
     suborno_configure_target(${target_name})
     if(MSVC AND SUBORNO_ENABLE_MSVC_ANALYSIS)
         target_compile_options("${target_name}" PRIVATE
-            /analyze:external-
-            "/FI${PROJECT_SOURCE_DIR}/cmake/msvc_test_c6326_suppress.h")
+            "$<$<CONFIG:Release>:/analyze:external->"
+            "$<$<CONFIG:Release>:/wd6326>")
     endif()
 endfunction()
 
