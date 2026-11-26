@@ -76,7 +76,7 @@ enum MenuId : UINT {
 
 enum class PageId : int {
     general = 0,
-    interface = 1,
+    interface_page = 1,
     topbar = 2,
     input = 3
 };
@@ -1179,20 +1179,20 @@ LRESULT CALLBACK about_window_proc(HWND window, UINT message, WPARAM w_param, LP
 
 ATOM register_about_class(HINSTANCE instance) {
     static const ATOM registered = [instance] {
-        WNDCLASSEXW window_class{};
-        window_class.cbSize = sizeof(window_class);
+        WNDCLASSEXW about_window_class{};
+        about_window_class.cbSize = sizeof(about_window_class);
         // Native elevation: the small DWM drop shadow under the frameless
 
         // popup (CS_DROPSHADOW is a documented class style, available on
 
         // every supported Windows version).
 
-        window_class.style = CS_DROPSHADOW;
-        window_class.lpfnWndProc = &about_window_proc;
-        window_class.hInstance = instance;
-        window_class.hCursor = ::LoadCursorW(nullptr, IDC_ARROW);
-        window_class.lpszClassName = about_class;
-        return ::RegisterClassExW(&window_class);
+        about_window_class.style = CS_DROPSHADOW;
+        about_window_class.lpfnWndProc = &about_window_proc;
+        about_window_class.hInstance = instance;
+        about_window_class.hCursor = ::LoadCursorW(nullptr, IDC_ARROW);
+        about_window_class.lpszClassName = about_class;
+        return ::RegisterClassExW(&about_window_class);
     }();
     return registered;
 }
@@ -1672,19 +1672,19 @@ class Application final : public ui_access::ElementSource {
 
         apply_ui_language(engine_->settings().ui.language);
 
-        WNDCLASSEXW window_class{};
-        window_class.cbSize = sizeof(window_class);
-        window_class.style = CS_DROPSHADOW;  // native elevation under the frameless window
+        WNDCLASSEXW window_class_definition{};
+        window_class_definition.cbSize = sizeof(window_class_definition);
+        window_class_definition.style = CS_DROPSHADOW;  // native elevation under the frameless window
 
-        window_class.hInstance = instance_;
-        window_class.lpfnWndProc = &Application::window_proc;
-        window_class.lpszClassName = window_class;
-        window_class.hIcon = ::LoadIconW(instance_, MAKEINTRESOURCEW(IDI_SUBORNO));
-        window_class.hIconSm = window_class.hIcon;
-        window_class.hCursor = ::LoadCursorW(nullptr, MAKEINTRESOURCEW(32512));
-        window_class.hbrBackground = nullptr;  // fully custom-painted dark window
+        window_class_definition.hInstance = instance_;
+        window_class_definition.lpfnWndProc = &Application::window_proc;
+        window_class_definition.lpszClassName = window_class;
+        window_class_definition.hIcon = ::LoadIconW(instance_, MAKEINTRESOURCEW(IDI_SUBORNO));
+        window_class_definition.hIconSm = window_class_definition.hIcon;
+        window_class_definition.hCursor = ::LoadCursorW(nullptr, MAKEINTRESOURCEW(32512));
+        window_class_definition.hbrBackground = nullptr;  // fully custom-painted dark window
 
-        if (window_class.hIcon == nullptr) {
+        if (window_class_definition.hIcon == nullptr) {
             report_error(nullptr,
                          ui::text("error.icon_load_failed",
                                   L"Suborno's application icon could not be loaded."),
@@ -1692,7 +1692,7 @@ class Application final : public ui_access::ElementSource {
                          !smoke_test_);
             return smoke_test_ ? smoke_test_exit_code(E_FAIL) : 1;
         }
-        if (::RegisterClassExW(&window_class) == 0) {
+        if (::RegisterClassExW(&window_class_definition) == 0) {
             const HRESULT error = HRESULT_FROM_WIN32(::GetLastError());
             report_error(nullptr,
                          ui::text("error.window_class_register_failed",
@@ -1710,20 +1710,22 @@ class Application final : public ui_access::ElementSource {
 
         // resolved at the top of run().
 
-        const int window_width = scaled(window_width);
-        const int window_height = scaled(window_height);
+        const int settings_window_width = scaled(window_width);
+        const int settings_window_height = scaled(window_height);
         const int window_x =
-            work_area.left + std::max(0L, ((work_area.right - work_area.left) - window_width) / 2);
+            work_area.left
+            + std::max(0L, ((work_area.right - work_area.left) - settings_window_width) / 2);
         const int window_y =
-            work_area.top + std::max(0L, ((work_area.bottom - work_area.top) - window_height) / 2);
+            work_area.top
+            + std::max(0L, ((work_area.bottom - work_area.top) - settings_window_height) / 2);
         window_ = ::CreateWindowExW(0,
                                     window_class,
                                     ui::text("settings.window.title", L"Suborno Settings"),
                                     WS_POPUP,
                                     window_x,
                                     window_y,
-                                    window_width,
-                                    window_height,
+                                    settings_window_width,
+                                    settings_window_height,
                                     nullptr,
                                     nullptr,
                                     instance_,
@@ -1738,7 +1740,7 @@ class Application final : public ui_access::ElementSource {
             ::UnregisterClassW(window_class, instance_);
             return smoke_test_ ? smoke_test_exit_code(error) : 1;
         }
-        ui::apply_window_treatment(window_, window_width, window_height, scaled(8));
+        ui::apply_window_treatment(window_, settings_window_width, settings_window_height, scaled(8));
         staged_ = engine_->settings();
         build_pages();
         if (smoke_test_) {
@@ -2295,7 +2297,7 @@ class Application final : public ui_access::ElementSource {
             general.push_back(std::move(dropdown));
         }
 
-        auto& interface_page = pages_[static_cast<int>(PageId::interface)];
+        auto& interface_page = pages_[static_cast<int>(PageId::interface_page)];
         interface_page.push_back(make_section(
             88,
             ui::text("settings.section.candidate_window", L"Candidate Window"),
@@ -4069,14 +4071,14 @@ class Application final : public ui_access::ElementSource {
         // same builder backs the topbar right-click context menu.
 
         HMENU menu = ::CreatePopupMenu();
-        HMENU layouts = ::CreatePopupMenu();
+        HMENU layouts_menu = ::CreatePopupMenu();
         HMENU fonts = ::CreatePopupMenu();
-        if (menu == nullptr || layouts == nullptr || fonts == nullptr) {
+        if (menu == nullptr || layouts_menu == nullptr || fonts == nullptr) {
             if (menu != nullptr) {
                 ::DestroyMenu(menu);
             }
-            if (layouts != nullptr) {
-                ::DestroyMenu(layouts);
+            if (layouts_menu != nullptr) {
+                ::DestroyMenu(layouts_menu);
             }
             if (fonts != nullptr) {
                 ::DestroyMenu(fonts);
@@ -4096,14 +4098,14 @@ class Application final : public ui_access::ElementSource {
                         topbar_visible_ ? MF_BYCOMMAND | MF_CHECKED : MF_BYCOMMAND | MF_UNCHECKED);
         for (std::size_t index = 0; index < layouts.size(); ++index) {
             const bool selected = engine_->settings().active_layout_id == layouts[index].id;
-            ::AppendMenuW(layouts,
+            ::AppendMenuW(layouts_menu,
                           MF_STRING | (selected ? MF_CHECKED : MF_UNCHECKED),
                           menu_layout_first + static_cast<UINT>(index),
                           layouts[index].name);
         }
         ::AppendMenuW(menu,
                       MF_POPUP,
-                      reinterpret_cast<UINT_PTR>(layouts),
+                      reinterpret_cast<UINT_PTR>(layouts_menu),
                       ui::text("topbar.menu.layout", L"Keyboard Layout"));
 
         // Font submenu: same options as Settings → Interface, applied live.

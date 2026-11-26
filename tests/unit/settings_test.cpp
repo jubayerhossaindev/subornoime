@@ -186,7 +186,7 @@ TEST(SettingsTest, UiLanguageKeyRoundTripsAndValidates) {
         suborno::settings::EngineSettings legacy;
         legacy.ui.language = "bn";
         ASSERT_EQ(store.save(legacy), suborno::settings::SettingsStatus::ok);
-        std::ifstream stream(path);
+        std::ifstream stream(path, std::ios::binary);
         std::string line;
         std::string rewritten;
         while (std::getline(stream, line)) {
@@ -195,7 +195,7 @@ TEST(SettingsTest, UiLanguageKeyRoundTripsAndValidates) {
             }
         }
         stream.close();
-        std::ofstream out(path, std::ios::trunc);
+        std::ofstream out(path, std::ios::binary | std::ios::trunc);
         out << rewritten;
     }
     {
@@ -223,7 +223,7 @@ TEST(SettingsTest, MigratesLegacyVersionOneSettingsToCurrentDefaults) {
     const std::filesystem::path path =
         std::filesystem::temp_directory_path() / "suborno_settings_v1_migration_test.conf";
     {
-        std::ofstream output(path, std::ios::trunc);
+        std::ofstream output(path, std::ios::binary | std::ios::trunc);
         output << "version=1\n"
                << "active_layout=probhat\n"
                << "candidate_limit=12\n"
@@ -276,7 +276,7 @@ TEST(SettingsTest, RejectsInvalidDesktopRangesShortcutsAndDuplicateKeys) {
               suborno::settings::SettingsStatus::invalid_format);
 
     {
-        std::ofstream output(path, std::ios::trunc);
+        std::ofstream output(path, std::ios::binary | std::ios::trunc);
         output << "version=2\n"
                << "active_layout=suborno-phonetic\n"
                << "active_layout=probhat\n"
@@ -291,7 +291,7 @@ TEST(SettingsTest, RejectsInvalidDesktopRangesShortcutsAndDuplicateKeys) {
 TEST(SettingsTest, RejectsMalformedOrUnsupportedFiles) {
     const std::filesystem::path malformed =
         std::filesystem::temp_directory_path() / "suborno_settings_malformed_test.conf";
-    std::ofstream malformed_output(malformed, std::ios::trunc);
+    std::ofstream malformed_output(malformed, std::ios::binary | std::ios::trunc);
     malformed_output << "not-a-settings-line\n";
     malformed_output.close();
 
@@ -300,7 +300,7 @@ TEST(SettingsTest, RejectsMalformedOrUnsupportedFiles) {
 
     const std::filesystem::path unsupported =
         std::filesystem::temp_directory_path() / "suborno_settings_unsupported_test.conf";
-    std::ofstream unsupported_output(unsupported, std::ios::trunc);
+    std::ofstream unsupported_output(unsupported, std::ios::binary | std::ios::trunc);
     unsupported_output << "version=99\n"
                        << "active_layout=suborno-phonetic\n"
                        << "candidate_limit=16\n"
@@ -318,7 +318,7 @@ TEST(SettingsTest, RejectsOverflowingVersionAndInvalidLayoutIds) {
     const std::filesystem::path version_path =
         std::filesystem::temp_directory_path() / "suborno_settings_overflow_version_test.conf";
     {
-        std::ofstream output(version_path, std::ios::trunc);
+        std::ofstream output(version_path, std::ios::binary | std::ios::trunc);
         output << "version=4294967297\n"
                << "active_layout=suborno-phonetic\n"
                << "candidate_limit=16\n"

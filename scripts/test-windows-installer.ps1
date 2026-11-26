@@ -7,9 +7,12 @@ if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) {
 }
 
 $setupVersion = (Get-Item -LiteralPath $installer).VersionInfo
-if ($setupVersion.ProductName -ne 'Suborno') {
-    throw "Unexpected installer ProductName: $($setupVersion.ProductName)"
+$rawProductName = [string]$setupVersion.ProductName
+$productName = $rawProductName.Trim()
+if ($productName -cne 'Suborno') {
+    throw "Unexpected installer ProductName: '$rawProductName' (trimmed: '$productName'; raw length: $($rawProductName.Length))."
 }
+Write-Host "Verified installer ProductName: '$productName' (raw length: $($rawProductName.Length))."
 $signature = Get-AuthenticodeSignature -LiteralPath $installer
 Write-Host "Installer signature status: $($signature.Status)"
 if ($signature.Status -notin @('Valid', 'NotSigned')) {
@@ -51,20 +54,81 @@ function Invoke-SubornoSetup {
 function Assert-CleanInstallDirectory {
     param([string]$Path)
 
-    $expectedFiles = @('Suborno.exe', 'THIRD_PARTY_NOTICES.md', 'unins000.dat', 'unins000.exe')
+    $expectedPayloadFiles = @(
+        'LICENSE',
+        'README.md',
+        'Suborno.exe',
+        'THIRD_PARTY_NOTICES.md'
+    )
     $actualFiles = @(Get-ChildItem -LiteralPath $Path -Force -File |
         Sort-Object Name | Select-Object -ExpandProperty Name)
-    if (($actualFiles -join '|') -ne (($expectedFiles | Sort-Object) -join '|')) {
-        throw "Unexpected Program Files contents: $($actualFiles -join ', ')"
+    $actualPayloadFiles = @($actualFiles | Where-Object {
+        $_ -notmatch '^unins\d{3}\.(dat|exe)$'
+    })
+    if (($actualPayloadFiles -join '|') -ne (($expectedPayloadFiles | Sort-Object) -join '|')) {
+        throw "Unexpected Program Files payload files: $($actualPayloadFiles -join ', ')"
+    }
+
+    $uninstallerExecutables = @($actualFiles | Where-Object { $_ -match '^unins\d{3}\.exe$' })
+    $uninstallerDataFiles = @($actualFiles | Where-Object { $_ -match '^unins\d{3}\.dat$' })
+    if ($uninstallerExecutables.Count -ne 1 -or $uninstallerDataFiles.Count -ne 1) {
+        throw "Expected exactly one matching Inno Setup uninstaller executable/data pair; found $($uninstallerExecutables.Count) executables and $($uninstallerDataFiles.Count) data files."
+    }
+    $uninstallerExeBase = [IO.Path]::GetFileNameWithoutExtension($uninstallerExecutables[0])
+    $uninstallerDataBase = [IO.Path]::GetFileNameWithoutExtension($uninstallerDataFiles[0])
+    if ($uninstallerExeBase -cne $uninstallerDataBase) {
+        throw "Inno Setup uninstaller files do not match: $($uninstallerExecutables[0]) and $($uninstallerDataFiles[0])."
     }
     $noticesPath = Join-Path $Path 'THIRD_PARTY_NOTICES.md'
     if (-not (Test-Path -LiteralPath $noticesPath -PathType Leaf) -or
         (Get-Item -LiteralPath $noticesPath).Length -eq 0) {
         throw 'Third-party license notices are missing from the installed application.'
     }
-    if (@(Get-ChildItem -LiteralPath $Path -Force -Directory).Count -ne 0) {
-        throw 'Subdirectories were installed into the Suborno application directory.'
+    # The installer intentionally ships the UI locale files under data/i18n.
+    # Validate that exact directory tree instead of incorrectly requiring a flat install.
+    $expectedDirectories = @('data')
+    $actualDirectories = @(Get-ChildItem -LiteralPath $Path -Force -Directory |
+        Sort-Object Name | Select-Object -ExpandProperty Name)
+    if (($actualDirectories -join '|') -ne ($expectedDirectories -join '|')) {
+        throw "Unexpected Program Files directories: $($actualDirectories -join ', ')"
     }
+
+    $i18nDirectory = Join-Path $Path 'data\i18n'
+    $expectedLocales = @('bn', 'en')
+    $actualLocales = @(Get-ChildItem -LiteralPath $i18nDirectory -Force -Directory |
+        Sort-Object Name | Select-Object -ExpandProperty Name)
+    if (($actualLocales -join '|') -ne ($expectedLocales -join '|')) {
+        throw "Unexpected installed UI locale directories: $($actualLocales -join ', ')"
+    }
+
+    foreach ($locale in $expectedLocales) {
+        $localeDirectory = Join-Path $i18nDirectory $locale
+        $localeFiles = @(Get-ChildItem -LiteralPath $localeDirectory -Force -File |
+            Sort-Object Name | Select-Object -ExpandProperty Name)
+        if (($localeFiles -join '|') -ne 'ui.json') {
+            throw "Unexpected files in the '$locale' UI locale directory: $($localeFiles -join ', ')"
+        }
+        if (@(Get-ChildItem -LiteralPath $localeDirectory -Force -Directory).Count -ne 0) {
+            throw "Unexpected nested directory in the '$locale' UI locale directory."
+        }
+    }
+}
+
+function Get-SubornoUninstallerPath {
+    param([string]$Path)
+
+    $uninstallers = @(Get-ChildItem -LiteralPath $Path -Force -File |
+        Where-Object { $_.Name -match '^unins\d{3}\.exe$' })
+    if ($uninstallers.Count -ne 1) {
+        throw "Expected exactly one Suborno uninstaller in '$Path'; found $($uninstallers.Count)."
+    }
+
+    $uninstallerData = [IO.Path]::ChangeExtension($uninstallers[0].FullName, '.dat')
+    if (-not (Test-Path -LiteralPath $uninstallerData -PathType Leaf)) {
+        throw "Matching Inno Setup uninstaller data file is missing: $uninstallerData"
+    }
+
+    return $uninstallers[0].FullName
 }
 
 function Assert-ServiceDeployment {
@@ -85,7 +149,7 @@ function Assert-ServiceDeployment {
 
 function Assert-SharedResourceDirectories {
     foreach ($resourceDirectory in @(
-        'assets\fonts', 'assets\themes', 'dictionaries', 'layouts'
+        'assets\fonts', 'assets\themes', 'assets\layout-icons\borno', 'dictionaries', 'layouts'
     )) {
         if (-not (Test-Path -LiteralPath (Join-Path $programDataDirectory $resourceDirectory) -PathType Container)) {
             throw "Machine-wide resource directory is missing: $resourceDirectory"
@@ -176,18 +240,35 @@ Assert-ServiceDeployment -Path $service -Architecture x64
 $startupKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 New-Item -Path $startupKey -Force | Out-Null
 Set-ItemProperty -Path $startupKey -Name 'Suborno' -Value "`"$application`" --startup"
-$uninstaller = Join-Path $installDirectory 'unins000.exe'
-if (-not (Test-Path -LiteralPath $uninstaller -PathType Leaf)) {
-    throw "Uninstaller not found: $uninstaller"
-}
+$uninstaller = Get-SubornoUninstallerPath -Path $installDirectory
+$uninstallLog = Join-Path $PWD 'verify-evidence\uninstall-x64-first.log'
 $uninstall = Start-Process -FilePath $uninstaller `
-    -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') -Wait -PassThru
+    -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/LOG=$uninstallLog") -Wait -PassThru
 if ($uninstall.ExitCode -ne 0) {
-    throw "Suborno uninstaller exited with code $($uninstall.ExitCode)."
+    throw "Suborno uninstaller exited with code $($uninstall.ExitCode). See $uninstallLog."
 }
 
+# This test creates the legacy Program Files\Suborno directory itself before
+# installing the new package. Inno Setup intentionally leaves directories
+# that existed before installation. Only remove that fixture-owned root after
+# proving the uninstaller removed every installed file and subdirectory.
+if (Test-Path -LiteralPath $installDirectory -PathType Container) {
+    $remainingEntries = @(Get-ChildItem -LiteralPath $installDirectory -Force -Recurse)
+    if ($remainingEntries.Count -gt 0) {
+        $remainingDescription = $remainingEntries | ForEach-Object {
+            if ($_.PSIsContainer) {
+                "[DIR] $($_.FullName)"
+            } else {
+                "[FILE] $($_.FullName)"
+            }
+        }
+        throw "Installer left entries under the pre-existing Program Files directory: $($remainingDescription -join '; '). See $uninstallLog."
+    }
+
+    Remove-Item -LiteralPath $installDirectory -Force
+}
 if (Test-Path -LiteralPath $installDirectory) {
-    throw 'Suborno installation directory remains after uninstall.'
+    throw 'The pre-existing installer test directory could not be removed after its contents were verified empty.'
 }
 if (Test-Path -LiteralPath $programDataDirectory) {
     throw 'Suborno service files remain in ProgramData after uninstall.'
@@ -246,12 +327,10 @@ if ($smokeX64.ExitCode -ne 0) {
 }
 
 # Uninstall x86: its application directory goes, shared ProgramData resources and user data stay.
-$uninstallerX86 = Join-Path $installDirectoryX86 'unins000.exe'
-if (-not (Test-Path -LiteralPath $uninstallerX86 -PathType Leaf)) {
-    throw "x86 uninstaller not found: $uninstallerX86"
-}
+$uninstallerX86 = Get-SubornoUninstallerPath -Path $installDirectoryX86
+$uninstallX86Log = Join-Path $PWD 'verify-evidence\uninstall-x86.log'
 $uninstallX86 = Start-Process -FilePath $uninstallerX86 `
-    -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') -Wait -PassThru
+    -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/LOG=$uninstallX86Log") -Wait -PassThru
 if ($uninstallX86.ExitCode -ne 0) {
     throw "x86 uninstaller exited with code $($uninstallX86.ExitCode)."
 }
@@ -268,10 +347,11 @@ Assert-SharedResourceDirectories
 Assert-UserDataPreserved
 
 # Uninstall x64 last: shared ProgramData resources are removed only when no architecture remains.
+$uninstallFinalLog = Join-Path $PWD 'verify-evidence\uninstall-x64-final.log'
 $uninstall = Start-Process -FilePath $uninstaller `
-    -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') -Wait -PassThru
+    -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/LOG=$uninstallFinalLog") -Wait -PassThru
 if ($uninstall.ExitCode -ne 0) {
-    throw "Suborno uninstaller exited with code $($uninstall.ExitCode)."
+    throw "Suborno uninstaller exited with code $($uninstall.ExitCode). See $uninstallFinalLog."
 }
 if (Test-Path -LiteralPath $installDirectory) {
     throw 'Suborno installation directory remains after uninstall.'

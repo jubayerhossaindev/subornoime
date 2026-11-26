@@ -1,0 +1,118 @@
+name: Windows UI Automation Audit
+
+# Runs UIA independently after Windows Verification publishes the native binary.
+# UIA failures are reported by this workflow and do not fail the build workflow.
+
+on:
+  workflow_run:
+    workflows:
+      - Windows Verification
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: "Completed successful Windows Verification run ID to audit"
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: windows-uia-audit-${{ github.event.workflow_run.id || github.event.inputs.source_run_id || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  uia-audit:
+    name: UIA functional audit (84 checks) on real Windows
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: windows-2022
+    timeout-minutes: 40
+    steps:
+      - name: Resolve successful Windows Verification run
+        id: source
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id || github.event.inputs.source_run_id }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:SOURCE_RUN_ID -notmatch '^\d+$') { throw "A numeric Windows Verification run ID is required." }
+          $headers = @{
+            Authorization = "Bearer $env:GH_TOKEN"
+            Accept = 'application/vnd.github+json'
+            'X-GitHub-Api-Version' = '2022-11-28'
+          }
+          $uri = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/actions/runs/$($env:SOURCE_RUN_ID)"
+          $sourceRun = Invoke-RestMethod -Method Get -Uri $uri -Headers $headers
+          if ($sourceRun.name -ne 'Windows Verification') { throw "Run $($sourceRun.id) is '$($sourceRun.name)', not 'Windows Verification'." }
+          if ($sourceRun.status -ne 'completed' -or $sourceRun.conclusion -ne 'success') {
+            throw "Source Windows Verification run must be completed and successful; status=$($sourceRun.status), conclusion=$($sourceRun.conclusion)."
+          }
+          if ($sourceRun.repository.full_name -ne $env:GITHUB_REPOSITORY) { throw "Source run belongs to an unexpected repository." }
+          @(
+            "run_id=$($sourceRun.id)"
+            "run_number=$($sourceRun.run_number)"
+            "head_sha=$($sourceRun.head_sha)"
+            "head_branch=$($sourceRun.head_branch)"
+          ) | Add-Content $env:GITHUB_OUTPUT
+          Write-Host "Validated source run #$($sourceRun.run_number), commit $($sourceRun.head_sha), branch $($sourceRun.head_branch)."
+          "## Source Windows Verification`n`n- Run: [#$($sourceRun.run_number)]($($sourceRun.html_url))`n- Commit: ``$($sourceRun.head_sha)```n- Branch: ``$($sourceRun.head_branch)```n" | Add-Content $env:GITHUB_STEP_SUMMARY
+
+      - name: Checkout exact source commit
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ steps.source.outputs.head_sha }}
+          persist-credentials: false
+
+      - name: Download the verified Windows application
+        uses: actions/download-artifact@v8.0.2
+        with:
+          name: suborno-windows-x64-verify-${{ steps.source.outputs.run_number }}
+          path: dist
+          repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.source.outputs.run_id }}
+
+      - name: Verify downloaded application
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exePath = Join-Path $env:GITHUB_WORKSPACE 'dist\build\windows-msvc\Release\Suborno.exe'
+          if (-not (Test-Path -LiteralPath $exePath -PathType Leaf)) {
+            Write-Host 'Downloaded distribution contents:'
+            Get-ChildItem -LiteralPath dist -Recurse -File | Select-Object -ExpandProperty FullName
+            throw "Verified Suborno.exe not found at expected artifact path: $exePath"
+          }
+          $hash = (Get-FileHash -LiteralPath $exePath -Algorithm SHA256).Hash.ToLowerInvariant()
+          "Verified executable: $exePath`nSHA-256: $hash" | Tee-Object -FilePath uia-binary-evidence.txt
+          Add-Content $env:GITHUB_STEP_SUMMARY ("## UIA target binary`n`n- SHA-256: ``$hash```n")
+
+      - name: Run UI Automation audit harness
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # The repository's complete audit harness remains unchanged:
+          # 84 happy-path + 14 failure-path checks, real UIA patterns and
+          # mouse input, settings persistence, About/OSK/topbar, and evidence.
+          $exe = (Resolve-Path 'dist\build\windows-msvc\Release\Suborno.exe').Path
+          "UIA audit for source run #${{ steps.source.outputs.run_number }} (commit ${{ steps.source.outputs.head_sha }})" | Set-Content uia-summary.txt
+          powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -File scripts\windows-ui-audit\Invoke-SubornoUiAudit.ps1 -ExePath $exe -ResultsJson uia-results.json -EvidenceDir uia-evidence
+          $code = $LASTEXITCODE
+          "audit exit code (failed checks): $code" | Add-Content uia-summary.txt
+          if ($code -ne 0) { throw "UIA audit failed with $code failing checks." }
+
+      - name: Upload UIA evidence
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: windows-uia-audit-${{ github.run_number }}
+          path: |
+            uia-results.json
+            uia-summary.txt
+            uia-binary-evidence.txt
+            uia-evidence/
+          if-no-files-found: warn
+          retention-days: 14

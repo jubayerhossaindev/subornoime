@@ -463,11 +463,20 @@ class ElementProvider final : public IRawElementProviderSimple,
         if (!available()) {
             return UIA_E_ELEMENTNOTAVAILABLE;
         }
-        // Deterministic per (window, element): the HWND value is stable for
-        // the window's lifetime and 0 is reserved for the root.
-        LONG first = static_cast<LONG>(reinterpret_cast<INT_PTR>(window_) & 0x7FFFFFFF);
-        LONG second = is_root_ ? 0 : static_cast<LONG>(index_ + 1);
-        SAFEARRAY* array = ::SafeArrayCreateVector(VT_I4, 0, 2);
+        // The UI Automation fragment contract requires the runtime id to
+        // begin with UiaAppendRuntimeId: the core then scopes the remaining
+        // integers to this provider instance. Without that first element the
+        // core cannot build a stable identity for fragment children, which
+        // breaks property-condition search (FindFirst/FindAll on AutomationId)
+        // even though raw tree navigation still works.
+        //
+        // Remaining elements are deterministic per (window, element): the
+        // HWND value is stable for the window's lifetime and 0 is reserved
+        // for the root.
+        LONG first = UiaAppendRuntimeId;
+        LONG second = static_cast<LONG>(reinterpret_cast<INT_PTR>(window_) & 0x7FFFFFFF);
+        LONG third = is_root_ ? 0 : static_cast<LONG>(index_ + 1);
+        SAFEARRAY* array = ::SafeArrayCreateVector(VT_I4, 0, 3);
         if (array == nullptr) {
             return E_OUTOFMEMORY;
         }
@@ -476,6 +485,10 @@ class ElementProvider final : public IRawElementProviderSimple,
         if (SUCCEEDED(put)) {
             index = 1;
             put = ::SafeArrayPutElement(array, &index, &second);
+        }
+        if (SUCCEEDED(put)) {
+            index = 2;
+            put = ::SafeArrayPutElement(array, &index, &third);
         }
         if (FAILED(put)) {
             ::SafeArrayDestroy(array);
@@ -882,7 +895,20 @@ LRESULT handle_get_object(HWND window,
                           const std::shared_ptr<int>& alive_token,
                           bool& handled) {
     handled = false;
-    if (l_param != static_cast<LPARAM>(OBJID_CLIENT) || !uia_available()) {
+
+    // UiaReturnRawElementProvider itself validates the object id and answers
+    // exactly two requests:
+    //   * UiaRootObjectId — the UI Automation provider LRESULT.
+    //   * OBJID_CLIENT    — the same provider exposed through the Microsoft
+    //     Active Accessibility bridge (screen readers and the UIA core's own
+    //     provider re-dispatch use this object id).
+    // Returning zero for OBJID_CLIENT silently severs both bridges: clients
+    // then see an empty element with no children. Everything else falls back
+    // to DefWindowProc below.
+    const DWORD object_id = static_cast<DWORD>(l_param);
+    if ((object_id != static_cast<DWORD>(UiaRootObjectId)
+         && object_id != static_cast<DWORD>(OBJID_CLIENT))
+        || !uia_available()) {
         return 0;
     }
     try {

@@ -440,6 +440,8 @@ begin
 
       RemoveDirectoryIfEmpty(SharedDirectory + '\layouts');
       RemoveDirectoryIfEmpty(SharedDirectory + '\dictionaries');
+      RemoveDirectoryIfEmpty(SharedDirectory + '\assets\layout-icons\borno');
+      RemoveDirectoryIfEmpty(SharedDirectory + '\assets\layout-icons');
       RemoveDirectoryIfEmpty(SharedDirectory + '\assets\fonts');
       RemoveDirectoryIfEmpty(SharedDirectory + '\assets\themes');
       RemoveDirectoryIfEmpty(SharedDirectory + '\assets');

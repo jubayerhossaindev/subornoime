@@ -1,6 +1,7 @@
 # Requires -Version 5.1
 # SubornoIME UI Automation audit harness.
 # Uses the .NET Framework UIA client that ships with Windows (no external deps).
+# WinApp CLI is optional; the audit never requires it.
 # Exit code = number of failed checks.
 #
 # Section 15 duties covered here: environment detection, application launch,
@@ -33,7 +34,60 @@ Add-Type -Namespace Suborno.Audit -Name Native -MemberDefinition @'
 [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
 [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
 [DllImport("user32.dll")] public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, System.UIntPtr dwExtraInfo);
+[DllImport("user32.dll", EntryPoint = "FindWindowW", CharSet = CharSet.Unicode, SetLastError = true)]
+public static extern IntPtr FindWindow(string className, string windowName);
+[DllImport("user32.dll", EntryPoint = "SendMessageW", SetLastError = true)]
+public static extern IntPtr SendMessage(IntPtr hWnd, uint message, IntPtr wParam, IntPtr lParam);
+[DllImport("user32.dll", EntryPoint = "GetClassNameW", CharSet = CharSet.Unicode, SetLastError = true)]
+public static extern int GetClassName(IntPtr hWnd, System.Text.StringBuilder className, int maxCount);
+[DllImport("user32.dll", EntryPoint = "GetWindowTextW", CharSet = CharSet.Unicode, SetLastError = true)]
+public static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder text, int maxCount);
+[DllImport("user32.dll", EntryPoint = "GetWindowThreadProcessId", SetLastError = true)]
+public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+[DllImport("user32.dll", EntryPoint = "IsWindowVisible")]
+[return: MarshalAs(UnmanagedType.Bool)]
+public static extern bool IsWindowVisible(IntPtr hWnd);
 '@
+
+# Use the Win32 API that Microsoft recommends for enumerating top-level windows.
+# GetWindow-in-a-loop is explicitly documented as less reliable because HWNDs
+# can be destroyed while the Z-order is being traversed.
+Add-Type -TypeDefinition @'
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+
+namespace Suborno.Audit
+{
+    public static class WindowEnumerator
+    {
+        private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool EnumWindows(EnumWindowsProc callback, IntPtr extraData);
+
+        public static IntPtr[] GetTopLevelWindows()
+        {
+            var handles = new List<IntPtr>();
+            EnumWindowsProc callback = delegate(IntPtr hWnd, IntPtr lParam)
+            {
+                handles.Add(hWnd);
+                return true;
+            };
+
+            if (!EnumWindows(callback, IntPtr.Zero))
+            {
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "EnumWindows failed.");
+            }
+
+            return handles.ToArray();
+        }
+    }
+}
+'@
+
 [void][Suborno.Audit.Native]::SetProcessDPIAware()
 
 $script:results = New-Object System.Collections.Generic.List[object]
@@ -51,7 +105,7 @@ function Get-AuditEnvironment {
     $osCaption = ''
     try { $osCaption = (Get-CimInstance Win32_OperatingSystem).Caption + ' build ' + (Get-CimInstance Win32_OperatingSystem).BuildNumber } catch { $osCaption = 'unknown' }
     $winapp = Get-Command winapp.exe -ErrorAction SilentlyContinue
-    $winappVersion = 'NOT INSTALLED'
+    $winappVersion = 'NOT INSTALLED (optional; in-box UIAutomationClient is used)'
     if ($winapp) { try { $winappVersion = (& winapp -V 2>&1 | Out-String).Trim() } catch { $winappVersion = 'present; version probe failed: ' + $_.Exception.Message } }
     $exeVersion = 'unknown'
     try { $exeVersion = (Get-Item $ExePath).VersionInfo.ProductVersion } catch { }
@@ -122,6 +176,149 @@ function Find-ById {
     return $Root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $cond)
 }
 
+function Find-NativeWindowByClass {
+    param(
+        [Parameter(Mandatory = $true)] [string] $ClassName,
+        [Parameter(Mandatory = $true)] [int] $ProcessId
+    )
+
+    # Enumerate all desktop top-level windows, including hidden windows, then
+    # match both the native class and the exact owning process ID.
+    foreach ($handle in [Suborno.Audit.WindowEnumerator]::GetTopLevelWindows()) {
+        [uint32]$windowProcessId = 0
+        $threadId = [Suborno.Audit.Native]::GetWindowThreadProcessId($handle, [ref]$windowProcessId)
+        if ($threadId -eq 0 -or $windowProcessId -ne $ProcessId) {
+            continue
+        }
+
+        $classNameBuffer = New-Object System.Text.StringBuilder 256
+        [void][Suborno.Audit.Native]::GetClassName($handle, $classNameBuffer, $classNameBuffer.Capacity)
+        if ($classNameBuffer.ToString() -ceq $ClassName) {
+            return $handle
+        }
+    }
+
+    return [IntPtr]::Zero
+}
+
+
+function Get-StartupDiagnostics {
+    param(
+        [System.Diagnostics.Process] $Process,
+        [string] $Label = 'application'
+    )
+
+    $lines = New-Object System.Collections.Generic.List[string]
+    $lines.Add("=== Startup diagnostics: $Label ===")
+    if ($null -ne $Process) {
+        try {
+            $Process.Refresh()
+            $lines.Add(("process_id={0}" -f $Process.Id))
+            $lines.Add(("has_exited={0}" -f $Process.HasExited))
+            if ($Process.HasExited) {
+                $lines.Add(("exit_code={0}" -f $Process.ExitCode))
+            } else {
+                $lines.Add(("main_window_handle=0x{0:X}" -f $Process.MainWindowHandle.ToInt64()))
+                $lines.Add(("main_window_title={0}" -f $Process.MainWindowTitle))
+                $lines.Add(("responding={0}" -f $Process.Responding))
+                $lines.Add(("thread_count={0}" -f $Process.Threads.Count))
+                $lines.Add(("cpu_seconds={0:N2}" -f $Process.TotalProcessorTime.TotalSeconds))
+            }
+        } catch {
+            $lines.Add(("process_query_error={0}" -f $_.Exception.Message))
+        }
+    }
+
+    $root = Get-RootElement
+    $textCondition = New-Object System.Windows.Automation.PropertyCondition(
+        [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+        [System.Windows.Automation.ControlType]::Text
+    )
+    $topLevelWindows = [Suborno.Audit.WindowEnumerator]::GetTopLevelWindows()
+    $windowIndex = 0
+    foreach ($handle in $topLevelWindows) {
+        [uint32]$windowProcessId = 0
+        [void][Suborno.Audit.Native]::GetWindowThreadProcessId($handle, [ref]$windowProcessId)
+
+        $className = New-Object System.Text.StringBuilder 256
+        $windowTitle = New-Object System.Text.StringBuilder 512
+        [void][Suborno.Audit.Native]::GetClassName($handle, $className, $className.Capacity)
+        [void][Suborno.Audit.Native]::GetWindowText($handle, $windowTitle, $windowTitle.Capacity)
+        $visible = [Suborno.Audit.Native]::IsWindowVisible($handle)
+
+        $isTargetProcess = ($null -ne $Process -and $windowProcessId -eq $Process.Id)
+        $isDialog = ($className.ToString() -eq '#32770')
+        if ($isTargetProcess -or ($isDialog -and $visible)) {
+            $lines.Add(("window hwnd=0x{0:X} pid={1} visible={2} class=[{3}] title=[{4}]" -f
+                $handle.ToInt64(), $windowProcessId, $visible, $className.ToString(), $windowTitle.ToString()))
+            try {
+                $element = [System.Windows.Automation.AutomationElement]::FromHandle($handle)
+                if ($null -ne $element) {
+                    $textElements = $element.FindAll(
+                        [System.Windows.Automation.TreeScope]::Descendants,
+                        $textCondition
+                    )
+                    foreach ($textElement in $textElements) {
+                        $name = $textElement.Current.Name
+                        if (-not [string]::IsNullOrWhiteSpace($name)) {
+                            $lines.Add(("  UIA text: {0}" -f $name))
+                        }
+                    }
+                    if ($visible) {
+                        $shot = Save-WindowScreenshot ("STARTUP-{0}" -f $windowIndex) $element
+                        if ($shot) { $lines.Add(("  screenshot={0}" -f $shot)) }
+                    }
+                }
+            } catch {
+                $lines.Add(("  UIA inspection error: {0}" -f $_.Exception.Message))
+            }
+        }
+
+        $windowIndex++
+    }
+
+    $lines.Add(("enumerated_top_level_windows={0}" -f $windowIndex))
+    $lines | Tee-Object -FilePath $script:startupDiagnosticsPath -Append | ForEach-Object { Write-Host $_ }
+}
+
+function Write-UIATreeDiagnostics {
+    param(
+        [System.Windows.Automation.AutomationElement] $Window,
+        [string] $Label
+    )
+
+    if ($null -eq $Window) {
+        Write-Host ("UIA tree [{0}]: window element is null." -f $Label)
+        return
+    }
+
+    try {
+        Write-Host ("UIA tree [{0}] root: Name=[{1}] Class=[{2}] AutomationId=[{3}] ControlType=[{4}] HWND=0x{5:X}" -f
+            $Label,
+            $Window.Current.Name,
+            $Window.Current.ClassName,
+            $Window.Current.AutomationId,
+            $Window.Current.ControlType.ProgrammaticName,
+            $Window.Current.NativeWindowHandle)
+        $condition = [System.Windows.Automation.Condition]::TrueCondition
+        $elements = $Window.FindAll([System.Windows.Automation.TreeScope]::Descendants, $condition)
+        Write-Host ("UIA tree [{0}] descendant_count={1}" -f $Label, $elements.Count)
+        $limit = [math]::Min($elements.Count, 120)
+        for ($index = 0; $index -lt $limit; $index++) {
+            $element = $elements.Item($index)
+            Write-Host ("  [{0}] Name=[{1}] AutomationId=[{2}] Class=[{3}] Type=[{4}] HWND=0x{5:X}" -f
+                $index,
+                $element.Current.Name,
+                $element.Current.AutomationId,
+                $element.Current.ClassName,
+                $element.Current.ControlType.ProgrammaticName,
+                $element.Current.NativeWindowHandle)
+        }
+    } catch {
+        Write-Host ("UIA tree [{0}] inspection failed: {1}" -f $Label, $_.Exception.Message)
+    }
+}
+
 function Assert-Element {
     param([string] $Id, [System.Windows.Automation.AutomationElement] $El, [System.Windows.Automation.AutomationElement] $Window, [string] $ControlType)
     if ($null -eq $El) { Add-Result $Id "element exists" "NOT FOUND" $false; return $false }
@@ -143,28 +340,112 @@ function Invoke-Pattern {
 
 Write-Host '== Suborno UI audit ==' -ForegroundColor Cyan
 $script:environment = Get-AuditEnvironment
-Write-Host ('environment: {0} | PS {1} | winapp: {2}' -f $script:environment.os, $script:environment.powershell_version, $script:environment.winapp_cli)
+Write-Host ('environment: {0} | PS {1} | winapp-cli: {2}' -f $script:environment.os, $script:environment.powershell_version, $script:environment.winapp_cli)
 New-Item -ItemType Directory -Force -Path $EvidenceDir | Out-Null
 
-# 0) Build/attach
-$process = $null
-$existing = Get-Process -Name 'Suborno' -ErrorAction SilentlyContinue
+# Persist startup evidence even when the application never creates its host window.
+$script:startupDiagnosticsPath = Join-Path (Get-Location) 'uia-startup-diagnostics.txt'
+"Suborno UIA startup diagnostics" | Set-Content -Path $script:startupDiagnosticsPath -Encoding UTF8
+
+# Run the application's non-interactive initialization/window-creation path first.
+# --smoke-test suppresses modal error dialogs and returns a process exit code,
+# making startup failures observable without changing production behavior.
+Write-Host 'Running Suborno --smoke-test startup preflight (30-second bound).'
+$smokeProcess = Start-Process -FilePath $ExePath -ArgumentList '--smoke-test' -PassThru
+$smokeCompleted = $smokeProcess.WaitForExit(30000)
+$smokeProcess.Refresh()
+if ($smokeCompleted) {
+    $smokeExitCode = $smokeProcess.ExitCode
+    Add-Result 'APP-SMOKE-TEST' 'initialization and native window creation exit code 0' ("exit code {0}" -f $smokeExitCode) ($smokeExitCode -eq 0)
+    ("smoke_test_exit_code={0}" -f $smokeExitCode) | Tee-Object -FilePath $script:startupDiagnosticsPath -Append | Write-Host
+} else {
+    Add-Result 'APP-SMOKE-TEST' 'smoke test completes within 30 seconds' 'TIMED OUT after 30 seconds' $false
+    Get-StartupDiagnostics -Process $smokeProcess -Label 'smoke-test-timeout'
+    Stop-Process -Id $smokeProcess.Id -Force -ErrorAction SilentlyContinue
+}
+$smokeProcess.Dispose()
+
+# 0) Build/attach. Keep a Process object in both paths so all discovery
+# remains scoped to the exact PID, including when an existing instance is reused.
+$existing = Get-Process -Name 'Suborno' -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($null -eq $existing) {
     $process = Start-Process -FilePath $ExePath -PassThru
-    Start-Sleep -Seconds 3
+    Write-Host ("Started Suborno PID {0}." -f $process.Id)
 } else {
-    Write-Host 'Attaching to running Suborno instance.'
+    $process = Get-Process -Id $existing.Id
+    Write-Host ("Attaching to running Suborno PID {0}." -f $process.Id)
 }
 
+# The application intentionally starts in its configured topbar/tray surface;
+# Settings is not guaranteed to be visible on launch. Find its hidden native
+# host by class + owning PID, then dispatch the production Settings command.
+# Use a monotonic timeout so delayed window creation is not mistaken for failure.
+$settingsHost = [IntPtr]::Zero
+$windowStartupTimeoutMs = 60000
+$windowPollIntervalMs = 200
+$startupStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+while ($startupStopwatch.ElapsedMilliseconds -lt $windowStartupTimeoutMs) {
+    $settingsHost = Find-NativeWindowByClass -ClassName 'SubornoDesktopWindow' -ProcessId $process.Id
+    if ($settingsHost -ne [IntPtr]::Zero) { break }
+
+    $process.Refresh()
+    if ($process.HasExited) {
+        $startupStopwatch.Stop()
+        Get-StartupDiagnostics -Process $process -Label 'process-exited-before-window'
+        throw ("Suborno exited before creating its native window (exit code {0})." -f $process.ExitCode)
+    }
+
+    Start-Sleep -Milliseconds $windowPollIntervalMs
+}
+$startupStopwatch.Stop()
+Write-Host ("Native host discovery elapsed: {0:N0} ms; timeout: {1:N0} ms." -f
+    $startupStopwatch.Elapsed.TotalMilliseconds, $windowStartupTimeoutMs)
+
+if ($settingsHost -eq [IntPtr]::Zero) {
+    Get-StartupDiagnostics -Process $process -Label 'native-window-timeout'
+    throw ("Suborno did not create the SubornoDesktopWindow host within {0} seconds. Startup diagnostics were saved to uia-startup-diagnostics.txt." -f
+        [math]::Ceiling($windowStartupTimeoutMs / 1000))
+}
+
+$wmCommand = [uint32]0x0111
+$menuOpenSettings = [IntPtr]2003
+$wildcardFindWindow = [Suborno.Audit.Native]::FindWindow('SubornoDesktopWindow', $null)
+$titleFindWindow = [Suborno.Audit.Native]::FindWindow('SubornoDesktopWindow', 'Suborno Settings')
+Write-Host ('FindWindowW comparison: null-title=0x{0:X}, exact-title=0x{1:X}; process-scoped enumeration=0x{2:X}.' -f
+    $wildcardFindWindow.ToInt64(), $titleFindWindow.ToInt64(), $settingsHost.ToInt64())
+Write-Host ('Opening Settings through the app WM_COMMAND handler; host HWND=0x{0:X}.' -f $settingsHost.ToInt64())
+[void][Suborno.Audit.Native]::SendMessage($settingsHost, $wmCommand, $menuOpenSettings, [IntPtr]::Zero)
+
 $root = Get-RootElement
-$settings = Find-Window $root 'SubornoDesktopWindow' ''
+$settings = $null
+for ($attempt = 0; $attempt -lt 50; $attempt++) {
+    $settings = Find-Window $root 'SubornoDesktopWindow' ''
+    if ($null -ne $settings) { break }
+    Start-Sleep -Milliseconds 200
+}
 if ($null -eq $settings) {
-    Add-Result 'SET-OPEN' 'Settings window found by class SubornoDesktopWindow' 'NOT FOUND (open it via the tray menu, then re-run)' $false
+    Add-Result 'SET-OPEN' 'Settings window found by class SubornoDesktopWindow after app menu command' 'NOT FOUND after WM_COMMAND 2003' $false
     $script:results | ConvertTo-Json -Depth 3 | Set-Content -Path $ResultsJson -Encoding UTF8
     $failed = @($script:results | Where-Object { $_.status -eq 'FAIL' }).Count
     exit $failed
 }
 Add-Result 'SET-OPEN' 'Settings window found' $settings.Current.Name $true
+$settingsByHandle = [System.Windows.Automation.AutomationElement]::FromHandle($settingsHost)
+Write-UIATreeDiagnostics -Window $settings -Label 'desktop-tree-find-window'
+Write-UIATreeDiagnostics -Window $settingsByHandle -Label 'direct-from-hwnd'
+$rootIdCondition = New-Object System.Windows.Automation.PropertyCondition(
+    [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
+    'window'
+)
+$rootIdElement = $settingsByHandle.FindFirst([System.Windows.Automation.TreeScope]::Element, $rootIdCondition)
+Write-Host ("UIA root AutomationId='window' matched={0}" -f ($null -ne $rootIdElement))
+$settingsHandleGeneral = Find-ById $settingsByHandle 'sidebar.general'
+$settingsDesktopGeneral = Find-ById $settings 'sidebar.general'
+Write-Host ("UIA selector probe sidebar.general: direct-from-hwnd={0}, desktop-tree={1}" -f
+    ($null -ne $settingsHandleGeneral), ($null -ne $settingsDesktopGeneral))
+if ($null -ne $settingsHandleGeneral) {
+    $settings = $settingsByHandle
+}
 $shot = Save-WindowScreenshot 'SET-OPEN' $settings
 
 # 1) Sidebar pages

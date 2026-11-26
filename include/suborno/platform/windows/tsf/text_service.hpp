@@ -72,10 +72,9 @@ class SubornoTextService final : public ITfTextInputProcessor,
     /// ITfDisplayAttributeProvider — BornoTSF parity
     /// (display/DisplayAttributeProvider.cpp): exposes the Input/Converted
     /// display attributes host applications use to render composition text.
-    STDMETHOD(EnumDisplayAttributeInfo)
-    (__RPC__deref_out_opt IEnumTfDisplayAttributeInfo** ppEnum) override;
+    STDMETHOD(EnumDisplayAttributeInfo)(_COM_Outptr_ IEnumTfDisplayAttributeInfo** ppEnum) override;
     STDMETHOD(GetDisplayAttributeInfo)
-    (__RPC__in REFGUID guidInfo, __RPC__deref_out_opt ITfDisplayAttributeInfo** ppInfo) override;
+    (__RPC__in REFGUID guidInfo, _COM_Outptr_ ITfDisplayAttributeInfo** ppInfo) override;
 
   public:
     static HRESULT CreateInstance(REFIID riid, void** ppv);

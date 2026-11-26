@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <string>
 #include <vector>
 
 namespace {
@@ -19,13 +20,30 @@ std::wstring& pinned_override_path() {
 }
 
 std::filesystem::path environment_folder(const char* name) {
+    std::string environment_path;
+#if defined(_MSC_VER)
+    char* environment_value = nullptr;
+    std::size_t environment_value_size = 0;
+    const int environment_status = _dupenv_s(&environment_value, &environment_value_size, name);
+    if (environment_status != 0 || environment_value == nullptr) {
+        std::free(environment_value);
+        return {};
+    }
+    environment_path.assign(environment_value, environment_value_size > 0 ? environment_value_size - 1 : 0);
+    std::free(environment_value);
+#else
     const char* environment_value = std::getenv(name);
-    if (environment_value == nullptr || *environment_value == '\0') {
+    if (environment_value == nullptr) {
+        return {};
+    }
+    environment_path.assign(environment_value);
+#endif
+    if (environment_path.empty()) {
         return {};
     }
     // APPDATA/PROGRAMDATA are ASCII in practice; byte-wise widening matches
     // the deployment layout.
-    return std::filesystem::path(std::string(environment_value));
+    return std::filesystem::path(environment_path);
 }
 
 bool is_usable_dictionary_file(const std::filesystem::path& candidate_path) {

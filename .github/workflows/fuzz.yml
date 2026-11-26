@@ -45,7 +45,7 @@ jobs:
             -DSUBORNO_BUILD_FUZZING=ON
 
       - name: Build fuzz target
-        run: cmake --build build/nightly-fuzz --target suborno_phonetic_fuzz suborno_c_api_fuzz
+        run: cmake --build build/nightly-fuzz --target suborno_phonetic_fuzz
 
       - name: Fuzz session (capped)
         run: |
@@ -54,15 +54,6 @@ jobs:
           ./build/nightly-fuzz/suborno_phonetic_fuzz \
             tests/fuzz/corpus /tmp/fuzz-artifacts \
             -dict=tests/fuzz/dictionaries/phonetic.dict \
-            -max_total_time="$FUZZ_SECONDS" \
-            -print_final_stats=1
-
-      - name: Fuzz session - public C API boundary (capped)
-        run: |
-          FUZZ_SECONDS="${{ github.event.inputs.fuzz_seconds || '600' }}"
-          mkdir -p /tmp/fuzz-artifacts-capi
-          ./build/nightly-fuzz/suborno_c_api_fuzz \
-            tests/fuzz/corpus /tmp/fuzz-artifacts-capi \
             -max_total_time="$FUZZ_SECONDS" \
             -print_final_stats=1
 

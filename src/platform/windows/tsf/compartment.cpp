@@ -14,21 +14,42 @@ Compartment::Compartment(IUnknown* owner, TfClientId client_id, REFGUID guid_com
     : client_id_(client_id),
       guid_compartment_(guid_compartment) {
     // AddRef the owner like upstream does (_punk = punk; _punk->AddRef()).
-    owner_.copy_from(owner);
+    owner_ = owner;
 }
 
-HRESULT Compartment::get_compartment(_Outptr_ ITfCompartment** compartment) const {
+HRESULT Compartment::get_compartment(
+    _Outptr_result_nullonfailure_ ITfCompartment** compartment) const {
     if (compartment == nullptr) {
         return E_INVALIDARG;
     }
     *compartment = nullptr;
+    if (owner_ == nullptr) {
+        return E_POINTER;
+    }
 
     wil::com_ptr<ITfCompartmentMgr> compartment_mgr;
-    HRESULT result = owner_.query_to(compartment_mgr.put());
-    if (SUCCEEDED(result) && compartment_mgr != nullptr) {
-        result = compartment_mgr->GetCompartment(guid_compartment_, compartment);
+    HRESULT result = owner_->QueryInterface(IID_PPV_ARGS(compartment_mgr.put()));
+    if (result != S_OK) {
+        return FAILED(result) ? result : E_UNEXPECTED;
     }
-    return result;
+    if (compartment_mgr == nullptr) {
+        return E_NOINTERFACE;
+    }
+
+    ITfCompartment* acquired = nullptr;
+    result = compartment_mgr->GetCompartment(guid_compartment_, &acquired);
+    if (result != S_OK) {
+        if (acquired != nullptr) {
+            acquired->Release();
+        }
+        return FAILED(result) ? result : E_UNEXPECTED;
+    }
+    if (acquired == nullptr) {
+        return E_UNEXPECTED;
+    }
+
+    *compartment = acquired;
+    return S_OK;
 }
 
 HRESULT Compartment::get_bool_value(_Out_ BOOL* enabled) const {
@@ -41,6 +62,9 @@ HRESULT Compartment::get_bool_value(_Out_ BOOL* enabled) const {
     HRESULT result = get_compartment(compartment.put());
     if (result != S_OK) {
         return result;
+    }
+    if (compartment == nullptr) {
+        return E_UNEXPECTED;
     }
 
     VARIANT value{};
@@ -58,7 +82,10 @@ HRESULT Compartment::get_bool_value(_Out_ BOOL* enabled) const {
 HRESULT Compartment::set_bool_value(BOOL enabled) const {
     wil::com_ptr<ITfCompartment> compartment;
     HRESULT result = get_compartment(compartment.put());
-    if (SUCCEEDED(result)) {
+    if (result == S_OK && compartment == nullptr) {
+        return E_UNEXPECTED;
+    }
+    if (result == S_OK) {
         VARIANT value{};
         value.vt = VT_I4;
         value.lVal = enabled ? 1 : 0;
@@ -68,19 +95,22 @@ HRESULT Compartment::set_bool_value(BOOL enabled) const {
 }
 
 HRESULT Compartment::get_dword_value(_Out_ DWORD* compartment_value) const {
-    if (value == nullptr) {
+    if (compartment_value == nullptr) {
         return E_INVALIDARG;
     }
-    *value = 0;
+    *compartment_value = 0;
 
     wil::com_ptr<ITfCompartment> compartment;
     HRESULT result = get_compartment(compartment.put());
-    if (SUCCEEDED(result)) {
+    if (result == S_OK && compartment == nullptr) {
+        return E_UNEXPECTED;
+    }
+    if (result == S_OK) {
         VARIANT variant{};
         result = compartment->GetValue(&variant);
         if (result == S_OK) {
             if (variant.vt == VT_I4) {
-                *value = static_cast<DWORD>(variant.lVal);
+                *compartment_value = static_cast<DWORD>(variant.lVal);
             } else {
                 result = S_FALSE;
             }
@@ -92,7 +122,10 @@ HRESULT Compartment::get_dword_value(_Out_ DWORD* compartment_value) const {
 HRESULT Compartment::set_dword_value(DWORD value) const {
     wil::com_ptr<ITfCompartment> compartment;
     HRESULT result = get_compartment(compartment.put());
-    if (SUCCEEDED(result)) {
+    if (result != S_OK || compartment == nullptr) {
+        return result == S_OK ? E_UNEXPECTED : result;
+    }
+    {
         VARIANT variant{};
         variant.vt = VT_I4;
         variant.lVal = static_cast<LONG>(value);
@@ -108,12 +141,19 @@ HRESULT Compartment::clear_value() {
         return S_FALSE;
     }
 
-    wil::com_ptr<ITfCompartmentMgr> compartment_mgr;
-    HRESULT result = owner_.query_to(compartment_mgr.put());
-    if (result == S_OK && compartment_mgr != nullptr) {
-        result = compartment_mgr->ClearCompartment(client_id_, guid_compartment_);
+    if (owner_ == nullptr) {
+        return E_POINTER;
     }
-    return result;
+
+    wil::com_ptr<ITfCompartmentMgr> compartment_mgr;
+    HRESULT result = owner_->QueryInterface(IID_PPV_ARGS(compartment_mgr.put()));
+    if (result != S_OK) {
+        return result;
+    }
+    if (compartment_mgr == nullptr) {
+        return E_NOINTERFACE;
+    }
+    return compartment_mgr->ClearCompartment(client_id_, guid_compartment_);
 }
 
 CompartmentEventSink::CompartmentEventSink(CompartmentCallback callback, void* callback_context)
@@ -162,6 +202,10 @@ STDMETHODIMP CompartmentEventSink::OnChange(REFGUID guid_compartment) {
 }
 
 HRESULT CompartmentEventSink::Advise(IUnknown* owner, REFGUID guid_compartment) {
+    if (owner == nullptr) {
+        return E_POINTER;
+    }
+
     wil::com_ptr<ITfCompartmentMgr> compartment_mgr;
     HRESULT result = owner->QueryInterface(IID_PPV_ARGS(compartment_mgr.put()));
     if (FAILED(result)) {
@@ -171,7 +215,7 @@ HRESULT CompartmentEventSink::Advise(IUnknown* owner, REFGUID guid_compartment) 
     result = compartment_mgr->GetCompartment(guid_compartment, compartment_.put());
     if (SUCCEEDED(result)) {
         wil::com_ptr<ITfSource> source;
-        result = compartment_.query_to(source.put());
+        result = compartment_->QueryInterface(IID_PPV_ARGS(source.put()));
         if (SUCCEEDED(result)) {
             result = source->AdviseSink(IID_ITfCompartmentEventSink, this, &cookie_);
         }
@@ -183,7 +227,7 @@ HRESULT CompartmentEventSink::Unadvise() {
     HRESULT result = S_OK;
     if (compartment_ != nullptr) {
         wil::com_ptr<ITfSource> source;
-        result = compartment_.query_to(source.put());
+        result = compartment_->QueryInterface(IID_PPV_ARGS(source.put()));
         if (SUCCEEDED(result)) {
             result = source->UnadviseSink(cookie_);
         }
