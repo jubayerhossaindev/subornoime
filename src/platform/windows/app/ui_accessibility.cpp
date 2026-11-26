@@ -200,21 +200,22 @@ class ElementProvider final : public IRawElementProviderSimple,
         if (!source_->element_info(index_, info)) {
             return UIA_E_ELEMENTNOTAVAILABLE;
         }
-        const bool supported =
-            (pattern_id == UIA_InvokePatternId && info.supports_invoke)
-            || (pattern_id == UIA_TogglePatternId && info.supports_toggle)
-            || (pattern_id == UIA_ExpandCollapsePatternId && info.supports_expand_collapse)
-            || (pattern_id == UIA_RangeValuePatternId && info.supports_range);
-        if (supported) {
-            // GetPatternProvider returns IUnknown*. Return the provider's
-            // canonical IUnknown identity (the IRawElementProviderSimple
-            // subobject), not an IUnknown subobject reached through one of
-            // the pattern interfaces. UI Automation queries this object for
-            // IInvokeProvider / IToggleProvider / etc. The distinction is
-            // required by COM identity when a provider uses multiple
-            // inheritance from independent IUnknown-based UIA interfaces.
-            *pattern = static_cast<IRawElementProviderSimple*>(this);
-            AddRef();
+        // Return the exact control-pattern interface requested by UI
+        // Automation. QueryInterface performs the COM identity adjustment
+        // required by this provider's multiple inheritance and AddRefs the
+        // returned interface on success.
+        if (pattern_id == UIA_InvokePatternId && info.supports_invoke) {
+            return QueryInterface(__uuidof(IInvokeProvider), reinterpret_cast<void**>(pattern));
+        }
+        if (pattern_id == UIA_TogglePatternId && info.supports_toggle) {
+            return QueryInterface(__uuidof(IToggleProvider), reinterpret_cast<void**>(pattern));
+        }
+        if (pattern_id == UIA_ExpandCollapsePatternId && info.supports_expand_collapse) {
+            return QueryInterface(
+                __uuidof(IExpandCollapseProvider), reinterpret_cast<void**>(pattern));
+        }
+        if (pattern_id == UIA_RangeValuePatternId && info.supports_range) {
+            return QueryInterface(__uuidof(IRangeValueProvider), reinterpret_cast<void**>(pattern));
         }
         return S_OK;
     }
