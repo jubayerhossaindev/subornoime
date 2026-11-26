@@ -19,21 +19,16 @@ option(SUBORNO_ENABLE_MSVC_CCACHE "Enable the MSVC compilation cache when ccache
 # The cache itself lives in RUNNER_TEMP (not the build tree) on CI.
 if(WIN32 AND MSVC AND SUBORNO_ENABLE_MSVC_CCACHE)
     set(_suborno_ccache_executable "$ENV{SUBORNO_CCACHE_EXECUTABLE}")
-    if(_suborno_ccache_executable AND EXISTS "${_suborno_ccache_executable}")
-        set(_suborno_ccache_proxy_dir "${CMAKE_BINARY_DIR}/ccache-proxy")
-        file(MAKE_DIRECTORY "${_suborno_ccache_proxy_dir}")
-        file(COPY_FILE
-            "${_suborno_ccache_executable}"
-            "${_suborno_ccache_proxy_dir}/cl.exe"
-            ONLY_IF_DIFFERENT
-        )
-
+    set(_suborno_ccache_directory "$ENV{SUBORNO_CCACHE_DIRECTORY}")
+    if(_suborno_ccache_executable
+       AND EXISTS "${_suborno_ccache_executable}"
+       AND IS_DIRECTORY "${_suborno_ccache_directory}")
         set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT
             "$<$<CONFIG:Debug,RelWithDebInfo>:Embedded>"
         )
         set(CMAKE_VS_GLOBALS
             "CLToolExe=cl.exe"
-            "CLToolPath=${_suborno_ccache_proxy_dir}"
+            "CLToolPath=${_suborno_ccache_directory}"
             "UseMultiToolTask=true"
         )
         message(STATUS "MSVC compilation cache enabled through ccache: ${_suborno_ccache_executable}")
