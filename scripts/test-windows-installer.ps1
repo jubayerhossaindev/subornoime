@@ -241,14 +241,34 @@ $startupKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 New-Item -Path $startupKey -Force | Out-Null
 Set-ItemProperty -Path $startupKey -Name 'Suborno' -Value "`"$application`" --startup"
 $uninstaller = Get-SubornoUninstallerPath -Path $installDirectory
+$uninstallLog = Join-Path $PWD 'verify-evidence\uninstall-x64-first.log'
 $uninstall = Start-Process -FilePath $uninstaller `
-    -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') -Wait -PassThru
+    -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/LOG=$uninstallLog") -Wait -PassThru
 if ($uninstall.ExitCode -ne 0) {
-    throw "Suborno uninstaller exited with code $($uninstall.ExitCode)."
+    throw "Suborno uninstaller exited with code $($uninstall.ExitCode). See $uninstallLog."
 }
 
+# This test creates the legacy Program Files\Suborno directory itself before
+# installing the new package. Inno Setup intentionally leaves directories
+# that existed before installation. Only remove that fixture-owned root after
+# proving the uninstaller removed every installed file and subdirectory.
+if (Test-Path -LiteralPath $installDirectory -PathType Container) {
+    $remainingEntries = @(Get-ChildItem -LiteralPath $installDirectory -Force -Recurse)
+    if ($remainingEntries.Count -gt 0) {
+        $remainingDescription = $remainingEntries | ForEach-Object {
+            if ($_.PSIsContainer) {
+                "[DIR] $($_.FullName)"
+            } else {
+                "[FILE] $($_.FullName)"
+            }
+        }
+        throw "Installer left entries under the pre-existing Program Files directory: $($remainingDescription -join '; '). See $uninstallLog."
+    }
+
+    Remove-Item -LiteralPath $installDirectory -Force
+}
 if (Test-Path -LiteralPath $installDirectory) {
-    throw 'Suborno installation directory remains after uninstall.'
+    throw 'The pre-existing installer test directory could not be removed after its contents were verified empty.'
 }
 if (Test-Path -LiteralPath $programDataDirectory) {
     throw 'Suborno service files remain in ProgramData after uninstall.'
@@ -308,8 +328,9 @@ if ($smokeX64.ExitCode -ne 0) {
 
 # Uninstall x86: its application directory goes, shared ProgramData resources and user data stay.
 $uninstallerX86 = Get-SubornoUninstallerPath -Path $installDirectoryX86
+$uninstallX86Log = Join-Path $PWD 'verify-evidence\uninstall-x86.log'
 $uninstallX86 = Start-Process -FilePath $uninstallerX86 `
-    -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') -Wait -PassThru
+    -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/LOG=$uninstallX86Log") -Wait -PassThru
 if ($uninstallX86.ExitCode -ne 0) {
     throw "x86 uninstaller exited with code $($uninstallX86.ExitCode)."
 }
@@ -326,10 +347,11 @@ Assert-SharedResourceDirectories
 Assert-UserDataPreserved
 
 # Uninstall x64 last: shared ProgramData resources are removed only when no architecture remains.
+$uninstallFinalLog = Join-Path $PWD 'verify-evidence\uninstall-x64-final.log'
 $uninstall = Start-Process -FilePath $uninstaller `
-    -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') -Wait -PassThru
+    -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/LOG=$uninstallFinalLog") -Wait -PassThru
 if ($uninstall.ExitCode -ne 0) {
-    throw "Suborno uninstaller exited with code $($uninstall.ExitCode)."
+    throw "Suborno uninstaller exited with code $($uninstall.ExitCode). See $uninstallFinalLog."
 }
 if (Test-Path -LiteralPath $installDirectory) {
     throw 'Suborno installation directory remains after uninstall.'
