@@ -72,8 +72,33 @@ function Assert-CleanInstallDirectory {
         (Get-Item -LiteralPath $noticesPath).Length -eq 0) {
         throw 'Third-party license notices are missing from the installed application.'
     }
-    if (@(Get-ChildItem -LiteralPath $Path -Force -Directory).Count -ne 0) {
-        throw 'Subdirectories were installed into the Suborno application directory.'
+    # The installer intentionally ships the UI locale files under data/i18n.
+    # Validate that exact directory tree instead of incorrectly requiring a flat install.
+    $expectedDirectories = @('data')
+    $actualDirectories = @(Get-ChildItem -LiteralPath $Path -Force -Directory |
+        Sort-Object Name | Select-Object -ExpandProperty Name)
+    if (($actualDirectories -join '|') -ne ($expectedDirectories -join '|')) {
+        throw "Unexpected Program Files directories: $($actualDirectories -join ', ')"
+    }
+
+    $i18nDirectory = Join-Path $Path 'data\i18n'
+    $expectedLocales = @('bn', 'en')
+    $actualLocales = @(Get-ChildItem -LiteralPath $i18nDirectory -Force -Directory |
+        Sort-Object Name | Select-Object -ExpandProperty Name)
+    if (($actualLocales -join '|') -ne ($expectedLocales -join '|')) {
+        throw "Unexpected installed UI locale directories: $($actualLocales -join ', ')"
+    }
+
+    foreach ($locale in $expectedLocales) {
+        $localeDirectory = Join-Path $i18nDirectory $locale
+        $localeFiles = @(Get-ChildItem -LiteralPath $localeDirectory -Force -File |
+            Sort-Object Name | Select-Object -ExpandProperty Name)
+        if (($localeFiles -join '|') -ne 'ui.json') {
+            throw "Unexpected files in the '$locale' UI locale directory: $($localeFiles -join ', ')"
+        }
+        if (@(Get-ChildItem -LiteralPath $localeDirectory -Force -Directory).Count -ne 0) {
+            throw "Unexpected nested directory in the '$locale' UI locale directory."
+        }
     }
 }
 
