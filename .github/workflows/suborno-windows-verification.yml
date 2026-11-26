@@ -287,8 +287,9 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           # Detailed MSBuild output exposes the actual CL task command lines.
-          # The binary log is retained in the always-uploaded evidence artifact.
-          cmake --build --preset windows-msvc-release -- /verbosity:detailed /clp:ShowCommandLine /bl:verify-evidence\release_build.binlog 2>&1 | Tee-Object -FilePath verify-evidence\release_build.log
+          # Use an absolute path because CMake invokes MSBuild from the build tree.
+          $binaryLogPath = Join-Path $env:GITHUB_WORKSPACE 'verify-evidence\release_build.binlog'
+          cmake --build --preset windows-msvc-release -- /verbosity:detailed /clp:ShowCommandLine "/bl:$binaryLogPath" 2>&1 | Tee-Object -FilePath verify-evidence\release_build.log
           $buildExitCode = $LASTEXITCODE
           if ($buildExitCode -ne 0) {
             Write-Host "MSVC Release build exited with native code $buildExitCode."
